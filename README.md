@@ -1,29 +1,18 @@
-# README #
+# Marathon of Hope Automation #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+This repository contains all of the scripts for the automation of the MOH projects
+and integration of genpipes
+## Abacus Scripts ##
 
-### What is this repository for? ###
+### Activate_globus.sh ###
+Activates the globus endpoints for Create_readset_transfer_BAMS.sh
+**Must be updated for individual users**
+Usage: `Activate_globus.sh`
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+### Create_readset_transfer_BAMS.sh ###
+Takes the full path of the read folder as an input and transfers the BAMs/fastqs with the 
+MoH prefix.In addition it tranfers over the key run processing metrics and generates 
+a log file forlater usage with the database
+**Globus fields must be updated for individual users**
+Usage: `Create_readset_transfer_BAMS.sh PATH_TO_RUN_FOLDER`
 
-### How do I get set up? ###
-
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
-
-### Contribution guidelines ###
-
-* Writing tests
-* Code review
-* Other guidelines
-
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
