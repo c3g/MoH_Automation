@@ -16,3 +16,11 @@ a log file forlater usage with the database
 **Globus fields must be updated for individual users**  
 Usage: `Create_readset_transfer_BAMS.sh PATH_TO_RUN_FOLDER`  
 
+### Metrics_Update.py ###
+This script takes a single file and parses it to update the database with metrics from
+run processing and from both DNA and RNA Genpipes. It compares the extracted values to
+ known acceptable values and adds them to the KEY_METRICS table within the MoH database.  
+**Update needed to extract data directly from Database rather than a file**  
+Usage: `Metrics_Update.py`  
+
+
