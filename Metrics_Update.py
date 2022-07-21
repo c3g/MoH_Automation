@@ -16,6 +16,8 @@ def main():
     with open('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/TEMP_FILE_LIST.txt') as f:
         lines = [line.rstrip() for line in f]
 
+
+
     extract_data(lines,connection)
     connection.commit()
     connection.close()

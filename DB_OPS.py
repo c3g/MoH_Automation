@@ -18,6 +18,17 @@ def create_connection(db_file):
         print(e)
     return conn
 
+def extract_sample_metrics(conn,Sample,column):
+    cur = conn.cursor()
+    cur.row_factory = lambda cursor, row: row[0]
+    cur.execute(f"SELECT {column} FROM KEY_METRICS WHERE Sample='{Sample}'")
+    result = cur.fetchone()
+    if result:
+        return result
+    else:
+        return "NA"
+    cur.row_factory = None
+
 def update_metrics_db(conn,Sample,WGS_Bases_Over_Q30 = 'NA',WGS_Min_Aligned_Reads_Delivered = 'NA',WGS_Raw_Coverage = 'NA',WGS_Dedup_Coverage = 'NA',Median_Insert_Size = 'NA',WGS_Duplication_Rate = 'NA',WGS_Contamination = 'NA',WTS_Clusters = 'NA',WTS_Unique_Reads='NA',WTS_Exonic_Rate='NA', WTS_rRNA_contamination = 'NA',Concordance = 'NA',Purity = 'NA',Yellow_Flags = 'NA',Red_Flags = 'NA'):
     # Create cursor object
     cur = conn.cursor()
