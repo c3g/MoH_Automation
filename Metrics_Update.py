@@ -2,7 +2,7 @@
 import glob
 import sys
 import re
-from  DB_OPS import update_metrics_db,create_connection
+from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names
 #TO DO::
 # Make this object orientated.
 #Implement function which extracts only completed samples from database rather than the temporary text file
@@ -11,14 +11,15 @@ from  DB_OPS import update_metrics_db,create_connection
 
 def main():
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
-    #Extract the data from the database later. Just using a list of names for today.
-#    with open('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/TEMP_TEST2.txt') as f:
-    with open('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/TEMP_FILE_LIST.txt') as f:
-        lines = [line.rstrip() for line in f]
-
-
-
-    extract_data(lines,connection)
+    
+    Samples = extract_sample_names(connection)
+    All_Samples = []
+    for sample in Samples:
+        All_Samples.append(extract_sample_field(connection,sample,"DNA_N"))
+        All_Samples.append(extract_sample_field(connection,sample,"DNA_T"))
+        All_Samples.append(extract_sample_field(connection,sample,"RNA"))
+    All_Samples = [x for x in All_Samples if x != "NA"]
+    extract_data(All_Samples,connection)
     connection.commit()
     connection.close()
 
