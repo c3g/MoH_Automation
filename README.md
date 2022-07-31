@@ -9,9 +9,6 @@ Activates the globus endpoints for Create_readset_transfer_BAMS.sh
 **Must be updated for individual users**  
 Usage: `Activate_globus.sh`  
 
-## Beluga Scripts ##
-
-
 ### Create_readset_transfer_BAMS.sh ###
 Takes the full path of the read folder as an input and transfers the BAMs/fastqs with the 
 MoH prefix.In addition it tranfers over the key run processing metrics and generates 
@@ -19,11 +16,12 @@ a log file forlater usage with the database
 **Globus fields must be updated for individual users**  
 Usage: `Create_readset_transfer_BAMS.sh PATH_TO_RUN_FOLDER`  
 
+## Beluga Scripts ##
+
 ### Metrics_Update.py ###
 This script takes a single file and parses it to update the database with metrics from
 run processing and from both DNA and RNA Genpipes. It compares the extracted values to
  known acceptable values and adds them to the KEY_METRICS table within the MoH database.  
-**Update needed to extract data directly from Database rather than a file**  
 Usage: `Metrics_Update.py` 
 
 ### MOH_Check_Progress.py ###
@@ -35,3 +33,9 @@ Usage: `MOH_Check_Progress.py`
 This contains all of the functions necessary for interacting with a file. Required for 
 other scripts.  
 
+### MOH_ln_output.py ###
+Takes a single sample input and hard links all of the delivarable files within a structured
+directory with their final names. In addition it constructs the custom readme and log files.
+All data is taken from the database.
+Usage: `MOH_ln_output.py Sample`  
+**Currently has a coverage cutoff implemented**  
