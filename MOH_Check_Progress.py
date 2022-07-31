@@ -5,7 +5,7 @@ import re
 import os.path
 import time
 import datetime
-from  DB_OPS import update_metrics_db,create_connection,extract_sample_details,extract_fileloc_details,extract_timestamp_details,update_timestamp_details,update_fileloc_details,extract_sample_names
+from  DB_OPS import update_metrics_db,create_connection,extract_sample_details,extract_fileloc_details,extract_timestamp_details,update_timestamp_details,update_fileloc_details,extract_sample_names,update_status_db
 
 
 class SampleData:
@@ -126,6 +126,43 @@ class Progress(SampleData):
         self.RNA_Variants_ini = filename
         self.TS_RNA_Variants_ini = getime(filename)
 #########################################################################################################
+
+    def Update_status(self):
+        DNA_N_Transfered = "NA"
+        if self.TS_Run_Proc_BAM_DNA_N != "NA":
+            DNA_N_Transfered = "Complete"
+        DNA_T_Transfered = "NA"
+        if self.TS_Run_Proc_BAM_DNA_T != "NA":
+            DNA_T_Transfered = "Complete"
+        Alignment= "NA"    
+        if self.Final_DNA_BAM_T != "NA":
+            Alignment = "Complete"
+        Variants = "NA"    
+        if self.DNA_VCF_G != "NA" and self.DNA_VCF_S != "NA" :
+            Variants = "Complete"
+        Reports = "NA"    
+        if self.DNA_MultiQC != "NA" and self.PCGR != "NA":
+            Reports = "Complete"
+        Tumour_Pair_Complete = "NA"
+        if Reports != "NA" and Alignment != "NA" and Variants != "NA":
+            Tumour_Pair_Complete = "Complete"
+        RNA_Transfrered = "NA"
+        if self.Beluga_fastq_1_RNA != "NA":
+            RNA_Transfrered = "Complete"
+        RNA_Alignment_expression = "NA"
+        if self.Final_RNA_BAM_expression != "NA":
+            RNA_Alignment_expression = "Complete"
+        RNA_Alignment_Variant = "NA"
+        if self.Final_RNA_BAM_variants != "NA":
+            RNA_Alignment_Variant = "Complete"
+        RNA_Reports = "NA"
+        if self.AnnoFuse != "NA":
+            RNA_Reports = "Complete"
+        RNA_Complete = "NA"
+        if self.big_wig_tracks_R != "NA" and RNA_Alignment_expression != "NA" and RNA_Alignment_Variant != "NA" and RNA_Reports != "NA":
+            RNA_Complete = "Complete"
+        update_status_db(self.conn,self.Sample,DNA_N_Transfered,DNA_T_Transfered,Alignment,Variants,Reports,Tumour_Pair_Complete,RNA_Transfrered,RNA_Alignment_expression,RNA_Alignment_Variant,RNA_Reports,RNA_Complete)
+
 
     def Gather_Run_Proc_BAM(self):
         if self.DNA_N_True == "NA":
@@ -430,6 +467,7 @@ def main():
         Sample.Gather_RNA_other()
         update_timestamp_details(Sample)
         update_fileloc_details(Sample)
+        Sample.Update_status()
     connection.commit()
     connection.close()
 

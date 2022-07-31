@@ -4,27 +4,32 @@ import sys
 import re
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names
 #TO DO::
-# Make this object orientated.
-#Implement function which extracts only completed samples from database rather than the temporary text file
-#Sort list based on size and then reverse it so you get the proper value for ones that end in 1 or 2
-#Raw coverage/ main coverage is off on a couple samples. Fix it.
+#FIX!
 
 def main():
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
     
     Samples = extract_sample_names(connection)
+    #TEST CASE
+    #Samples = ['MoHQ-JG-9-10','MoHQ-MU-12-122','MoHQ-MU-12-1224']
+
     All_Samples = []
+    PAIRED_SAMPLES = dict()
     for sample in Samples:
         All_Samples.append(extract_sample_field(connection,sample,"DNA_N"))
+        PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_N")] = sample
         All_Samples.append(extract_sample_field(connection,sample,"DNA_T"))
+        PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_T")] = sample
         All_Samples.append(extract_sample_field(connection,sample,"RNA"))
+        PAIRED_SAMPLES[extract_sample_field(connection,sample,"RNA")] = sample
     All_Samples = [x for x in All_Samples if x != "NA"]
-    extract_data(All_Samples,connection)
+    extract_data(All_Samples,connection,PAIRED_SAMPLES)
     connection.commit()
     connection.close()
 
-def extract_data(SAMP,connection):
+def extract_data(SAMP,connection,PAIRED_SAMPLES):
     for Sample in SAMP:
+        PATIENT = PAIRED_SAMPLES[Sample]
         TYPE=''
         if Sample.endswith('N'):
             TYPE = 'N'
@@ -32,7 +37,7 @@ def extract_data(SAMP,connection):
             TYPE = 'T'
         Y_Flags=[]
         R_Flags=[]
-        WGS_Bases_Over_Q30 = extract_bs_over_q30(Sample)
+        WGS_Bases_Over_Q30 = extract_bs_over_q30(Sample,PATIENT)
         if WGS_Bases_Over_Q30 == None:
             WGS_Bases_Over_Q30 = 'NA'
         elif (float(WGS_Bases_Over_Q30)<75):
@@ -40,7 +45,7 @@ def extract_data(SAMP,connection):
         elif (float(WGS_Bases_Over_Q30)<80):
             Y_Flags.append('WGS Bases Over Q30')
 
-        WGS_Min_Aligned_Reads_Delivered = extract_min_aln_rds(Sample)
+        WGS_Min_Aligned_Reads_Delivered = extract_min_aln_rds(Sample,PATIENT)
         if WGS_Min_Aligned_Reads_Delivered == None or WGS_Min_Aligned_Reads_Delivered == 'NA' :
             WGS_Min_Aligned_Reads_Delivered = 'NA'            
         elif (float(WGS_Min_Aligned_Reads_Delivered)<260000000 and TYPE == 'N'):
@@ -54,7 +59,7 @@ def extract_data(SAMP,connection):
         
 
         #WGS_Duplication_Rate
-        WGS_duplicates = extract_sambama_dups(Sample)
+        WGS_duplicates = extract_sambama_dups(Sample,PATIENT)
         if  WGS_duplicates == None or WGS_duplicates == 'NA' :
             WGS_duplicates = 'NA'            
         elif (float(WGS_duplicates)>50):
@@ -71,11 +76,11 @@ def extract_data(SAMP,connection):
             R_Flags.append('WGS Raw Coverage')
 
 
-        WGS_Dedup_Coverage = extract_ded_coverage(Sample)
+        WGS_Dedup_Coverage = extract_ded_coverage(Sample,PATIENT)
         if WGS_Dedup_Coverage  == None or WGS_Dedup_Coverage == 'NA' :
             WGS_Dedup_Coverage = 'NA'            
 
-        Median_Insert_Size = extract_insert_size(Sample)
+        Median_Insert_Size = extract_insert_size(Sample,PATIENT)
         if  Median_Insert_Size == None or Median_Insert_Size == 'NA' :
             Median_Insert_Size = 'NA'            
         elif (float(Median_Insert_Size)<300):
@@ -84,21 +89,21 @@ def extract_data(SAMP,connection):
             R_Flags.append('Median_Insert_Size')
 
         #WGS_Contamination
-        WGS_Contamination = extract_contamination(Sample)
+        WGS_Contamination = extract_contamination(Sample,PATIENT)
         if WGS_Contamination  == None or WGS_Contamination == 'NA' :
             WGS_Contamination = 'NA'            
         elif (float(WGS_Contamination)>5):
             R_Flags.append('WGS_Contamination')
 
         #Concordance
-        Concordance = extract_concordance(Sample)
+        Concordance = extract_concordance(Sample,PATIENT)
         if  Concordance == None or Concordance == 'NA' :
             Concordance = 'NA'            
         elif (float(Concordance)<99):
             R_Flags.append('Concordance')
 
         #Tumor_Purity
-        Purity = extract_purity(Sample)
+        Purity = extract_purity(Sample,PATIENT)
         if  Purity == None or Purity == 'NA' :
             Purity = 'NA'            
         elif (float(Purity)<30):
@@ -190,9 +195,6 @@ def extract_WTS_unique(ID):
                 Output = fields[0]
                 return Output
     
-
-
-
 def extract_WTS_exonic(ID):
     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
         return 'NA'
@@ -227,21 +229,14 @@ def extract_raw_coverage(ID):
             with open(filename, 'r') as f:
                 for line in f:
                     if ID in line:
-                        print (line)
                         data = line.split(",")
                         return data[41]
 
-
-
-
-def extract_purity(ID):
+def extract_purity(ID,PATIENT):
     if 'R' in ID or ID.endswith('N'):
         return 'NA'
     else:
-        Tester = re.compile('(MoHQ-\w+-\w+-\w+)')
-        Test = Tester.match(ID)
-        SAMP = Test.group(1)
-        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/' + SAMP + '*/purple/*.purity.tsv'    
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/' + PATIENT + '/purple/*.purity.tsv'    
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 lines=f.readlines()
@@ -251,14 +246,11 @@ def extract_purity(ID):
                 return Output 
 
 #WGS N % Contamination,WGS T % Contamination,
-def extract_contamination(ID):
+def extract_contamination(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
-        Tester = re.compile('(MoHQ-\w+-\w+-\w+)')
-        Test = Tester.match(ID)
-        SAMP = Test.group(1)
-        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + SAMP + '*.contamination.tsv'    
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + PATIENT + '*.contamination.tsv'    
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 for line in f:
@@ -271,15 +263,12 @@ def extract_contamination(ID):
                         return output
 
 
-def extract_concordance(ID):
+def extract_concordance(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
         CON = None
-        Tester = re.compile('(MoHQ-\w+-\w+-\w+)')
-        Test = Tester.match(ID)
-        SAMP = Test.group(1)
-        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + SAMP + '*.concordance.tsv'    
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + PATIENT + '*.concordance.tsv'    
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 CON = f.readline()
@@ -295,7 +284,7 @@ def extract_concordance(ID):
             return None
 
 
-def extract_sambama_dups(ID):
+def extract_sambama_dups(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
@@ -308,14 +297,14 @@ def extract_sambama_dups(ID):
                     if Tester.match(line):
                         Test = Tester.match(line)
                         DUPS=Test.group(1)
-        Total = parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-total_reads',0)
+        Total = parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-total_reads',0,PATIENT)
         if (DUPS == None or Total == None):
             return 'NA'
         else:
             Output= (int(DUPS)/int(Total)*100)
             return (f"%.2f" % round(Output, 2))
 
-def extract_insert_size(ID):
+def extract_insert_size(ID,PATIENT):
     if 'R' in ID:
         OUTPUT = 0;
         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' +  ID + '/*.insert_size_metrics'
@@ -325,31 +314,25 @@ def extract_insert_size(ID):
                 line=lines[7]
                 metrics = line.split("\t")
                 OUTPUT = metrics[0]
-                print (OUTPUT)
         return OUTPUT 
     else:
-        return parse_multiqc2(ID,'median_insert_size',2)
+        return parse_multiqc2(ID,'median_insert_size',2,PATIENT)
 
 
-def extract_ded_coverage(ID):
+def extract_ded_coverage(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
-        print ('deducov')
-        print( parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mean_coverage',2))
-        return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mean_coverage',2)
+        return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mean_coverage',2,PATIENT)
 
-def extract_min_aln_rds(ID):
+def extract_min_aln_rds(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
-        return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mapped_reads',0)
+        return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mapped_reads',0,PATIENT)
 
-def parse_multiqc(ID,field,Round):
-    Tester = re.compile('(MoHQ-\w+-\w+-\w+)')
-    Test = Tester.match(ID)
-    SAMP = Test.group(1)
-    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  SAMP + '*.multiqc_data/multiqc_general_stats.txt'
+def parse_multiqc(ID,field,Round,PATIENT):
+    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  PATIENT + '*.multiqc_data/multiqc_general_stats.txt'
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             Output =''
@@ -365,11 +348,8 @@ def parse_multiqc(ID,field,Round):
             Output=f"%.{Round}f" % round(Output, Round)
             return Output
 
-def parse_multiqc2(ID,field,Round):
-    Tester = re.compile('(MoHQ-\w+-\w+-\w+)')
-    Test = Tester.match(ID)
-    SAMP = Test.group(1)
-    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  SAMP + '*.multiqc_data/multiqc_qualimap_bamqc_genome_results.txt'
+def parse_multiqc2(ID,field,Round,PATIENT):
+    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  PATIENT + '*.multiqc_data/multiqc_qualimap_bamqc_genome_results.txt'
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             Output =''
@@ -385,16 +365,14 @@ def parse_multiqc2(ID,field,Round):
             Output=f"%.{Round}f" % round(Output, Round)
             return Output
 
-def extract_bs_over_q30(ID):
+def extract_bs_over_q30(ID,PATIENT):
     path = ''
-    print (ID)
     if 'R' in ID:
         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/picard_metrics/*quality_distribution_metrics'
     else:
         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' + ID + '*/picard_metrics/*quality_distribution_metrics'
     Tester = re.compile('(\d+)\W+(\d+)')
     for filename in glob.glob(path):
-        print (filename)
         with open(filename, 'r') as f:
             Abv_30=0
             Blw_30=0
@@ -413,53 +391,6 @@ def extract_bs_over_q30(ID):
 
 
 
-
-"""
-
-#WTS Clusters, 
-if RNA == False:
-    Data.append('NA')
-    
-#WTS rRNA contamination, 
-if RNA == False:
-    Data.append('NA')
-
-#WTS % Mapped, 
-if RNA == False:
-    Data.append('NA')
-
-#WTS Mean Insert Size, 
-if RNA == False:
-    Data.append('NA')
-
-
-
-if (float(CON)<0.99):
-    R_Flags.append('Concordance')
-Data.append(CON)
-
-# Yellow Flags
-if not Y_Flags:
-    Data.append('None')
-else:
-    YFLAG=';'.join(Y_Flags)
-    Data.append(YFLAG)
-
-#Red Flags'
-if not R_Flags:
-    Data.append('None')
-else:
-    RFLAG=';'.join(R_Flags)
-    Data.append(RFLAG)
-
-OUT_METRICS='/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics' + Name +'.keymetrics.csv'
-
-with open("output.txt", "a") as f:
-    print(Header,file=f)
-    OUTS=','.join(Data)
-    print (OUTS,file=f, end = '')
-
-"""
 
 if __name__ == '__main__':
     main()
