@@ -143,20 +143,24 @@ def extract_data(SAMP,connection,PAIRED_SAMPLES):
             elif (float(WTS_rRNA_contamination)>0.1):
                 Y_Flags.append('WTS_rRNA_contamination')
 
+        mean_ins_size = extract_mean_map_ins_size(Sample)
+        med_ins_size = extract_med_map_ins_size(Sample)
 
         #Warning flags
         Yellow_Flags=';'.join(Y_Flags)
         Red_Flags=';'.join(R_Flags)
         
-        update_metrics_db(connection,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags)
+        update_metrics_db(connection,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
 
         print (Sample)
         #print (WGS_Bases_Over_Q30)
         #print (WGS_Min_Aligned_Reads_Delivered)
-        print (WGS_Raw_Coverage)
-        print (WGS_Dedup_Coverage)
+        #print (WGS_Raw_Coverage)
+        #print (WGS_Dedup_Coverage)
         #print (WGS_duplicates)
-        #print (Median_Insert_Size)
+        print (Median_Insert_Size)
+        print (mean_ins_size)
+        print (med_ins_size)
         #print (WGS_Contamination) 
         #print (Concordance)
         #print (Purity)
@@ -231,6 +235,22 @@ def extract_raw_coverage(ID):
                     if ID in line:
                         data = line.split(",")
                         return data[41]
+def extract_med_map_ins_size(ID):
+    path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+    for filename in glob.glob(path):
+        with open(filename, 'r') as f:
+            for line in f:
+                if ID in line:
+                    data = line.split(",")
+                    return data[38]
+def extract_mean_map_ins_size(ID):
+    path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+    for filename in glob.glob(path):
+        with open(filename, 'r') as f:
+            for line in f:
+                if ID in line:
+                    data = line.split(",")
+                    return data[39]
 
 def extract_purity(ID,PATIENT):
     if 'R' in ID or ID.endswith('N'):
@@ -288,21 +308,18 @@ def extract_sambama_dups(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
-        DUPS = 0;
-        path = '/home/dipop/MOH/MAIN/job_output/sambamba_mark_duplicates/*' +  ID + '*'
-        Tester = re.compile('.*found (\d+) duplicates.*')
+        DUPS = None;
+        path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 for line in f:
-                    if Tester.match(line):
-                        Test = Tester.match(line)
-                        DUPS=Test.group(1)
-        Total = parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-total_reads',0,PATIENT)
-        if (DUPS == None or Total == None):
+                    if ID in line:
+                        data = line.split(",")
+                        DUPS = data[15]
+        if DUPS == None or DUPS == '':
             return 'NA'
         else:
-            Output= (int(DUPS)/int(Total)*100)
-            return (f"%.2f" % round(Output, 2))
+            return float(DUPS) 
 
 def extract_insert_size(ID,PATIENT):
     if 'R' in ID:
@@ -323,7 +340,19 @@ def extract_ded_coverage(ID,PATIENT):
     if 'R' in ID:
         return 'NA'
     else:
-        return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mean_coverage',2,PATIENT)
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  ID + '/qualimap/' + ID + '/genome_results.txt'
+        OUTPUT = 'NA'
+        for filename in glob.glob(path):
+            with open(filename, 'r') as f:
+                lines=f.readlines()
+                line=lines[71]
+                #line is      mean coverageData = 304.9902X
+                metrics = line.split(" ")
+                OUTPUT = metrics[-1].replace('X', '')
+        if OUTPUT == 'NA' or OUTPUT == '':
+            return "NA"
+        else:
+            return float(OUTPUT)
 
 def extract_min_aln_rds(ID,PATIENT):
     if 'R' in ID:
