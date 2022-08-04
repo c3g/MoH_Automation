@@ -51,7 +51,7 @@ def extract_fileloc_field(conn,Sample,column):
         return "NA"
     cur.row_factory = None
 
-def update_metrics_db(conn,Sample,WGS_Bases_Over_Q30 = 'NA',WGS_Min_Aligned_Reads_Delivered = 'NA',WGS_Raw_Coverage = 'NA',WGS_Dedup_Coverage = 'NA',Median_Insert_Size = 'NA',WGS_Duplication_Rate = 'NA',WGS_Contamination = 'NA',WTS_Clusters = 'NA',WTS_Unique_Reads='NA',WTS_Exonic_Rate='NA', WTS_rRNA_contamination = 'NA',Concordance = 'NA',Purity = 'NA',Yellow_Flags = 'NA',Red_Flags = 'NA',Raw_Median_Insert_Size = 'NA',Raw_Mean_Insert_Size= 'NA'):
+def update_metrics_db(conn,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_Duplication_Rate,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate, WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,Raw_Median_Insert_Size,Raw_Mean_Insert_Size):
     # Create cursor object
     cur = conn.cursor()
     #Test to see if it exists and if so extract the current data
