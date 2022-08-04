@@ -54,7 +54,7 @@ LEFT JOIN KEY_METRICS tum ON Samples.DNA_T = tum.Sample
 LEFT JOIN KEY_METRICS rna ON Samples.RNA = rna.Sample
 GROUP BY Samples.Cohort
 ;
-' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Sample_Summary.csv
+' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Cohort_Summary.csv
 
 #Report to give all of the metrics related to each Instituion.
 sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'SELECT Samples.Instituion AS Instituion,
@@ -72,6 +72,6 @@ LEFT JOIN KEY_METRICS tum ON Samples.DNA_T = tum.Sample
 LEFT JOIN KEY_METRICS rna ON Samples.RNA = rna.Sample
 GROUP BY Samples.Instituion
 ;
-' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Sample_Summary.csv
+' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Institution_Summary.csv
 
 
