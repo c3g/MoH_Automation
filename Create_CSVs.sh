@@ -38,4 +38,40 @@ LEFT JOIN KEY_METRICS rna ON Samples.RNA = rna.Sample
 ;
 ' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Sample_Summary.csv
 
+#Report to give all of the metrics related to each Cohort.
+sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'SELECT Samples.Cohort AS Cohort,
+SUM(CASE WHEN (Samples.DNA_N_True == "NA") THEN 0 ELSE 1 END) AS WGS,
+SUM(CASE WHEN (Samples.RNA_True == "NA") THEN 0 ELSE 1 END) AS WTA,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") THEN 1 ELSE 0 END) AS WGS_Complete,
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") THEN 1 ELSE 0 END) AS WTS_Complete,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) THEN 1 ELSE 0 END) AS WGS_Complete_Pass,
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
+FROM Samples
+LEFT JOIN STATUS on Samples.Sample=STATUS.Sample
+LEFT JOIN KEY_METRICS norm ON Samples.DNA_N = norm.Sample
+LEFT JOIN KEY_METRICS tum ON Samples.DNA_T = tum.Sample
+LEFT JOIN KEY_METRICS rna ON Samples.RNA = rna.Sample
+GROUP BY Samples.Cohort
+;
+' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Sample_Summary.csv
+
+#Report to give all of the metrics related to each Instituion.
+sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'SELECT Samples.Instituion AS Instituion,
+SUM(CASE WHEN (Samples.DNA_N_True == "NA") THEN 0 ELSE 1 END) AS WGS,
+SUM(CASE WHEN (Samples.RNA_True == "NA") THEN 0 ELSE 1 END) AS WTA,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") THEN 1 ELSE 0 END) AS WGS_Complete,
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") THEN 1 ELSE 0 END) AS WTS_Complete,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) THEN 1 ELSE 0 END) AS WGS_Complete_Pass,
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
+FROM Samples
+LEFT JOIN STATUS on Samples.Sample=STATUS.Sample
+LEFT JOIN KEY_METRICS norm ON Samples.DNA_N = norm.Sample
+LEFT JOIN KEY_METRICS tum ON Samples.DNA_T = tum.Sample
+LEFT JOIN KEY_METRICS rna ON Samples.RNA = rna.Sample
+GROUP BY Samples.Instituion
+;
+' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Sample_Summary.csv
+
 
