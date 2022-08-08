@@ -160,7 +160,7 @@ def update_status_db(conn,Sample,DNA_N_Transfered,DNA_T_Transfered,Alignment,Var
     cur.execute(f"SELECT * FROM STATUS WHERE Sample='{Sample}'")
     result = cur.fetchone()
     if result:
-        cur.execute(f"DELETE FROM STATUS WHERE Sample='{sample}'")
+        cur.execute(f"DELETE FROM STATUS WHERE Sample='{Sample}'")
         cur.execute(f"INSERT INTO STATUS (Sample,DNA_N_Transfered,DNA_T_Transfered,Alignment,Variants,Reports,Tumour_Pair_Complete,RNA_Transfrered,RNA_Alignment_expression,RNA_Alignment_Variant,RNA_Reports,RNA_Complete) VALUES ('{Sample}','{DNA_N_Transfered}','{DNA_T_Transfered}','{Alignment}','{Variants}','{Reports}','{Tumour_Pair_Complete}','{RNA_Transfrered}','{RNA_Alignment_expression}','{RNA_Alignment_Variant}','{RNA_Reports}','{RNA_Complete}')")
     else:
         cur.execute(f"INSERT INTO STATUS (Sample,DNA_N_Transfered,DNA_T_Transfered,Alignment,Variants,Reports,Tumour_Pair_Complete,RNA_Transfrered,RNA_Alignment_expression,RNA_Alignment_Variant,RNA_Reports,RNA_Complete) VALUES ('{Sample}','{DNA_N_Transfered}','{DNA_T_Transfered}','{Alignment}','{Variants}','{Reports}','{Tumour_Pair_Complete}','{RNA_Transfrered}','{RNA_Alignment_expression}','{RNA_Alignment_Variant}','{RNA_Reports}','{RNA_Complete}')")

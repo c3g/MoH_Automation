@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+#Ensure the joins work
+sqlite3 /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'delete from KEY_METRICS where Sample = "NA";'
+
+
 #Dump all of the tables as CSV's
 sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'select * from File_Locations;' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/File_Locations.csv
 sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'select * from KEY_METRICS;' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/KEY_METRICS.csv
@@ -75,3 +79,15 @@ GROUP BY Samples.Instituion
 ' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Institution_Summary.csv
 
 
+#Report to give all of the metrics related to each Instituion.
+sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'SELECT Samples.Sample_True as Patient,
+norm.WGS_Dedup_Coverage as Normal_Deduplex_coverage,
+tum.WGS_Dedup_Coverage as Tumour_Deduplex_coverage
+FROM Samples
+INNER JOIN KEY_METRICS norm
+ON Samples.DNA_N = norm.Sample
+INNER JOIN KEY_METRICS tum
+ON Samples.DNA_T = tum.Sample
+WHERE RNA == "NA"
+;
+' > /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/CSV/Coverage_WO_WTS.csv

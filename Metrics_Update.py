@@ -373,8 +373,9 @@ def parse_multiqc(ID,field,Round,PATIENT):
                 Output = A[index]
             elif B[0].endswith(ID[-1]):
                 Output = B[index]
-            Output=float(Output)
-            Output=f"%.{Round}f" % round(Output, Round)
+            if Output != '':
+                Output=float(Output)
+                Output=f"%.{Round}f" % round(Output, Round)
             return Output
 
 def parse_multiqc2(ID,field,Round,PATIENT):
@@ -390,8 +391,9 @@ def parse_multiqc2(ID,field,Round,PATIENT):
                 Output = A[index]
             elif B[0].endswith(ID[-1]):
                 Output = B[index]
-            Output=float(Output)
-            Output=f"%.{Round}f" % round(Output, Round)
+            if Output != '':
+                Output=float(Output)
+                Output=f"%.{Round}f" % round(Output, Round)
             return Output
 
 def extract_bs_over_q30(ID,PATIENT):
