@@ -341,11 +341,14 @@ def extract_ded_coverage(ID,PATIENT):
         return ''
     else:
         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  ID + '/qualimap/' + ID + '/genome_results.txt'
+        print(path)
         OUTPUT = ''
         for filename in glob.glob(path):
+            print ("'" + filename + "'")
             with open(filename, 'r') as f:
                 lines=f.readlines()
                 line=lines[71]
+                print ("'" + line + "'")
                 #line is      mean coverageData = 304.9902X
                 metrics = line.split(" ")
                 OUTPUT = metrics[-1].replace('X', '')
