@@ -18,6 +18,19 @@ def create_connection(db_file):
         print(e)
     return conn
 
+#Replace the other functions with this one
+def extract_value(conn,Table,Sample,column):
+    cur = conn.cursor()
+    cur.row_factory = lambda cursor, row: row[0]
+    cur.execute(f"SELECT {column} FROM {Table} WHERE Sample='{Sample}'")
+    result = cur.fetchone()
+    if result:
+        return result
+    else:
+        return "NA"
+    cur.row_factory = None
+
+
 def extract_sample_metrics(conn,Sample,column):
     cur = conn.cursor()
     cur.row_factory = lambda cursor, row: row[0]

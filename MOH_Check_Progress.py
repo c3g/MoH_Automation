@@ -287,6 +287,8 @@ class Progress(SampleData):
                         self.TS_Final_RNA_BAM_variants = getime(filename)
                         self.Final_RNA_BAM_expression = filename
                 elif ".sorted.mdup.split.realigned.recal.bam" in filename:
+                    if ".bai" in filename or ".sbi" in filename:
+                        continue
                     if self.TS_Final_RNA_BAM_expression != getime(filename):
                         self.TS_Final_RNA_BAM_expression = getime(filename)
                         self.Final_RNA_BAM_variants = filename

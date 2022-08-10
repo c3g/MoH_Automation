@@ -4,130 +4,142 @@ import sys
 import os
 from datetime import date
 import pandas as pd
-from  DB_OPS import create_connection,extract_sample_metrics,extract_sample_details,extract_fileloc_field
-#update_metrics_db,extract_sample_details,extract_fileloc_details,extract_timestamp_details,update_timestamp_details,update_fileloc_details,extract_sample_names
+from  DB_OPS import create_connection,extract_sample_metrics,extract_sample_details,extract_fileloc_field,extract_value,extract_sample_names
+
 def main():
-    Name = sys.argv[1]          #Current name of the sample as found in Samples table
-    print(Name)
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
-    Sample = SampleData(connection,Name)
-    #check if samples reach the threashold for delivery
-    #Check that DNA_T dedup coverage is over 80
-    #Check that DNA_N dedup coverage is over 30
-    #Check that RNA spots is over 100000000
-    DNA = False
-    RNA = False
-    if  extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage") == "NA":
+    #ALL_Samples = extract_sample_names(connection)
+    ALL_Samples = ["MoHQ-CM-3-1","MoHQ-CM-3-1"] 
+    for smple in ALL_Samples: 
+        Sample = SampleData(connection,smple)
+
+        #check if samples reach the threashold for delivery
+        #Check that DNA_T dedup coverage is over 80
+        #Check that DNA_N dedup coverage is over 30
+        #Check that RNA spots is over 100000000
+        #Check that processing is complete
         DNA = False
-    elif float(extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage")) >30 and float(extract_sample_metrics(Sample.conn,Sample.DNA_T,"WGS_Dedup_Coverage")) >80:
-        DNA = True
-    if  extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters") == "NA":
-        RNA = False 
-    elif float(extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters")) >100000000:
-        RNA = True
-    print (DNA)
-    print (RNA)
-    print (extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters"))
-#Folders used for Delivery
-    Base_Folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/'   #Base Folder
-    Out_Folder = '/lustre03/project/rrg-bourqueg-ad/C3G/projects/GLOBUS_SHARE/MOH/' # Output Folder
-    Out_Folder = Out_Folder + Sample.Institution + "/" + Sample.Cohort + "/" + Sample.Sample_True + "/"
-    #contains Warnings.txt Readme.txt Log.txt and all subfolders
-    Raw_Folder = Out_Folder + "raw_data/"
-    #contains raw bams and fastqs
-    Var_Folder = Out_Folder + "variants/"
-    #contains all variants the subfolder 
-    Cal_Folder = Var_Folder + "caller_vcfs/"
-    #contains all the vcfs from the callers
-    Align_Folder = Out_Folder + "alignment/"
-    #contains the analysis bams
-    Param_Folder = Out_Folder + "paramaters/"
-    #contains the ini files.
-    Tracks_Folder= Out_Folder + "tracks/"
-    #contains the big wig tracks
-    Reports_Folder= Out_Folder + "reports/"
-    #contains the big wig tracks
+        RNA = False
+        print (Sample.Sample)
+        print (extract_value(Sample.conn,"STATUS",Sample.Sample,       "RNA_Complete"))
+        print (extract_value(Sample.conn,"STATUS",Sample.Sample,       "Tumour_Pair_Complete"))
+        print (Sample.Sample)
+        if  extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage") == "NA" or extract_value(Sample.conn,"STATUS",Sample.Sample,"Tumour_Pair_Complete") == "NA":
+            DNA = False
+        elif float(extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage")) >30 and float(extract_sample_metrics(Sample.conn,Sample.DNA_T,"WGS_Dedup_Coverage")) >80:
+            DNA = True
+        if  extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters") == "NA" or extract_value(Sample.conn,"STATUS",Sample.Sample,"RNA_Complete") == "NA":
+            RNA = False 
+        elif float(extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters")) >100000000:
+            RNA = True
+        print (DNA)
+        print (RNA)
 
-#See if the directory is created and if so check for file updates.
-    print (Out_Folder)
-    if os.path.isdir(Out_Folder):
-        print ("Folder Present")
-    else:
-        print ("Made Folder")
-        os.makedirs(Out_Folder)
-        os.makedirs(Raw_Folder)
-        os.makedirs(Var_Folder)
-        os.makedirs(Cal_Folder)
-        os.makedirs(Align_Folder)
-        os.makedirs(Param_Folder)
-        os.makedirs(Tracks_Folder)
-        os.makedirs(Reports_Folder)
+        #Folders used for Delivery
+        Base_Folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/'   #Base Folder
+        Out_Folder = '/lustre03/project/rrg-bourqueg-ad/C3G/projects/GLOBUS_SHARE/MOH/' # Output Folder
+        Out_Folder = Out_Folder + Sample.Institution + "/" + Sample.Cohort + "/" + Sample.Sample_True + "/"
+        #contains Warnings.txt Readme.txt Log.txt and all subfolders
+        Raw_Folder = Out_Folder + "raw_data/"
+        #contains raw bams and fastqs
+        Var_Folder = Out_Folder + "variants/"
+        #contains all variants the subfolder 
+        Cal_Folder = Var_Folder + "caller_vcfs/"
+        #contains all the vcfs from the callers
+        Align_Folder = Out_Folder + "alignment/"
+        #contains the analysis bams
+        Param_Folder = Out_Folder + "paramaters/"
+        #contains the ini files.
+        Tracks_Folder= Out_Folder + "tracks/"
+        #contains the big wig tracks
+        Reports_Folder= Out_Folder + "reports/"
+        #contains the big wig tracks
 
-        #Populate the general files 
-        log = open(Out_Folder + "log.txt", "w") 
-        log.write("File,Date,Details\n")
+    #Check to see if pipeline is complete
 
-        generate_readme(Out_Folder,Sample.Sample_True)
-        log_new("Readme.txt",log)
 
-        Warnings = pd.read_sql_query(f'select Sample,YELLOW_Flags,RED_Flags from KEY_METRICS where Sample="{Sample.DNA_N}" or Sample="{Sample.DNA_T}" or Sample="{Sample.RNA}"', connection) 
-        Warnings.to_csv(Out_Folder + "Warnings.txt", index=False)
-        with open(Out_Folder + 'Warnings.txt', 'r+') as file:
-            content = file.read()
-            file.seek(0)
-            file.write("Below are three collumns, Yellow flags indicate values that may be troublesome while red flags indicate a point of failure. Data may be useable with these flags, but any red flaged data should be carefully considered. If nothing is present, this data exceeded all standards.\n Data will not be delivered for Red Flaged coverage at this time.\n" + content)
-        log_new("Warnings.txt",log)
+
+    #See if the directory is created and if so check for file updates.
+        print (Out_Folder)
+        if os.path.isdir(Out_Folder):
+            print ("Folder Present")
+        elif DNA == True or RNA == True:
+            print ("Made Folder")
+            os.makedirs(Out_Folder)
+            os.makedirs(Raw_Folder)
+            os.makedirs(Var_Folder)
+            os.makedirs(Cal_Folder)
+            os.makedirs(Align_Folder)
+            os.makedirs(Param_Folder)
+            os.makedirs(Tracks_Folder)
+            os.makedirs(Reports_Folder)
+
+            #Populate the general files 
+            log = open(Out_Folder + "log.txt", "w") 
+            log.write("File,Date,Details\n")
+
+            generate_readme(Out_Folder,Sample.Sample_True)
+            log_new("Readme.txt",log)
+
+            Warnings = pd.read_sql_query(f'select Sample,YELLOW_Flags,RED_Flags from KEY_METRICS where Sample="{Sample.DNA_N}" or Sample="{Sample.DNA_T}" or Sample="{Sample.RNA}"', connection) 
+            Warnings.to_csv(Out_Folder + "Warnings.txt", index=False)
+            with open(Out_Folder + 'Warnings.txt', 'r+') as file:
+                content = file.read()
+                file.seek(0)
+                file.write("Below are three collumns, Yellow flags indicate values that may be troublesome while red flags indicate a point of failure. Data may be useable with these flags, but any red flaged data should be carefully considered. If nothing is present, this data exceeded all standards.\n Data will not be delivered for Red Flaged coverage at this time.\n" + content)
+            log_new("Warnings.txt",log)
 
 #Populate DNA data
-        if DNA == True:
-            get_link_log("Beluga_BAM_DNA_N",Raw_Folder,"_DN.bam",Sample.Sample_True,connection,log)
-            get_link_log("Beluga_BAM_DNA_T",Raw_Folder,"_DT.bam",Sample.Sample_True,connection,log)
-            
-            get_link_log("DNA_VCF_G",Var_Folder,".ensemble.germline.vt.annot.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("DNA_VCF_S",Var_Folder,".ensemble.somatic.vt.annot.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("Mutect2_Germline_vcf",Cal_Folder,".mutect2.germline.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("Mutect2_Somatic_vcf",Cal_Folder,".mutect2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("strelka2_Germline_vcf",Cal_Folder,".strelka2.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("strelka2_Somatic_vcf",Cal_Folder,".strelka2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("vardict_Germline_vcf",Cal_Folder,".vardict.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("vardict_Somatic_vcf",Cal_Folder,".vardict.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("varscan2_Germline_vcf",Cal_Folder,".varscan2.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
-            get_link_log("varscan2_Somatic_vcf",Cal_Folder,".varscan2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
+            if DNA == True:
+                get_link_log("Beluga_BAM_DNA_N",Raw_Folder,"_DN.bam",Sample.Sample_True,connection,log)
+                get_link_log("Beluga_BAM_DNA_T",Raw_Folder,"_DT.bam",Sample.Sample_True,connection,log)
+                
+                get_link_log("DNA_VCF_G",Var_Folder,".ensemble.germline.vt.annot.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("DNA_VCF_S",Var_Folder,".ensemble.somatic.vt.annot.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("Mutect2_Germline_vcf",Cal_Folder,".mutect2.germline.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("Mutect2_Somatic_vcf",Cal_Folder,".mutect2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("strelka2_Germline_vcf",Cal_Folder,".strelka2.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("strelka2_Somatic_vcf",Cal_Folder,".strelka2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("vardict_Germline_vcf",Cal_Folder,".vardict.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("vardict_Somatic_vcf",Cal_Folder,".vardict.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("varscan2_Germline_vcf",Cal_Folder,".varscan2.germline.vt.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("varscan2_Somatic_vcf",Cal_Folder,".varscan2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log)
 
-            get_link_log("Final_DNA_BAM_N",Align_Folder,"_DN.bam",Sample.Sample_True,connection,log)
-            get_link_log("Final_DNA_BAM_T",Align_Folder,"_DT.bam",Sample.Sample_True,connection,log)
+                get_link_log("Final_DNA_BAM_N",Align_Folder,"_DN.bam",Sample.Sample_True,connection,log)
+                get_link_log("Final_DNA_BAM_T",Align_Folder,"_DT.bam",Sample.Sample_True,connection,log)
 
-            get_link_log("DNA_MultiQC",Reports_Folder,"_D.multiqc.html",Sample.Sample_True,connection,log)
-            get_link_log("PCGR",Reports_Folder,".pcgr.html",Sample.Sample_True,connection,log)
+                get_link_log("DNA_MultiQC",Reports_Folder,"_D.multiqc.html",Sample.Sample_True,connection,log)
+                get_link_log("PCGR",Reports_Folder,".pcgr.html",Sample.Sample_True,connection,log)
 
-            get_link_log("TP_ini",Param_Folder,".tp.ini",Sample.Sample_True,connection,log)
+                get_link_log("TP_ini",Param_Folder,".tp.ini",Sample.Sample_True,connection,log)
 
-        if RNA == True:
-            get_link_log("Beluga_fastq_1_RNA",Raw_Folder,"_R1.fastq.gz",Sample.Sample_True,connection,log)
-            get_link_log("Beluga_fastq_2_RNA",Raw_Folder,"_R2.fastq.gz",Sample.Sample_True,connection,log)
+            if RNA == True:
+                get_link_log("Beluga_fastq_1_RNA",Raw_Folder,"_R1.fastq.gz",Sample.Sample_True,connection,log)
+                get_link_log("Beluga_fastq_2_RNA",Raw_Folder,"_R2.fastq.gz",Sample.Sample_True,connection,log)
 
-            get_link_log("RNA_VCF",Var_Folder,".rna.hc.vcf.gz",Sample.Sample_True,connection,log)
+                get_link_log("RNA_VCF",Var_Folder,".rna.hc.vcf.gz",Sample.Sample_True,connection,log)
 
-            get_link_log("Final_RNA_BAM_expression",Align_Folder,"_RT.expression.bam",Sample.Sample_True,connection,log)
-            get_link_log("Final_RNA_BAM_variants",Align_Folder,"_RT.variants.bam",Sample.Sample_True,connection,log)
+                get_link_log("Final_RNA_BAM_expression",Align_Folder,"_RT.expression.cram",Sample.Sample_True,connection,log)
+                get_link_log("Final_RNA_BAM_variants",Align_Folder,"_RT.variants.bam",Sample.Sample_True,connection,log)
 
-            get_link_log("RNA_MultiQC",Reports_Folder,"_R.multiqc.html",Sample.Sample_True,connection,log)
-            get_link_log("AnnoFuse",Reports_Folder,".anno_fuse",Sample.Sample_True,connection,log)
-            get_link_log("GRIDSS",Reports_Folder,".gridss",Sample.Sample_True,connection,log)
+                get_link_log("RNA_MultiQC",Reports_Folder,"_R.multiqc.html",Sample.Sample_True,connection,log)
+                get_link_log("AnnoFuse",Reports_Folder,".anno_fuse",Sample.Sample_True,connection,log)
+                get_link_log("GRIDSS",Reports_Folder,".gridss",Sample.Sample_True,connection,log)
 
-            get_link_log("RNA_Abundance_ini",Param_Folder,".RNA.expression.ini",Sample.Sample_True,connection,log)
-            get_link_log("RNA_Variants_ini",Param_Folder,".RNA.variants.ini",Sample.Sample_True,connection,log)
+                get_link_log("RNA_Abundance_ini",Param_Folder,".RNA.expression.ini",Sample.Sample_True,connection,log)
+                get_link_log("RNA_Variants_ini",Param_Folder,".RNA.variants.ini",Sample.Sample_True,connection,log)
 
-            get_link_log("big_wig_tracks_F",Tracks_Folder,".forward.bw",Sample.Sample_True,connection,log)
-            get_link_log("big_wig_tracks_R",Tracks_Folder,".reverse.bw",Sample.Sample_True,connection,log)
+                get_link_log("big_wig_tracks_F",Tracks_Folder,".forward.bw",Sample.Sample_True,connection,log)
+                get_link_log("big_wig_tracks_R",Tracks_Folder,".reverse.bw",Sample.Sample_True,connection,log)
 
-        if RNA == True and DNA == True:
-            get_link_log("Final_VCF",Var_Folder,".vcf.gz",Sample.Sample_True,connection,log)
+            if RNA == True and DNA == True:
+                get_link_log("Final_VCF",Var_Folder,".vcf.gz",Sample.Sample_True,connection,log)
 
-        metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{Sample.DNA_N}" or Sample="{Sample.DNA_T}" or Sample="{Sample.RNA}"', connection) 
-        metrics.to_csv(Reports_Folder + Sample.Sample_True + ".Key_metrics.csv", index=False)
-        log_new(Sample.Sample_True + ".Key_metrics.csv",log)
-        log.close()
+            if DNA == True or RNA == True:
+                metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{Sample.DNA_N}" or Sample="{Sample.DNA_T}" or Sample="{Sample.RNA}"', connection) 
+                metrics.to_csv(Reports_Folder + Sample.Sample_True + ".Key_metrics.csv", index=False)
+                log_new(Sample.Sample_True + ".Key_metrics.csv",log)
+                log.close()
 
 def get_link_log(Column,location,suffix,True_Name,connection,log):
     data = extract_fileloc_field(connection,True_Name,Column)
