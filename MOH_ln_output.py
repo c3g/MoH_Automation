@@ -8,22 +8,19 @@ from  DB_OPS import create_connection,extract_sample_metrics,extract_sample_deta
 
 def main():
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
-    #ALL_Samples = extract_sample_names(connection)
-    ALL_Samples = ["MoHQ-CM-3-1-17057-1D","MoHQ-CM-3-2-61285-1D","MoHQ-CM-1-9-2804-1-D"] 
+    #Test String
+    #ALL_Samples = ["MoHQ-CM-3-1-17057-1D","MoHQ-CM-3-2-61285-1D","MoHQ-CM-1-9-2804-1-D"] 
+    ALL_Samples = extract_sample_names(connection)
     for smple in ALL_Samples: 
         Sample = SampleData(connection,smple)
-
+        print (Sample.Sample)
         #check if samples reach the threashold for delivery
         #Check that DNA_T dedup coverage is over 80
         #Check that DNA_N dedup coverage is over 30
-        #Check that RNA spots is over 100000000
         #Check that processing is complete
+        #Check that RNA spots is over 100000000
         DNA = False
         RNA = False
-        print (Sample.Sample)
-        print (extract_value(Sample.conn,"STATUS",Sample.Sample,       "RNA_Complete"))
-        print (extract_value(Sample.conn,"STATUS",Sample.Sample,       "Tumour_Pair_Complete"))
-        print (Sample.Sample)
         if  extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage") == "NA" or extract_value(Sample.conn,"STATUS",Sample.Sample,"Tumour_Pair_Complete") == "NA":
             DNA = False
         elif float(extract_sample_metrics(Sample.conn,Sample.DNA_N,"WGS_Dedup_Coverage")) >30 and float(extract_sample_metrics(Sample.conn,Sample.DNA_T,"WGS_Dedup_Coverage")) >80:
@@ -32,10 +29,6 @@ def main():
             RNA = False 
         elif float(extract_sample_metrics(Sample.conn,Sample.RNA,"WTS_Clusters")) >100000000:
             RNA = True
-        print ("DNA")
-        print (DNA)
-        print ("RNA")
-        print (RNA)
 
         #Folders used for Delivery
         Base_Folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/'   #Base Folder
@@ -57,9 +50,9 @@ def main():
         Reports_Folder= Out_Folder + "reports/"
         #contains the big wig tracks
 
-
-        print (Out_Folder)
-        print (Sample.Sample)
+        #I AM SO SORRY. I was getting frustrated and I got lazy and made two global varaiables. I have sinned. 
+        #UPDATED keeps track of if we need to update the metrics and warnings file
+        #old_log stores the data in the log file to see if things need updating.
         global UPDATED 
         UPDATED = False 
         global Old_log
@@ -73,13 +66,10 @@ def main():
                     line.rstrip()
                     fields = line.split(",")
                     Old_log[fields[0]] = fields[1]
-                    print ("Folder Present")
             log_in.close()
-            
             log = open(Out_Folder + "log.txt", "a") 
 
         elif DNA == True or RNA == True:
-            print ("Made Folder")
             os.makedirs(Out_Folder)
             os.makedirs(Raw_Folder)
             os.makedirs(Var_Folder)
@@ -95,12 +85,13 @@ def main():
 
             generate_readme(Out_Folder,Sample.Sample_True)
             log_new("Readme.txt",log,None,"Created")
+        else:
+            continue
 
 
 
 #Populate DNA data
         if DNA == True:
-            print ("DNA_TEST")
             get_link_log("Beluga_BAM_DNA_N",Raw_Folder,"_DN.bam",Sample.Sample_True,connection,log,Sample.Sample)
             get_link_log("Beluga_BAM_DNA_T",Raw_Folder,"_DT.bam",Sample.Sample_True,connection,log,Sample.Sample)
             
@@ -157,6 +148,7 @@ def main():
             else:
                 log_new("Warnings.txt",log,None,"Created")
                 log_new("Key_metrics.csv",log,None,"Updated")
+
             #add key metrics table for samples
             metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{Sample.DNA_N}" or Sample="{Sample.DNA_T}" or Sample="{Sample.RNA}"', connection) 
             metrics.to_csv(Reports_Folder + Sample.Sample_True + ".Key_metrics.csv", index=False)
@@ -170,6 +162,7 @@ def main():
                 file.write("Below are three collumns, Yellow flags indicate values that may be troublesome while red flags indicate a point of failure. Data may be useable with these flags, but any red flaged data should be carefully considered. If nothing is present, this data exceeded all standards.\n Data will not be delivered for Red Flaged coverage at this time.\n" + content)
         log.close()
 
+#Key function. Basiclly updates the logs and links the files based on the database.
 def get_link_log(Column,location,suffix,True_Name,connection,log,Name):
     data = extract_fileloc_field(connection,Name,Column)
     if data != "NA":
@@ -222,11 +215,7 @@ def log_new(File,log,file_date,message):
         file_date = file_date.strftime("%Y/%m/%d")
     Now = datetime.date.today()
     Date = Now.strftime("%Y/%m/%d")
-    print (File)
-    print (file_date)
-    print (Date)
-    print (f"{message}\n")
-
+    print (File + "," + file_date + "," + Date + "," + f"{message}\n")
     data = File + "," + file_date + "," + Date + "," + f"{message}\n"
     log.write(data)
 
@@ -282,8 +271,6 @@ tracks/                  Big Wig tracks for RNA expression results
     f = open(Location + "Readme.txt" , "w") 
     f.write(data)
     f.close()
-
-
 
 
 
