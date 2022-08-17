@@ -109,7 +109,6 @@ def main():
     elif Mol_type == 'DNA':
         #Check to see if any files have already present in the final directory
         DNA_Samples = Tumour_Samples + Normal_Samples
-        print (DNA_Samples)
         duplicates = []
         for name in DNA_Samples:
             if os.path.exists(Output_RR + name):

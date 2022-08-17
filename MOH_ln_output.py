@@ -83,7 +83,7 @@ def main():
             log = open(Out_Folder + "log.txt", "w") 
             log.write("File,File_Creation_Date,Date_Added,Details\n")
 
-            generate_readme(Out_Folder,Sample.Sample_True)
+            generate_readme(Out_Folder,Sample.Sample_True,Sample.DNA_N,Sample.DNA_T,Sample.RNA)
             log_new("Readme.txt",log,None,"Created")
         else:
             continue
@@ -92,8 +92,8 @@ def main():
 
 #Populate DNA data
         if DNA == True:
-            get_link_log("Beluga_BAM_DNA_N",Raw_Folder,"_DN.bam",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("Beluga_BAM_DNA_T",Raw_Folder,"_DT.bam",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("Beluga_BAM_DNA_N",Raw_Folder,".bam",Sample.DNA_N,connection,log,Sample.Sample)
+            get_link_log("Beluga_BAM_DNA_T",Raw_Folder,".bam",Sample.DNA_T,connection,log,Sample.Sample)
             
             get_link_log("DNA_VCF_G",Var_Folder,".ensemble.germline.vt.annot.vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
             get_link_log("DNA_VCF_S",Var_Folder,".ensemble.somatic.vt.annot.vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
@@ -106,8 +106,8 @@ def main():
             get_link_log("varscan2_Germline_vcf",Cal_Folder,".varscan2.germline.vt.vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
             get_link_log("varscan2_Somatic_vcf",Cal_Folder,".varscan2.somatic.vt.vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
 
-            get_link_log("Final_DNA_BAM_N",Align_Folder,"_DN.bam",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("Final_DNA_BAM_T",Align_Folder,"_DT.bam",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("Final_DNA_BAM_N",Align_Folder,".bam",Sample.DNA_N,connection,log,Sample.Sample)
+            get_link_log("Final_DNA_BAM_T",Align_Folder,".bam",Sample.DNA_T,connection,log,Sample.Sample)
 
             get_link_log("DNA_MultiQC",Reports_Folder,"_D.multiqc.html",Sample.Sample_True,connection,log,Sample.Sample)
             get_link_log("PCGR",Reports_Folder,".pcgr.html",Sample.Sample_True,connection,log,Sample.Sample)
@@ -116,23 +116,23 @@ def main():
 
         if RNA == True:
             print ("RNA_TEST")
-            get_link_log("Beluga_fastq_1_RNA",Raw_Folder,"_R1.fastq.gz",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("Beluga_fastq_2_RNA",Raw_Folder,"_R2.fastq.gz",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("Beluga_fastq_1_RNA",Raw_Folder,"_R1.fastq.gz",Sample.RNA,connection,log,Sample.Sample)
+            get_link_log("Beluga_fastq_2_RNA",Raw_Folder,"_R2.fastq.gz",Sample.RNA,connection,log,Sample.Sample)
 
-            get_link_log("RNA_VCF",Var_Folder,".rna.hc.vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("RNA_VCF",Var_Folder,".rna.hc.vcf.gz",Sample.RNA,connection,log,Sample.Sample)
 
-            get_link_log("Final_RNA_BAM_expression",Align_Folder,"_RT.expression.cram",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("Final_RNA_BAM_variants",Align_Folder,"_RT.variants.bam",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("Final_RNA_BAM_expression",Align_Folder,".expression.cram",Sample.RNA,connection,log,Sample.Sample)
+            get_link_log("Final_RNA_BAM_variants",Align_Folder,"RT.variants.bam",Sample.RNA,connection,log,Sample.Sample)
 
             get_link_log("RNA_MultiQC",Reports_Folder,"_R.multiqc.html",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("AnnoFuse",Reports_Folder,".anno_fuse",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("GRIDSS",Reports_Folder,".gridss",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("AnnoFuse",Reports_Folder,".anno_fuse",Sample.RNA,connection,log,Sample.Sample)
+            get_link_log("GRIDSS",Reports_Folder,".gridss",Sample.RNA,connection,log,Sample.Sample)
 
             get_link_log("RNA_Abundance_ini",Param_Folder,".RNA.expression.ini",Sample.Sample_True,connection,log,Sample.Sample)
             get_link_log("RNA_Variants_ini",Param_Folder,".RNA.variants.ini",Sample.Sample_True,connection,log,Sample.Sample)
 
-            get_link_log("big_wig_tracks_F",Tracks_Folder,".forward.bw",Sample.Sample_True,connection,log,Sample.Sample)
-            get_link_log("big_wig_tracks_R",Tracks_Folder,".reverse.bw",Sample.Sample_True,connection,log,Sample.Sample)
+            get_link_log("big_wig_tracks_F",Tracks_Folder,".forward.bw",Sample.RNA,connection,log,Sample.Sample)
+            get_link_log("big_wig_tracks_R",Tracks_Folder,".reverse.bw",Sample.RNA,connection,log,Sample.Sample)
 
         if RNA == True and DNA == True:
             get_link_log("Final_VCF",Var_Folder,".vcf.gz",Sample.Sample_True,connection,log,Sample.Sample)
@@ -170,9 +170,6 @@ def get_link_log(Column,location,suffix,True_Name,connection,log,Name):
         #Portion for updating files if they have been modified
         if os.path.exists(location + True_Name + suffix):
             old_time = Old_log[True_Name + suffix] 
-            print (Column)
-            print (old_time)
-            print (new_time)
             if old_time != new_time:
                 os.remove(location + True_Name + suffix)
                 os.link(data,location + True_Name + suffix)
@@ -221,7 +218,7 @@ def log_new(File,log,file_date,message):
 
 
 
-def generate_readme(Location,PATIENT):
+def generate_readme(Location,PATIENT,DNA_N,DNA_T,RNA):
     data = f"""This directory contains the delivered data for {PATIENT} processed by the Canadian Centre for Computational Genomics. 
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
@@ -230,9 +227,9 @@ Readme.txt      This file
 log.txt         Log file containing the dates of transfers and if files have been updated
 Warnings.txt    Contains details of any warnings and whether they caused a failure of this analysis.
 raw_data/               Contains all of the bam's/fastqs from the sequencer
-    {PATIENT}_DN.bam         Raw DNA reads for the Normal sample
-    {PATIENT}_DT.bam         Raw DNA reads for the Tumor sample
-    {PATIENT}_RT.fastq       Raw RNA reads for the Tumor sample
+    {DNA_N}.bam         Raw DNA reads for the Normal sample
+    {DNA_T}.bam         Raw DNA reads for the Tumor sample
+    {RNA}.fastq       Raw RNA reads for the Tumor sample
 variants/                                   Contains the vcfs related to variant calls
     {PATIENT}.ensemble.germline.vt.annot.vcf.gz     Germline Variants found in any of the callers
     {PATIENT}.ensemble.somatic.vt.annot.vcf.gz      Somatic Variants found in any of the callers
@@ -249,24 +246,24 @@ variants/                                   Contains the vcfs related to variant
         {PATIENT}.varscan2.somatic.vt.vcf.gz        Somatic results for varscan2
     
 alignment/              Contains the alignment data for each sample
-    {PATIENT}_DN.bam                 Alignment of normal against the reference
-    {PATIENT}_DT.bam                 Alignment of tumor against the reference
-*   {PATIENT}_RT.expression.bam      Alignment of tumor RNA against the reference used in expression analysis
-*   {PATIENT}_RT.variants.bam        Alignment of tumor RNA against the reference used in variants analysis
+    {DNA_N}.bam                 Alignment of normal against the reference
+    {DNA_T}.bam                 Alignment of tumor against the reference
+    {RNA}.expression.bam      Alignment of tumor RNA against the reference used in expression analysis
+    {RNA}.variants.bam        Alignment of tumor RNA against the reference used in variants analysis
 reports/                    Contains the reports for the experiment
     {PATIENT}_D.multiqc.html    QC report for the DNA analysis
     {PATIENT}_R.multiqc.html    QC report for the RNA analysis
     {PATIENT}.pcgr.html         Personal Cancer Genome Reporter report
-    {PATIENT}.anno_fuse         Report for fusions detected using RNA
-*   {PATIENT}.gridss            Not yet available
+    {RNA}.anno_fuse         Report for fusions detected using RNA
+*   {RNA}.gridss            Not yet available
     {PATIENT}.Key_metrics.csv   Metrics used to determine whether the analysis was successful
 parameters/             Contains the records of all the Parameters used in the experiment
     tumorPair.config.trace.ini              Parameters used in the tumor pair analysis
     RNAseq.expression.config.trace.ini      Parameters used in the RNA expression analysis
 *   RNAseq.variants.config.trace.ini        Parameters used in the RNA variant analysis
 tracks/                  Big Wig tracks for RNA expression results
-    {PATIENT}.forward.bw        Forward big wig track
-    {PATIENT}.reverse.bw        Reverse big wig track
+    {RNA}.forward.bw        Forward big wig track
+    {RNA}.reverse.bw        Reverse big wig track
     """
     f = open(Location + "Readme.txt" , "w") 
     f.write(data)
