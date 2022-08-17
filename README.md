@@ -25,8 +25,10 @@ run processing and from both DNA and RNA Genpipes. It compares the extracted val
 Usage: `Metrics_Update.py` 
 
 ### MOH_Check_Progress.py ###
-Parses Samples table for all available samples and updates the File_location & Timestamp
-tables with the appropriate data.   
+Parses the file structure of MAIN and looks for the output files produced from samples in
+the Sample table. It then updates STATUS table with any progress. It queries for all files,
+so any deliverables that are removed will result in an incomplete listing. In addition this 
+script populates/updates the Timestamps and File_Locations tables.   
 Usage: `MOH_Check_Progress.py`  
 
 ### DB_OPS.py ###
@@ -43,4 +45,12 @@ Usage: `MOH_ln_output.py Sample`
 ### Create_CSVs.sh ###
 Dumps the tables within the database as csv's within the CSV folder of DATABASE.   
 Usage: `Create_CSVs.sh`  
+
+### Generate_pairs_readset.py ###
+Searches the temporary raw_reads folder for matching DNA pairs or RNA. It moves the
+fastqs/BAMs and creates the readset and pairs files in preparation for Setup_run_XXX.sh. 
+In addition, it populates the Samples table. It will not move process any files that are
+outside the naming convention and it will exit if it finds files with the same name at the 
+destination.    
+Usage `Generate_pairs_readset.py DNA` or `Generate_pairs_readset.py RNA` 
 
