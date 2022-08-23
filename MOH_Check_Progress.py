@@ -171,7 +171,7 @@ class Progress(SampleData):
             self.TS_Run_Proc_BAM_DNA_T = "NA"
             self.TS_Run_Proc_BAM_DNA_N = "NA"
         else:
-            path = '/home/dipop/MOH/DATABASE/log_files/transfer/*'
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
             if self.Run_Proc_BAM_DNA_T == "NA" or self.Run_Proc_BAM_DNA_N == "NA":
                 for filename in glob.glob(path):
                     with open(filename, 'r') as f:
@@ -191,7 +191,7 @@ class Progress(SampleData):
             self.TS_Run_Proc_fastq_1_RNA = "NA"
             self.TS_Run_Proc_fastq_2_RNA = "NA"
         else:
-            path = '/home/dipop/MOH/DATABASE/log_files/transfer/*'
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
             if self.Run_Proc_fastq_1_RNA == "NA" or self.Run_Proc_fastq_2_RNA == "NA":
                 for filename in glob.glob(path):
                     with open(filename, 'r') as f:
@@ -207,8 +207,8 @@ class Progress(SampleData):
                                     self.TS_Run_Proc_fastq_2_RNA = getime(filename)
 
     def Gather_BAM_loc(self):
-        loc1 = "/home/dipop/MOH/raw_reads"
-        loc2 = "/home/dipop/MOH/MAIN/raw_reads"
+        loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
+        loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
         if self.DNA_N_True == "NA":
             self.Beluga_BAM_DNA_T = "NA"
             self. Beluga_BAM_DNA_N= "NA"
@@ -216,7 +216,6 @@ class Progress(SampleData):
             self.TS_Beluga_BAM_DNA_N = "NA"
         else:
             path = loc1 + "/*" + self.DNA_N + "*/*.bam"
-            print (path)
             for filename in glob.glob(path):
                self.Beluga_BAM_DNA_N = filename
                self.TS_Beluga_BAM_DNA_N = getime(filename)
