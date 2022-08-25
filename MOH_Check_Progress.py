@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import progressbar
 import glob
 import sys
 import re
@@ -454,23 +455,29 @@ def getime(PATH):
 
 
 def main():
+    widgets=[' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
     ALL_Samples = extract_sample_names(connection)
-    for smple in ALL_Samples:
-        Sample = Progress(connection,smple)
-        update_timestamp_details(Sample) 
-        update_fileloc_details(Sample) 
-        Sample.Gather_Run_Proc_BAM()
-        Sample.Gather_BAM_loc()
-        Sample.Gather_Final_BAMs()
-        Sample.Gather_VCFs()
-        Sample.Gather_reports()
-        Sample.Gather_RNA_other()
-        update_timestamp_details(Sample)
-        update_fileloc_details(Sample)
-        Sample.Update_status()
+    print("Updating Database...")
+    with progressbar.ProgressBar(max_value=len(ALL_Samples), widgets=widgets) as bar:
+        for index, smple in enumerate(ALL_Samples, 1):
+            Sample = Progress(connection,smple)
+            update_timestamp_details(Sample) 
+            update_fileloc_details(Sample) 
+            Sample.Gather_Run_Proc_BAM()
+            Sample.Gather_BAM_loc()
+            Sample.Gather_Final_BAMs()
+            Sample.Gather_VCFs()
+            Sample.Gather_reports()
+            Sample.Gather_RNA_other()
+            update_timestamp_details(Sample)
+            update_fileloc_details(Sample)
+            Sample.Update_status()
+            bar.update(index)
+    print("Committing changes to Database...")
     connection.commit()
     connection.close()
+    print("Done.")
 
 
 if __name__ == '__main__':
