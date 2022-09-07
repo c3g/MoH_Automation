@@ -76,30 +76,26 @@ def update_metrics_db(conn,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Deliv
     else:
         cur.execute(f"INSERT INTO KEY_METRICS (Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_Duplication_Rate,WGS_Contamination,WTS_Clusters,WTS_Exonic_Rate,WTS_Unique_Reads,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,Raw_Median_Insert_Size,Raw_Mean_Insert_Size) VALUES ('{Sample}','{WGS_Bases_Over_Q30}','{WGS_Min_Aligned_Reads_Delivered}','{WGS_Raw_Coverage}','{WGS_Dedup_Coverage}','{Median_Insert_Size}','{WGS_Duplication_Rate}','{WGS_Contamination}','{WTS_Clusters}','{WTS_Exonic_Rate}','{WTS_Unique_Reads}','{WTS_rRNA_contamination}','{Concordance}','{Purity}','{Yellow_Flags}','{Red_Flags}','{Raw_Median_Insert_Size}','{Raw_Mean_Insert_Size}')")
 
-        ############THIS FUNCTION NEEDS TO BE UPDATED FOR DATABASE CHANGES############
-def update_sample_db(conn,sample,Institution,Cohort,DNA_N = 'ND',DNA_T = 'ND',RNA = 'ND'):
+def Update_Samples_Table(conn,Sample,Sample_True,Instituion,Cohort,DNA_N,DNA_N_True,DNA_T,DNA_T_True,RNA,RNA_True):
     # Create cursor object
     cur = conn.cursor()
     #Test to see if it exists and if so extract the current data
-    cur.execute(f"""SELECT * FROM Samples WHERE Sample='{sample}'""")
+    cur.execute(f"""SELECT * FROM Samples WHERE Sample='{Sample}'""")
     result = cur.fetchone()
-
     if result:
-        flag = False
-        if result[3].startswith('MoH'):
-            DNA_N = result[3]
-            flag = True
-        if result[4].startswith('MoH'):
-            DNA_T = result[4]
-            flag = True
-        if result[5].startswith('MoH'):
-            RNA = result[5]
-            flag = True
-        if flag == True:
-            cur.execute(f"DELETE FROM Samples WHERE Sample='{sample}'")
-            cur.execute(f"INSERT INTO Samples (Sample,Institution,Cohort,DNA_N,DNA_T,RNA) VALUES ('{sample}','{Institution}','{Cohort}','{DNA_N}','{DNA_T}','{RNA}')")
+        if result[4].startswith('MoH') and DNA_N == 'NA':
+            DNA_N = result[4]
+            DNA_N_True = result[4]
+        if result[6].startswith('MoH') and DNA_T == 'NA':
+            DNA_T = result[6]
+            DNA_T_True = result[6]
+        if result[8].startswith('MoH') and RNA == 'NA':
+            RNA = result[8]
+            RNA_True = result[8]
+        cur.execute(f"DELETE FROM Samples WHERE Sample='{Sample}'")
+        cur.execute(f"INSERT INTO Samples (Sample,Sample_True,Instituion,Cohort,DNA_N,DNA_N_True,DNA_T,DNA_T_True,RNA,RNA_True) VALUES ('{Sample}','{Sample}','{Instituion}','{Cohort}','{DNA_N}','{DNA_N_True}','{DNA_T}','{DNA_T_True}','{RNA}','{RNA_True}')")
     else:
-        cur.execute(f"INSERT INTO Samples (Sample,Institution,Cohort,DNA_N,DNA_T,RNA) VALUES ('{sample}','{Institution}','{Cohort}','{DNA_N}','{DNA_T}','{RNA}')")
+        cur.execute(f"INSERT INTO Samples (Sample,Sample_True,Instituion,Cohort,DNA_N,DNA_N_True,DNA_T,DNA_T_True,RNA,RNA_True) VALUES ('{Sample}','{Sample}','{Instituion}','{Cohort}','{DNA_N}','{DNA_N_True}','{DNA_T}','{DNA_T_True}','{RNA}','{RNA_True}')")
 
 #Grabs all fields from Sample table and outputs an array of the data
 def extract_sample_details(conn,sample_true):

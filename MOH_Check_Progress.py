@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import progressbar
 import glob
 import sys
 import re
@@ -171,7 +172,7 @@ class Progress(SampleData):
             self.TS_Run_Proc_BAM_DNA_T = "NA"
             self.TS_Run_Proc_BAM_DNA_N = "NA"
         else:
-            path = '/home/dipop/MOH/DATABASE/log_files/transfer/*'
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
             if self.Run_Proc_BAM_DNA_T == "NA" or self.Run_Proc_BAM_DNA_N == "NA":
                 for filename in glob.glob(path):
                     with open(filename, 'r') as f:
@@ -191,7 +192,7 @@ class Progress(SampleData):
             self.TS_Run_Proc_fastq_1_RNA = "NA"
             self.TS_Run_Proc_fastq_2_RNA = "NA"
         else:
-            path = '/home/dipop/MOH/DATABASE/log_files/transfer/*'
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
             if self.Run_Proc_fastq_1_RNA == "NA" or self.Run_Proc_fastq_2_RNA == "NA":
                 for filename in glob.glob(path):
                     with open(filename, 'r') as f:
@@ -207,8 +208,8 @@ class Progress(SampleData):
                                     self.TS_Run_Proc_fastq_2_RNA = getime(filename)
 
     def Gather_BAM_loc(self):
-        loc1 = "/home/dipop/MOH/raw_reads"
-        loc2 = "/home/dipop/MOH/MAIN/raw_reads"
+        loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
+        loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
         if self.DNA_N_True == "NA":
             self.Beluga_BAM_DNA_T = "NA"
             self. Beluga_BAM_DNA_N= "NA"
@@ -216,7 +217,6 @@ class Progress(SampleData):
             self.TS_Beluga_BAM_DNA_N = "NA"
         else:
             path = loc1 + "/*" + self.DNA_N + "*/*.bam"
-            print (path)
             for filename in glob.glob(path):
                self.Beluga_BAM_DNA_N = filename
                self.TS_Beluga_BAM_DNA_N = getime(filename)
@@ -455,23 +455,29 @@ def getime(PATH):
 
 
 def main():
+    widgets=[' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
     ALL_Samples = extract_sample_names(connection)
-    for smple in ALL_Samples:
-        Sample = Progress(connection,smple)
-        update_timestamp_details(Sample) 
-        update_fileloc_details(Sample) 
-        Sample.Gather_Run_Proc_BAM()
-        Sample.Gather_BAM_loc()
-        Sample.Gather_Final_BAMs()
-        Sample.Gather_VCFs()
-        Sample.Gather_reports()
-        Sample.Gather_RNA_other()
-        update_timestamp_details(Sample)
-        update_fileloc_details(Sample)
-        Sample.Update_status()
+    print("Updating Database...")
+    with progressbar.ProgressBar(max_value=len(ALL_Samples), widgets=widgets) as bar:
+        for index, smple in enumerate(ALL_Samples, 1):
+            Sample = Progress(connection,smple)
+            update_timestamp_details(Sample) 
+            update_fileloc_details(Sample) 
+            Sample.Gather_Run_Proc_BAM()
+            Sample.Gather_BAM_loc()
+            Sample.Gather_Final_BAMs()
+            Sample.Gather_VCFs()
+            Sample.Gather_reports()
+            Sample.Gather_RNA_other()
+            update_timestamp_details(Sample)
+            update_fileloc_details(Sample)
+            Sample.Update_status()
+            bar.update(index)
+    print("Committing changes to Database...")
     connection.commit()
     connection.close()
+    print("Done.")
 
 
 if __name__ == '__main__':

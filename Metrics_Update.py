@@ -2,11 +2,13 @@
 import glob
 import sys
 import re
+import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names
 #TO DO::
 #FIX!
 
 def main():
+    widgets = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
     
     Samples = extract_sample_names(connection)
@@ -15,170 +17,179 @@ def main():
 
     All_Samples = []
     PAIRED_SAMPLES = dict()
-    for sample in Samples:
-        All_Samples.append(extract_sample_field(connection,sample,"DNA_N"))
-        PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_N")] = sample
-        All_Samples.append(extract_sample_field(connection,sample,"DNA_T"))
-        PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_T")] = sample
-        All_Samples.append(extract_sample_field(connection,sample,"RNA"))
-        PAIRED_SAMPLES[extract_sample_field(connection,sample,"RNA")] = sample
+    print("Fetching Database...")
+    with progressbar.ProgressBar(max_value=len(Samples), widgets=widgets) as bar:
+        for index, sample in enumerate(Samples, 1):
+            All_Samples.append(extract_sample_field(connection,sample,"DNA_N"))
+            PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_N")] = sample
+            All_Samples.append(extract_sample_field(connection,sample,"DNA_T"))
+            PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_T")] = sample
+            All_Samples.append(extract_sample_field(connection,sample,"RNA"))
+            PAIRED_SAMPLES[extract_sample_field(connection,sample,"RNA")] = sample
+            bar.update(index)
     All_Samples = [x for x in All_Samples if x != ""]
-    extract_data(All_Samples,connection,PAIRED_SAMPLES)
+    extract_data(All_Samples, connection, PAIRED_SAMPLES)
+    print("Committing changes to Database...")
     connection.commit()
     connection.close()
+    print("Done.")
 
-def extract_data(SAMP,connection,PAIRED_SAMPLES):
-    for Sample in SAMP:
-        PATIENT = PAIRED_SAMPLES[Sample]
-        TYPE=''
-        if Sample.endswith('N'):
-            TYPE = 'N'
-        elif Sample.endswith('T'):
-            TYPE = 'T'
-        Y_Flags=[]
-        R_Flags=[]
-        WGS_Bases_Over_Q30 = extract_bs_over_q30(Sample,PATIENT)
-        if WGS_Bases_Over_Q30 == None:
-            WGS_Bases_Over_Q30 = ''
-        elif (float(WGS_Bases_Over_Q30)<75):
-            R_Flags.append('WGS Bases Over Q30')
-        elif (float(WGS_Bases_Over_Q30)<80):
-            Y_Flags.append('WGS Bases Over Q30')
-
-        WGS_Min_Aligned_Reads_Delivered = extract_min_aln_rds(Sample,PATIENT)
-        if WGS_Min_Aligned_Reads_Delivered == None or WGS_Min_Aligned_Reads_Delivered == '' :
-            WGS_Min_Aligned_Reads_Delivered = ''            
-        elif (float(WGS_Min_Aligned_Reads_Delivered)<260000000 and TYPE == 'N'):
-            R_Flags.append('WGS Min Aligned Reads Delivered')
-        elif (float(WGS_Min_Aligned_Reads_Delivered)<660000000 and TYPE == 'N'):
-            Y_Flags.append('WGS Min Aligned Reads Delivered')
-        elif (float(WGS_Min_Aligned_Reads_Delivered)<530000000 and TYPE == 'T'):
-            R_Flags.append('WGS Min Aligned Reads Delivered')
-        elif (float(WGS_Min_Aligned_Reads_Delivered)<1330000000 and TYPE == 'T'):
-            Y_Flags.append('WGS Min Aligned Reads Delivered')
-        
-
-        #WGS_Duplication_Rate
-        WGS_duplicates = extract_sambama_dups(Sample,PATIENT)
-        if  WGS_duplicates == None or WGS_duplicates == '' :
-            WGS_duplicates = ''            
-        elif (float(WGS_duplicates)>50):
-            R_Flags.append('WGS_Duplication_Rate')
-        elif (float(WGS_duplicates)>20):
-            Y_Flags.append('WGS_Duplication_Rate')
-
-        WGS_Raw_Coverage = extract_raw_coverage(Sample)
-        if  WGS_Raw_Coverage == None or WGS_Raw_Coverage == '' :
-            WGS_Raw_Coverage = ''            
-        elif (float(WGS_Raw_Coverage)<30 and TYPE == 'N'):
-            R_Flags.append('WGS Raw Coverage')
-        elif (float(WGS_Raw_Coverage)<80 and TYPE == 'T'):
-            R_Flags.append('WGS Raw Coverage')
-
-
-        WGS_Dedup_Coverage = extract_ded_coverage(Sample,PATIENT)
-        if WGS_Dedup_Coverage  == None or WGS_Dedup_Coverage == '' :
-            WGS_Dedup_Coverage = ''            
-
-        Median_Insert_Size = extract_insert_size(Sample,PATIENT)
-        if  Median_Insert_Size == None or Median_Insert_Size == '' :
-            Median_Insert_Size = ''            
-        elif (float(Median_Insert_Size)<300):
-            Y_Flags.append('Median_Insert_Size')
-        elif (float(Median_Insert_Size)<150):
-            R_Flags.append('Median_Insert_Size')
-
-        #WGS_Contamination
-        WGS_Contamination = extract_contamination(Sample,PATIENT)
-        if WGS_Contamination  == None or WGS_Contamination == '' :
-            WGS_Contamination = ''            
-        elif (float(WGS_Contamination)>5):
-            R_Flags.append('WGS_Contamination')
-
-        #Concordance
-        Concordance = extract_concordance(Sample,PATIENT)
-        if  Concordance == None or Concordance == '' :
-            Concordance = ''            
-        elif (float(Concordance)<99):
-            R_Flags.append('Concordance')
-
-        #Tumor_Purity
-        Purity = extract_purity(Sample,PATIENT)
-        if  Purity == None or Purity == '' :
-            Purity = ''            
-        elif (float(Purity)<30):
-            R_Flags.append('Purity')
-
-        #WTS_Clusters
-        WTS_Clusters = extract_WTS_Clusters(Sample)
-        if  WTS_Clusters == None or WTS_Clusters == '' :
-           WTS_Clusters  = ''            
-        elif (float(WTS_Clusters)<80000000):
-            R_Flags.append('WTS_Clusters')
-        elif (float(WTS_Clusters)<100000000):
-            Y_Flags.append('WTS_Clusters')
-
-        #WTS_Exonic_Rate
-        WTS_Exonic_Rate = extract_WTS_exonic(Sample)
-        if WTS_Exonic_Rate  == None or WTS_Exonic_Rate == '' :
-            WTS_Exonic_Rate = ''            
-        elif (float(WTS_Exonic_Rate)<0.6):
-            R_Flags.append('WTS_Exonic_Rate')
-        elif (float(WTS_Exonic_Rate)<0.8):
-            Y_Flags.append('WTS_Exonic_Rate')
-
-        #WTS_Unique_Reads
-        WTS_Unique_Reads = extract_WTS_unique(Sample)
-        if  WTS_Unique_Reads == None or WTS_Unique_Reads == '' :
-            WTS_Unique_Reads = ''            
-
-        #WTS_rRA_contamination
-        rRNA_count = extract_WTS_rRNA(Sample)
-        if  rRNA_count == None or rRNA_count == '' or WTS_Unique_Reads == '':
-            WTS_rRNA_contamination = ''            
-        else:
-            WTS_rRNA_contamination = int(rRNA_count)/int(WTS_Unique_Reads)
-            if (float(WTS_rRNA_contamination)>0.35):
-                R_Flags.append('WTS_rRNA_contamination')
-            elif (float(WTS_rRNA_contamination)>0.1):
-                Y_Flags.append('WTS_rRNA_contamination')
-
-        mean_ins_size = extract_mean_map_ins_size(Sample)
-        med_ins_size = extract_med_map_ins_size(Sample)
-
-        #Warning flags
-        Yellow_Flags=';'.join(Y_Flags)
-        Red_Flags=';'.join(R_Flags)
-        
-        update_metrics_db(connection,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
-
-        print (Sample)
-        #print (WGS_Bases_Over_Q30)
-        #print (WGS_Min_Aligned_Reads_Delivered)
-        #print (WGS_Raw_Coverage)
-        #print (WGS_Dedup_Coverage)
-        #print (WGS_duplicates)
-        print (Median_Insert_Size)
-        print (mean_ins_size)
-        print (med_ins_size)
-        #print (WGS_Contamination) 
-        #print (Concordance)
-        #print (Purity)
-        #print (WTS_Clusters)
-        #print (WTS_Exonic_Rate)
-        #print (WTS_Unique_Reads)
-        #print ("HERE")
-        #print (WTS_rRNA_contamination)
-        #print (Yellow_Flags)
-        #print (Red_Flags)
-
+def extract_data(SAMP, connection, PAIRED_SAMPLES):
+    print("Updating metrics in Database...")
+    widgets = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
+    with progressbar.ProgressBar(max_value=len(SAMP), widgets=widgets) as bar:
+        for index, Sample in enumerate(SAMP, 1):
+            PATIENT = PAIRED_SAMPLES[Sample]
+            TYPE=''
+            if Sample.endswith('N'):
+                TYPE = 'N'
+            elif Sample.endswith('T'):
+                TYPE = 'T'
+            Y_Flags=[]
+            R_Flags=[]
+            WGS_Bases_Over_Q30 = extract_bs_over_q30(Sample,PATIENT)
+            if WGS_Bases_Over_Q30 == None:
+                WGS_Bases_Over_Q30 = ''
+            elif (float(WGS_Bases_Over_Q30)<75):
+                R_Flags.append('WGS Bases Over Q30')
+            elif (float(WGS_Bases_Over_Q30)<80):
+                Y_Flags.append('WGS Bases Over Q30')
+    
+            WGS_Min_Aligned_Reads_Delivered = extract_min_aln_rds(Sample,PATIENT)
+            if WGS_Min_Aligned_Reads_Delivered == None or WGS_Min_Aligned_Reads_Delivered == '' :
+                WGS_Min_Aligned_Reads_Delivered = ''            
+            elif (float(WGS_Min_Aligned_Reads_Delivered)<260000000 and TYPE == 'N'):
+                R_Flags.append('WGS Min Aligned Reads Delivered')
+            elif (float(WGS_Min_Aligned_Reads_Delivered)<660000000 and TYPE == 'N'):
+                Y_Flags.append('WGS Min Aligned Reads Delivered')
+            elif (float(WGS_Min_Aligned_Reads_Delivered)<530000000 and TYPE == 'T'):
+                R_Flags.append('WGS Min Aligned Reads Delivered')
+            elif (float(WGS_Min_Aligned_Reads_Delivered)<1330000000 and TYPE == 'T'):
+                Y_Flags.append('WGS Min Aligned Reads Delivered')
+            
+    
+            #WGS_Duplication_Rate
+            WGS_duplicates = extract_sambama_dups(Sample,PATIENT)
+            if  WGS_duplicates == None or WGS_duplicates == '' :
+                WGS_duplicates = ''            
+            elif (float(WGS_duplicates)>50):
+                R_Flags.append('WGS_Duplication_Rate')
+            elif (float(WGS_duplicates)>20):
+                Y_Flags.append('WGS_Duplication_Rate')
+    
+            WGS_Raw_Coverage = extract_raw_coverage(Sample)
+            if  WGS_Raw_Coverage == None or WGS_Raw_Coverage == '' :
+                WGS_Raw_Coverage = ''            
+            elif (float(WGS_Raw_Coverage)<30 and TYPE == 'N'):
+                R_Flags.append('WGS Raw Coverage')
+            elif (float(WGS_Raw_Coverage)<80 and TYPE == 'T'):
+                R_Flags.append('WGS Raw Coverage')
+    
+    
+            WGS_Dedup_Coverage = extract_ded_coverage(Sample,PATIENT)
+            if WGS_Dedup_Coverage  == None or WGS_Dedup_Coverage == '' :
+                WGS_Dedup_Coverage = ''            
+    
+            Median_Insert_Size = extract_insert_size(Sample,PATIENT)
+            if  Median_Insert_Size == None or Median_Insert_Size == '' :
+                Median_Insert_Size = ''            
+            elif (float(Median_Insert_Size)<300):
+                Y_Flags.append('Median_Insert_Size')
+            elif (float(Median_Insert_Size)<150):
+                R_Flags.append('Median_Insert_Size')
+    
+            #WGS_Contamination
+            WGS_Contamination = extract_contamination(Sample,PATIENT)
+            if WGS_Contamination  == None or WGS_Contamination == '' :
+                WGS_Contamination = ''            
+            elif (float(WGS_Contamination)>5):
+                R_Flags.append('WGS_Contamination')
+    
+            #Concordance
+            Concordance = extract_concordance(Sample,PATIENT)
+            if  Concordance == None or Concordance == '' :
+                Concordance = ''            
+            elif (float(Concordance)<99):
+                R_Flags.append('Concordance')
+    
+            #Tumor_Purity
+            Purity = extract_purity(Sample,PATIENT)
+            if  Purity == None or Purity == '' :
+                Purity = ''            
+            elif (float(Purity)<30):
+                R_Flags.append('Purity')
+    
+            #WTS_Clusters
+            WTS_Clusters = extract_WTS_Clusters(Sample)
+            if  WTS_Clusters == None or WTS_Clusters == '' :
+               WTS_Clusters  = ''            
+            elif (float(WTS_Clusters)<80000000):
+                R_Flags.append('WTS_Clusters')
+            elif (float(WTS_Clusters)<100000000):
+                Y_Flags.append('WTS_Clusters')
+    
+            #WTS_Exonic_Rate
+            WTS_Exonic_Rate = extract_WTS_exonic(Sample)
+            if WTS_Exonic_Rate  == None or WTS_Exonic_Rate == '' :
+                WTS_Exonic_Rate = ''            
+            elif (float(WTS_Exonic_Rate)<0.6):
+                R_Flags.append('WTS_Exonic_Rate')
+            elif (float(WTS_Exonic_Rate)<0.8):
+                Y_Flags.append('WTS_Exonic_Rate')
+    
+            #WTS_Unique_Reads
+            WTS_Unique_Reads = extract_WTS_unique(Sample)
+            if  WTS_Unique_Reads == None or WTS_Unique_Reads == '' :
+                WTS_Unique_Reads = ''            
+    
+            #WTS_rRA_contamination
+            rRNA_count = extract_WTS_rRNA(Sample)
+            if  rRNA_count == None or rRNA_count == '' or WTS_Unique_Reads == '':
+                WTS_rRNA_contamination = ''            
+            else:
+                WTS_rRNA_contamination = int(rRNA_count)/int(WTS_Unique_Reads)
+                if (float(WTS_rRNA_contamination)>0.35):
+                    R_Flags.append('WTS_rRNA_contamination')
+                elif (float(WTS_rRNA_contamination)>0.1):
+                    Y_Flags.append('WTS_rRNA_contamination')
+    
+            mean_ins_size = extract_mean_map_ins_size(Sample)
+            med_ins_size = extract_med_map_ins_size(Sample)
+    
+            #Warning flags
+            Yellow_Flags=';'.join(Y_Flags)
+            Red_Flags=';'.join(R_Flags)
+            
+            update_metrics_db(connection,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
+            bar.update(index)
+    
+            #print (Sample)
+            #print (WGS_Bases_Over_Q30)
+            #print (WGS_Min_Aligned_Reads_Delivered)
+            #print (WGS_Raw_Coverage)
+            #print (WGS_Dedup_Coverage)
+            #print (WGS_duplicates)
+            #print (Median_Insert_Size)
+            #print (mean_ins_size)
+            #print (med_ins_size)
+            #print (WGS_Contamination) 
+            #print (Concordance)
+            #print (Purity)
+            #print (WTS_Clusters)
+            #print (WTS_Exonic_Rate)
+            #print (WTS_Unique_Reads)
+            #print ("HERE")
+            #print (WTS_rRNA_contamination)
+            #print (Yellow_Flags)
+            #print (Red_Flags)
+    
 
 
 def extract_WTS_rRNA(ID):
     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
         return ''
     else:
-        path = '/home/dipop/MOH/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*rRNA_counts.txt'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*rRNA_counts.txt'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 lines=f.readlines()
@@ -190,7 +201,7 @@ def extract_WTS_unique(ID):
     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
         return ''
     else:
-        path = '/home/dipop/MOH/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 lines=f.readlines()
@@ -203,7 +214,7 @@ def extract_WTS_exonic(ID):
     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
         return ''
     else:
-        path = '/home/dipop/MOH/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 lines=f.readlines()
@@ -216,7 +227,7 @@ def extract_WTS_Clusters(ID):
     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
         return ''
     else:
-        path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 for line in f:
@@ -228,7 +239,7 @@ def extract_raw_coverage(ID):
     if 'R' in ID:
         return ''
     else:
-        path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 for line in f:
@@ -236,7 +247,7 @@ def extract_raw_coverage(ID):
                         data = line.split(",")
                         return data[41]
 def extract_med_map_ins_size(ID):
-    path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             for line in f:
@@ -244,7 +255,7 @@ def extract_med_map_ins_size(ID):
                     data = line.split(",")
                     return data[38]
 def extract_mean_map_ins_size(ID):
-    path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+    path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
     for filename in glob.glob(path):
         with open(filename, 'r') as f:
             for line in f:
@@ -309,7 +320,7 @@ def extract_sambama_dups(ID,PATIENT):
         return ''
     else:
         DUPS = None;
-        path = '/home/dipop/MOH/MAIN/metrics/run_metrics/*'
+        path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
         for filename in glob.glob(path):
             with open(filename, 'r') as f:
                 for line in f:
@@ -341,14 +352,11 @@ def extract_ded_coverage(ID,PATIENT):
         return ''
     else:
         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  ID + '/qualimap/' + ID + '/genome_results.txt'
-        print(path)
         OUTPUT = ''
         for filename in glob.glob(path):
-            print ("'" + filename + "'")
             with open(filename, 'r') as f:
                 lines=f.readlines()
                 line=lines[71]
-                print ("'" + line + "'")
                 #line is      mean coverageData = 304.9902X
                 metrics = line.split(" ")
                 OUTPUT = metrics[-1].replace('X', '')
