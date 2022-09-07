@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-#Temporary File Location
+#Temporary File Location, you may want to change it to your scratch for easier clean up.
 TEMP='/lb/project/mugqic/projects/MOH/TEMP'
 TIMESTAMP=`date +%FT%H.%M.%S`
 LOGFILE=$TIMESTAMP"_transfer_log.txt";
@@ -127,6 +127,14 @@ F_NAME=${MET_LOC##*/}
 echo $MET_LOC '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/'$F_NAME
 >>$TEMP"/"$LISTFILE;
 
+# Load globus module
+module load mugqic/globus-cli/3.7.0
+
+# generate and store a UUID for the submission-id
+sub_id="$(globus task generate-submission-id)"
+label=${Location%?}
+label=${label##*/}
+
 #Start the batch transfer.
-globus transfer --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP
+globus transfer --submission-id $sub_id --label "$label" --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP
 
