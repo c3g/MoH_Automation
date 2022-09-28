@@ -7,6 +7,7 @@ import glob
 import getpass
 import argparse
 import re
+import typing
 from sqlite3 import Error
 
 
@@ -1680,3 +1681,114 @@ def extract_bs_over_q30(sample, sample_type):
     except FileNotFoundError:
         percent_abv = None
     return percent_abv
+
+
+
+
+
+
+
+
+# Cf. https://stackoverflow.com/questions/48722835/custom-type-hint-annotation
+T = typing.TypeVar('T')
+
+class json(typing.Generic[T]):
+    pass
+
+class timestamp(typing.Generic[T]):
+    pass
+
+class Table():
+    """docstring for Table"""
+    def __init__(self, identifier: int = None, deleted: bool = False, extra_metadata: json = None) -> None:
+        super().__init__()
+        self.id = identifier
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
+
+class Project(Table):
+    """docstring for Project"""
+    def __init__(self, name: str = None) -> None:
+        super().__init__()
+        self.name = name
+
+class Patient(Table):
+    """docstring for Patient"""
+    def __init__(self, project_id: int = None, name: str = None, alias: str = None, cohort: str = None, institution: str = None):
+        super().__init__()
+        self.project_id = project_id
+        self.name = name
+        self.alias = alias
+        self.cohort = cohort
+        self.institution = institution
+
+class Run(Table):
+    """docstring for Run"""
+    def __init__(self, lab_id: int = None, name: str = None, date: str = None):
+        super().__init__()
+        self.lab_id = lab_id
+        self.name = name
+        self.date = date
+
+class Sample(Table):
+    """docstring for Sample"""
+    def __init__(self, patient_id: int = None, name: str = None, sequencing_technology: str = None, tumour: bool = None, alias: str = None):
+        super().__init__()
+        self.patient_id = patient_id
+        self.name = name
+        self.sequencing_technology = sequencing_technology
+        self.tumour = tumour
+        self.alias = alias
+
+class Readset(Table):
+    """docstring for Readset"""
+    def __init__(self, sample_id: int = None, run_id: int = None, name: str = None, lane: str = None, adapter1: str = None, adapter2: str = None, sequencing_type: str = None, quality_offset: str = None, alias: str = None):
+        super().__init__()
+        self.sample_id = sample_id
+        self.run_id = run_id
+        self.name = name
+        self.lane = lane
+        self.adapter1 = adapter1
+        self.adapter2 = adapter2
+        self.sequencing_type = sequencing_type
+        self.quality_offset = quality_offset
+        self.alias = alias
+
+class Step(Table):
+    """docstring for Step"""
+    def __init__(self, sample_id: int = None, readset_id: int = None, name: str = None, status: str = None):
+        super().__init__()
+        self.sample_id = sample_id
+        self.readset_id = readset_id
+        self.name = name
+        self.status = status
+
+class Job(Table):
+    """docstring for Job"""
+    def __init__(self, step_id: int = None, name: str = None, start: timestamp = None, stop: timestamp = None, status: str = None, type: str = None):
+        super().__init__()
+        self.step_id = step_id
+        self.name = name
+        self.start = start
+        self.stop = stop
+        self.status = status
+        self.type = type
+
+class Metric(Table):
+    """docstring for Metric"""
+    def __init__(self, job_id: int = None, name: str = None, value: str = None, flag: str = None):
+        super().__init__()
+        self.job_id = job_id
+        self.name = name
+        self.value = value
+        self.flag = flag
+
+class File(Table):
+    """docstring for File"""
+    def __init__(self, job_id: int = None, path: str = None, type: str = None, description: str = None, creation: timestamp = None):
+        super().__init__()
+        self.job_id = job_id
+        self.path = path
+        self.type = type
+        self.description = description
+        self.creation = creation
