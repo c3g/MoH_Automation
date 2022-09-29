@@ -9,7 +9,7 @@ import argparse
 import re
 import typing
 from sqlite3 import Error
-from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, PickleType, DateTime
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, JSON, DateTime
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import relation, sessionmaker
 
@@ -1709,7 +1709,7 @@ class Project(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String, nullable=False)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     def __init__(self, name=None, deleted=None, extra_metadata=None):
         self.name = name
@@ -1730,7 +1730,7 @@ class Patient(Base):
     cohort = Column(String, nullable=True)
     institution = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     project = relation("Project", backref="patient", lazy=False)
 
@@ -1754,7 +1754,7 @@ class Run(Base):
     name = Column(String, nullable=False, unique=True)
     date = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     def __init__(self, lab_id=None, name=None, date=None, deleted=None, extra_metadata=None):
         self.lab_id = lab_id
@@ -1777,7 +1777,7 @@ class Sample(Base):
     tumour = Column(Boolean, default=False)
     alias = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     patient = relation("Patient", backref="sample", lazy=False)
 
@@ -1807,7 +1807,7 @@ class Readset(Base):
     quality_offset = Column(String, nullable=True)
     alias = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     sample = relation("Sample", backref="readset", lazy=False)
     run = relation("Run", backref="readset", lazy=False)
@@ -1836,7 +1836,7 @@ class Step(Base):
     name = Column(String, nullable=False)
     status = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     sample = relation("Sample", backref="step", lazy=False)
     readset = relation("Readset", backref="step", lazy=False)
@@ -1862,7 +1862,7 @@ class Job(Base):
     status = Column(String, nullable=True)
     type = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     step = relation("Step", backref="job", lazy=False)
 
@@ -1888,7 +1888,7 @@ class Metric(Base):
     value = Column(String, nullable=True)
     flag = Column(String, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     job = relation("Job", backref="metric", lazy=False)
 
@@ -1913,7 +1913,7 @@ class File(Base):
     description = Column(String, nullable=True)
     creation = Column(DateTime, nullable=True)
     deleted = Column(Boolean, default=False)
-    extra_metadata = Column(PickleType, nullable=True)
+    extra_metadata = Column(JSON, nullable=True)
 
     job = relation("Job", backref="file", lazy=False)
 
