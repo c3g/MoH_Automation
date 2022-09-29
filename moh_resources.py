@@ -9,6 +9,9 @@ import argparse
 import re
 import typing
 from sqlite3 import Error
+from sqlalchemy import Column, ForeignKey, Integer, Boolean, String, PickleType, DateTime
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relation, sessionmaker
 
 
 class PasswordPromptAction(argparse.Action):
@@ -1688,64 +1691,128 @@ def extract_bs_over_q30(sample, sample_type):
 
 
 
-
 # Cf. https://stackoverflow.com/questions/48722835/custom-type-hint-annotation
-T = typing.TypeVar('T')
+# T = typing.TypeVar('T')
 
-class json(typing.Generic[T]):
-    pass
+# class json(typing.Generic[T]):
+#     pass
 
-class timestamp(typing.Generic[T]):
-    pass
+# class timestamp(typing.Generic[T]):
+#     pass
 
-class Table():
-    """docstring for Table"""
-    def __init__(self, identifier: int = None, deleted: bool = False, extra_metadata: json = None) -> None:
-        super().__init__()
-        self.id = identifier
+Base = declarative_base()
+
+class Project(Base):
+    """docstring for Project"""
+    __tablename__ = "project"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    def __init__(self, name=None, deleted=None, extra_metadata=None):
+        self.name = name
         self.deleted = deleted
         self.extra_metadata = extra_metadata
 
-class Project(Table):
-    """docstring for Project"""
-    def __init__(self, name: str = None) -> None:
-        super().__init__()
-        self.name = name
+    def __repr__(self):
+        return f"Project({self.name!r}, {self.deleted!r}, {self.extra_metadata!r})"
 
-class Patient(Table):
+class Patient(Base):
     """docstring for Patient"""
-    def __init__(self, project_id: int = None, name: str = None, alias: str = None, cohort: str = None, institution: str = None):
-        super().__init__()
-        self.project_id = project_id
+    __tablename__ = "patient"
+
+    id = Column(Integer, primary_key=True)
+    project_id = Column(Integer, ForeignKey("project.id"))
+    name = Column(String, nullable=False, unique=True)
+    alias = Column(String, nullable=True)
+    cohort = Column(String, nullable=True)
+    institution = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    project = relation("Project", backref="patient", lazy=False)
+
+    def __init__(self, name=None, alias=None, cohort=None, institution=None, deleted=None, extra_metadata=None):
         self.name = name
         self.alias = alias
         self.cohort = cohort
         self.institution = institution
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Run(Table):
-    """docstring for Run"""
-    def __init__(self, lab_id: int = None, name: str = None, date: str = None):
-        super().__init__()
+    def __repr__(self):
+        return f"Patient({self.project!r}, {self.name!r}, {self.alias!r}, {self.cohort!r}, {self.institution!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Run(Base):
+    """docstring for Patient"""
+    __tablename__ = "run"
+
+    id = Column(Integer, primary_key=True)
+    lab_id = Column(String, nullable=True)
+    name = Column(String, nullable=False, unique=True)
+    date = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    def __init__(self, lab_id=None, name=None, date=None, deleted=None, extra_metadata=None):
         self.lab_id = lab_id
         self.name = name
         self.date = date
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Sample(Table):
+    def __repr__(self):
+        return f"Run({self.lab_id!r}, {self.name!r}, {self.date!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Sample(Base):
     """docstring for Sample"""
-    def __init__(self, patient_id: int = None, name: str = None, sequencing_technology: str = None, tumour: bool = None, alias: str = None):
-        super().__init__()
-        self.patient_id = patient_id
+    __tablename__ = "sample"
+
+    id = Column(Integer, primary_key=True)
+    patient_id = Column(Integer, ForeignKey("patient.id"))
+    name = Column(String, nullable=False, unique=True)
+    sequencing_technology = Column(String, nullable=True)
+    tumour = Column(Boolean, default=False)
+    alias = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    patient = relation("Patient", backref="sample", lazy=False)
+
+    def __init__(self, name=None, sequencing_technology=None, tumour=None, alias=None, deleted=None, extra_metadata=None):
         self.name = name
         self.sequencing_technology = sequencing_technology
         self.tumour = tumour
         self.alias = alias
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Readset(Table):
+    def __repr__(self):
+        return f"Sample({self.patient!r}, {self.name!r}, {self.sequencing_technology!r}, {self.tumour!r}, {self.alias!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Readset(Base):
     """docstring for Readset"""
-    def __init__(self, sample_id: int = None, run_id: int = None, name: str = None, lane: str = None, adapter1: str = None, adapter2: str = None, sequencing_type: str = None, quality_offset: str = None, alias: str = None):
-        super().__init__()
-        self.sample_id = sample_id
-        self.run_id = run_id
+    __tablename__ = "readset"
+
+    id = Column(Integer, primary_key=True)
+    sample_id = Column(Integer, ForeignKey("sample.id"))
+    run_id = Column(Integer, ForeignKey("run.id"))
+    name = Column(String, nullable=False, unique=True)
+    lane = Column(String, nullable=True)
+    adapter1 = Column(String, nullable=True)
+    adapter2 = Column(String, nullable=True)
+    sequencing_type = Column(String, nullable=True)
+    quality_offset = Column(String, nullable=True)
+    alias = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    sample = relation("Sample", backref="readset", lazy=False)
+    run = relation("Run", backref="readset", lazy=False)
+
+    def __init__(self, name=None, lane=None, adapter1=None, adapter2=None, sequencing_type=None, quality_offset=None, alias=None, deleted=None, extra_metadata=None):
         self.name = name
         self.lane = lane
         self.adapter1 = adapter1
@@ -1753,42 +1820,110 @@ class Readset(Table):
         self.sequencing_type = sequencing_type
         self.quality_offset = quality_offset
         self.alias = alias
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Step(Table):
+    def __repr__(self):
+        return f"Readset({self.sample!r}, {self.run!r}, {self.name!r}, {self.lane!r}, {self.adapter1!r}, {self.adapter2!r}, {self.sequencing_type!r}, {self.quality_offset!r}, {self.alias!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Step(Base):
     """docstring for Step"""
-    def __init__(self, sample_id: int = None, readset_id: int = None, name: str = None, status: str = None):
-        super().__init__()
-        self.sample_id = sample_id
-        self.readset_id = readset_id
+    __tablename__ = "step"
+
+    id = Column(Integer, primary_key=True)
+    sample_id = Column(Integer, ForeignKey("sample.id"))
+    readset_id = Column(Integer, ForeignKey("readset.id"))
+    name = Column(String, nullable=False)
+    status = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    sample = relation("Sample", backref="step", lazy=False)
+    readset = relation("Readset", backref="step", lazy=False)
+
+    def __init__(self, name=None, status=None, deleted=None, extra_metadata=None):
         self.name = name
         self.status = status
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Job(Table):
+    def __repr__(self):
+        return f"Step({self.sample!r}, {self.readset!r}, {self.name!r}, {self.status!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Job(Base):
     """docstring for Job"""
-    def __init__(self, step_id: int = None, name: str = None, start: timestamp = None, stop: timestamp = None, status: str = None, type: str = None):
-        super().__init__()
-        self.step_id = step_id
+    __tablename__ = "job"
+
+    id = Column(Integer, primary_key=True)
+    step_id = Column(Integer, ForeignKey("step.id"))
+    name = Column(String, nullable=False)
+    start = Column(DateTime, nullable=True)
+    stop = Column(DateTime, nullable=True)
+    status = Column(String, nullable=True)
+    type = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    step = relation("Step", backref="job", lazy=False)
+
+    def __init__(self, name=None, start=None, stop=None, status=None, type=None, deleted=None, extra_metadata=None):
         self.name = name
         self.start = start
         self.stop = stop
         self.status = status
         self.type = type
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class Metric(Table):
+    def __repr__(self):
+        return f"Job({self.step!r}, {self.name!r}, {self.start!r}, {self.stop!r}, {self.status!r}, {self.type!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class Metric(Base):
     """docstring for Metric"""
-    def __init__(self, job_id: int = None, name: str = None, value: str = None, flag: str = None):
-        super().__init__()
-        self.job_id = job_id
+    __tablename__ = "metric"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(Integer, ForeignKey("job.id"))
+    name = Column(String, nullable=False)
+    value = Column(String, nullable=True)
+    flag = Column(String, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    job = relation("Job", backref="metric", lazy=False)
+
+    def __init__(self, name=None, value=None, flag=None, deleted=None, extra_metadata=None):
         self.name = name
         self.value = value
         self.flag = flag
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
 
-class File(Table):
+    def __repr__(self):
+        return f"Metric({self.job!r}, {self.name!r}, {self.value!r}, {self.flag!r}, {self.deleted!r}, {self.extra_metadata!r})"
+
+class File(Base):
     """docstring for File"""
-    def __init__(self, job_id: int = None, path: str = None, type: str = None, description: str = None, creation: timestamp = None):
-        super().__init__()
-        self.job_id = job_id
+    __tablename__ = "file"
+
+    id = Column(Integer, primary_key=True)
+    job_id = Column(Integer, ForeignKey("job.id"))
+    path = Column(String, nullable=True)
+    type = Column(String, nullable=True)
+    description = Column(String, nullable=True)
+    creation = Column(DateTime, nullable=True)
+    deleted = Column(Boolean, default=False)
+    extra_metadata = Column(PickleType, nullable=True)
+
+    job = relation("Job", backref="file", lazy=False)
+
+    def __init__(self, path=None, type=None, description=None, creation=None, deleted=None, extra_metadata=None):
         self.path = path
         self.type = type
         self.description = description
         self.creation = creation
+        self.deleted = deleted
+        self.extra_metadata = extra_metadata
+
+    def __repr__(self):
+        return f"File({self.job!r}, {self.path!r}, {self.type!r}, {self.description!r}, {self.creation!r}, {self.deleted!r}, {self.extra_metadata!r})"
