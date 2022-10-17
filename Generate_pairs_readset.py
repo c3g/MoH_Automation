@@ -121,12 +121,19 @@ def main():
             sys.exit("Program will not produce readsets or pairs until this is solved. Exiting") 
         
         #Find matching pairs
-        pair_dict = {} 
+        pair_dict = {}
+        #print("Normal len: " + str(len(Normal_Samples)))
+        #print("Tumour len: " + str(len(Tumour_Samples)))
         for Normal in Normal_Samples:
+            #print("Normal: " + Normal)
             result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", Normal)
             Sample = result.group(1)
             for Tumour in Tumour_Samples:
-                if Sample in Tumour:
+                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", Tumour)
+                patient = result.group(1)
+                #print("Tumour: " + Tumour)
+                if Sample == patient:
+                    print("Pair found for sample " + Sample)
                     pair_dict[Normal] = Tumour
         DNA_Samples = [] 
         if pair_dict:
