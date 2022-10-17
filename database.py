@@ -28,7 +28,7 @@ class BaseTable(Base):
     deleted = Column(Boolean, default=False)
     extra_metadata = Column(JSON, nullable=True)
 
-    def __init__(self, deleted=None, extra_metadata=None):
+    def __init__(self, deleted=False, extra_metadata=None):
         self.deleted = deleted
         self.extra_metadata = extra_metadata
 
@@ -132,7 +132,7 @@ class Sample(BaseTable):
     patient = relationship("Patient", backref="sample", lazy=False)
     experiment = relationship("Experiment", backref="sample", lazy=False)
 
-    def __init__(self, name=None, tumour=None, alias=None):
+    def __init__(self, name=None, tumour=False, alias=None):
         super().__init__()
         self.name = name
         self.tumour = tumour
@@ -346,8 +346,14 @@ def insert(engine, entry, **relations):
 
     # new_entry = entry
     for name, relation_entry in relations.items():
-        session.get(relation_entry)
         setattr(entry, name, relation_entry)
+        # print(getattr(relation_entry, "name"))
+        # print(session.query(type(relation_entry)).populate_existing().all())
+        # exit()
+        # print(type(relation_entry).__name__)
+        # print(session.query(type(relation_entry)).first())
+        # if session.query(type(relation_entry)).first():
+        #     setattr(entry, name, session.query(type(relation_entry)).first())
         # new_entry.name = relation_entry
 
     try:
