@@ -458,8 +458,6 @@ def main():
     widgets=[' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
     connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db") 
     ALL_Samples = extract_sample_names(connection)
-    print(len(ALL_Samples))
-    exit()
     print("Updating Database...")
     with progressbar.ProgressBar(max_value=len(ALL_Samples), widgets=widgets) as bar:
         for index, smple in enumerate(ALL_Samples, 1):

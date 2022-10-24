@@ -20,14 +20,24 @@ def main():
     print("Fetching Database by Patient...")
     with progressbar.ProgressBar(max_value=len(Samples), widgets=widgets) as bar:
         for index, sample in enumerate(Samples, 1):
-            All_Samples.append(extract_sample_field(connection,sample,"DNA_N"))
-            PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_N")] = sample
-            All_Samples.append(extract_sample_field(connection,sample,"DNA_T"))
-            PAIRED_SAMPLES[extract_sample_field(connection,sample,"DNA_T")] = sample
-            All_Samples.append(extract_sample_field(connection,sample,"RNA"))
-            PAIRED_SAMPLES[extract_sample_field(connection,sample,"RNA")] = sample
+            dna_n = extract_sample_field(connection,sample,"DNA_N")
+            if dna_n != "NA" and dna_n != "":
+                All_Samples.append(dna_n)
+                PAIRED_SAMPLES[dna_n] = sample
+            dna_t = extract_sample_field(connection,sample,"DNA_T")
+            if dna_t != "NA" and dna_t != "":
+                All_Samples.append(dna_t)
+                PAIRED_SAMPLES[dna_t] = sample
+            rna = extract_sample_field(connection,sample,"RNA")
+            if rna != "NA" and rna != "":
+                All_Samples.append(rna)
+                PAIRED_SAMPLES[rna] = sample
             bar.update(index)
-    All_Samples = [x for x in All_Samples if x != "NA"]
+    #print(All_Samples)
+    #All_Samples = [x for x in All_Samples if x != "NA" and x != ""]
+    #print(len(All_Samples))
+    #print(len(PAIRED_SAMPLES))
+    #exit()
     extract_data(All_Samples, connection, PAIRED_SAMPLES)
     print("Committing changes to Database...")
     connection.commit()
@@ -159,6 +169,8 @@ def extract_data(SAMP, connection, PAIRED_SAMPLES):
             #Warning flags
             Yellow_Flags=';'.join(Y_Flags)
             Red_Flags=';'.join(R_Flags)
+
+            #print(Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
 
             update_metrics_db(connection,Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
             bar.update(index)
