@@ -113,7 +113,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('WGS_Bases_Over_Q30')
                 elif int(dna_bases_over_q30_percent)<80 and sample_type in ('DN', 'DT'):
                     flags.append('WGS_Bases_Over_Q30')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # if dna_bases_over_q30_percent is None:
             #     dna_bases_over_q30_percent = ''
@@ -132,7 +132,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('WGS_Min_Aligned_Reads_Delivered')
                 elif int(dna_aligned_reads_count)<1330000000 and sample_type == 'DT':
                     flags.append('WGS_Min_Aligned_Reads_Delivered')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # if dna_aligned_reads_count in (None, ''):
             #     dna_aligned_reads_count = ''
@@ -162,21 +162,21 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('Raw_Mean_Coverage')
                 elif float(raw_mean_coverage)<80 and sample_type == 'DT':
                     fails.append('Raw_Mean_Coverage')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             try:
                 if float(raw_reads_count)<80000000 and sample_type == 'RT':
                     fails.append('Raw_Reads_Count')
                 elif float(raw_reads_count)<100000000 and sample_type == 'RT':
                     flags.append('Raw_Reads_Count')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             try:
                 if float(raw_duplication_rate)>50 and sample_type in ('DT', 'DN'):
                     fails.append('Raw_Duplication_Rate')
                 elif float(raw_duplication_rate)>20 and sample_type in ('DT', 'DN'):
                     flags.append('Raw_Duplication_Rate')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
 
             # dna_raw_coverage = extract_raw_coverage(sample)
@@ -216,7 +216,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     flags.append('Median_Insert_Size')
                 elif float(median_insert_size)<150:
                     fails.append('Median_Insert_Size')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # Median_Insert_Size = extract_insert_size(Sample,PATIENT)
             # if  Median_Insert_Size == None or Median_Insert_Size == '' :
@@ -231,7 +231,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             try:
                 if float(dna_contamination)>5:
                     fails.append('WGS_Contamination')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # WGS_Contamination = extract_contamination(Sample,PATIENT)
             # if WGS_Contamination  == None or WGS_Contamination == '' :
@@ -244,7 +244,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             try:
                 if float(dna_concordance)<99:
                     fails.append('Concordance')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # Concordance = extract_concordance(Sample,PATIENT)
             # if  Concordance == None or Concordance == '' :
@@ -257,7 +257,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             try:
                 if float(dna_tumour_purity)<30:
                     fails.append('Purity')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # Purity = extract_purity(Sample,PATIENT)
             # if  Purity == None or Purity == '' :
@@ -281,7 +281,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('WTS_Exonic_Rate')
                 elif float(rna_exonic_rate)<0.8:
                     flags.append('WTS_Exonic_Rate')
-            except TypeError:
+            except (TypeError, ValueError):
                 pass
             # WTS_Exonic_Rate = extract_WTS_exonic(Sample)
             # if WTS_Exonic_Rate  == None or WTS_Exonic_Rate == '' :
