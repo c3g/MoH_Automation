@@ -96,7 +96,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
         for index, sample in enumerate(samples_list, 1):
             patient = paired_samples_dict[sample][0]
             run = paired_samples_dict[sample][1]
-            print(sample, run + "\n")
+            # print(sample, run + "\n")
             # sample_type = ''
             if sample.endswith('DN'):
                 sample_type = 'DN'
@@ -395,7 +395,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
 
 def parse_run_metrics(sample, run):
     try:
-        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics', run + '.align_bwa_mem.csv')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics', run + '-run.align_bwa_mem.csv')
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split(",")
