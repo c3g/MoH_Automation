@@ -625,6 +625,7 @@ def extract_concordance(patient, sample_type):
 #             return float(DUPS)
 
 def extract_insert_size(sample, patient, sample_type):
+    ret = None
     try:
         if sample_type == 'RT':
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
@@ -640,8 +641,6 @@ def extract_insert_size(sample, patient, sample_type):
                     parsed_line = line.split("\t")
                     if parsed_line[0] == sample:
                         ret = round(float(parsed_line[7]), 0)
-        else:
-            ret = None
     except FileNotFoundError:
         ret = None
     return ret
