@@ -15,7 +15,7 @@ sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATAB
 sqlite3 -header -csv /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db 'SELECT 	Samples.Sample_True as Patient,
 norm.WGS_Dedup_Coverage as Normal_Deduplex_coverage, 
 tum.WGS_Dedup_Coverage as Tumour_Deduplex_coverage,
-rna.WTS_Clusters as WTS_Clusters
+rna.Raw_Reads_Count as Raw_Reads_Count
 FROM Samples 
 INNER JOIN KEY_METRICS norm 
 ON Samples.DNA_N = norm.Sample
@@ -32,8 +32,8 @@ STATUS.Tumour_Pair_Complete as WGS_Complete,
 Samples.RNA_True AS WTS,
 STATUS.RNA_Complete as WTS_Complete,
 CASE WHEN (Samples.DNA_N_True == "NA") THEN "NA" WHEN (tum.WGS_Dedup_Coverage < 80) THEN "FAIL" WHEN (norm.WGS_Dedup_Coverage < 40) THEN "FAIL" ELSE "PASS" END WGS_Coverage_Pass,
-CASE WHEN (Samples.RNA_True == "NA") THEN "NA" WHEN (rna.WTS_Clusters < 100000000) THEN "FAIL"  ELSE "PASS" END WTS_Clusters_Pass,
-CASE WHEN (Samples.DNA_N_True == "NA") THEN "NA" WHEN (Samples.RNA_True == "NA") THEN "NA" WHEN (tum.WGS_Dedup_Coverage < 80) THEN "FAIL" WHEN (norm.WGS_Dedup_Coverage < 40) THEN "FAIL"  WHEN (rna.WTS_Clusters < 100000000) THEN "FAIL"  ELSE "PASS" END WGS_WTS_PASS
+CASE WHEN (Samples.RNA_True == "NA") THEN "NA" WHEN (rna.Raw_Reads_Count < 100000000) THEN "FAIL"  ELSE "PASS" END Raw_Reads_Count_Pass,
+CASE WHEN (Samples.DNA_N_True == "NA") THEN "NA" WHEN (Samples.RNA_True == "NA") THEN "NA" WHEN (tum.WGS_Dedup_Coverage < 80) THEN "FAIL" WHEN (norm.WGS_Dedup_Coverage < 40) THEN "FAIL"  WHEN (rna.Raw_Reads_Count < 100000000) THEN "FAIL"  ELSE "PASS" END WGS_WTS_PASS
 FROM Samples 
 LEFT JOIN STATUS on Samples.Sample=STATUS.Sample
 LEFT JOIN KEY_METRICS norm ON Samples.DNA_N = norm.Sample
@@ -49,8 +49,8 @@ SUM(CASE WHEN (Samples.RNA_True == "NA") THEN 0 ELSE 1 END) AS WTA,
 SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") THEN 1 ELSE 0 END) AS WGS_Complete,
 SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") THEN 1 ELSE 0 END) AS WTS_Complete,
 SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) THEN 1 ELSE 0 END) AS WGS_Complete_Pass,
-SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
-SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.Raw_Reads_Count > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.Raw_Reads_Count > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
 FROM Samples
 LEFT JOIN STATUS on Samples.Sample=STATUS.Sample
 LEFT JOIN KEY_METRICS norm ON Samples.DNA_N = norm.Sample
@@ -67,8 +67,8 @@ SUM(CASE WHEN (Samples.RNA_True == "NA") THEN 0 ELSE 1 END) AS WTA,
 SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") THEN 1 ELSE 0 END) AS WGS_Complete,
 SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") THEN 1 ELSE 0 END) AS WTS_Complete,
 SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) THEN 1 ELSE 0 END) AS WGS_Complete_Pass,
-SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
-SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.WTS_Clusters > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
+SUM(CASE WHEN (STATUS.RNA_Complete == "Complete") AND (rna.Raw_Reads_Count > 100000000) THEN 1 ELSE 0 END) AS WTS_Complete_Pass,
+SUM(CASE WHEN (STATUS.Tumour_Pair_Complete == "Complete") AND (tum.WGS_Dedup_Coverage > 80) AND (norm.WGS_Dedup_Coverage > 30) AND (STATUS.RNA_Complete == "Complete") AND (rna.Raw_Reads_Count > 100000000) THEN 1 ELSE 0 END) AS WTS_WGS_Complete_Pass
 FROM Samples
 LEFT JOIN STATUS on Samples.Sample=STATUS.Sample
 LEFT JOIN KEY_METRICS norm ON Samples.DNA_N = norm.Sample
