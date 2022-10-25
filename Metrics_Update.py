@@ -104,15 +104,15 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 sample_type = 'DT'
             elif sample.endswith('RT'):
                 sample_type = 'RT'
-            flag = []
-            fail = []
+            flags = []
+            fails = []
 
             dna_bases_over_q30_percent = extract_bs_over_q30(sample, sample_type)
             try:
                 if int(dna_bases_over_q30_percent)<75 and sample_type in ('DN', 'DT'):
-                    fail.append('WGS_Bases_Over_Q30')
+                    fails.append('WGS_Bases_Over_Q30')
                 elif int(dna_bases_over_q30_percent)<80 and sample_type in ('DN', 'DT'):
-                    flag.append('WGS_Bases_Over_Q30')
+                    flags.append('WGS_Bases_Over_Q30')
             except TypeError:
                 pass
             # if dna_bases_over_q30_percent is None:
@@ -125,13 +125,13 @@ def extract_data(samples_list, connection, paired_samples_dict):
             dna_aligned_reads_count = extract_min_aln_rds(sample, patient)
             try:
                 if int(dna_aligned_reads_count)<260000000 and sample_type == 'DN':
-                    fail.append('WGS_Min_Aligned_Reads_Delivered')
+                    fails.append('WGS_Min_Aligned_Reads_Delivered')
                 elif int(dna_aligned_reads_count)<660000000 and sample_type == 'DN':
-                    flag.append('WGS_Min_Aligned_Reads_Delivered')
+                    flags.append('WGS_Min_Aligned_Reads_Delivered')
                 elif int(dna_aligned_reads_count)<530000000 and sample_type == 'DT':
-                    fail.append('WGS_Min_Aligned_Reads_Delivered')
+                    fails.append('WGS_Min_Aligned_Reads_Delivered')
                 elif int(dna_aligned_reads_count)<1330000000 and sample_type == 'DT':
-                    flag.append('WGS_Min_Aligned_Reads_Delivered')
+                    flags.append('WGS_Min_Aligned_Reads_Delivered')
             except TypeError:
                 pass
             # if dna_aligned_reads_count in (None, ''):
@@ -159,23 +159,23 @@ def extract_data(samples_list, connection, paired_samples_dict):
             raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate = parse_run_metrics(sample, run)
             try:
                 if float(raw_mean_coverage)<30 and sample_type == 'DN':
-                    fail.append('Raw_Mean_Coverage')
+                    fails.append('Raw_Mean_Coverage')
                 elif float(raw_mean_coverage)<80 and sample_type == 'DT':
-                    fail.append('Raw_Mean_Coverage')
+                    fails.append('Raw_Mean_Coverage')
             except TypeError:
                 pass
             try:
                 if float(raw_reads_count)<80000000 and sample_type == 'RT':
-                    fail.append('Raw_Reads_Count')
+                    fails.append('Raw_Reads_Count')
                 elif float(raw_reads_count)<100000000 and sample_type == 'RT':
-                    flag.append('Raw_Reads_Count')
+                    flags.append('Raw_Reads_Count')
             except TypeError:
                 pass
             try:
                 if float(raw_duplication_rate)>50 and sample_type in ('DT', 'DN'):
-                    fail.append('Raw_Duplication_Rate')
+                    fails.append('Raw_Duplication_Rate')
                 elif float(raw_duplication_rate)>20 and sample_type in ('DT', 'DN'):
-                    flag.append('Raw_Duplication_Rate')
+                    flags.append('Raw_Duplication_Rate')
             except TypeError:
                 pass
 
@@ -213,9 +213,9 @@ def extract_data(samples_list, connection, paired_samples_dict):
             median_insert_size = extract_insert_size(sample, patient, sample_type)
             try:
                 if float(median_insert_size)<300:
-                    flag.append('Median_Insert_Size')
+                    flags.append('Median_Insert_Size')
                 elif float(median_insert_size)<150:
-                    fail.append('Median_Insert_Size')
+                    fails.append('Median_Insert_Size')
             except TypeError:
                 pass
             # Median_Insert_Size = extract_insert_size(Sample,PATIENT)
@@ -230,7 +230,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             dna_contamination = extract_contamination(patient, sample_type)
             try:
                 if float(dna_contamination)>5:
-                    fail.append('WGS_Contamination')
+                    fails.append('WGS_Contamination')
             except TypeError:
                 pass
             # WGS_Contamination = extract_contamination(Sample,PATIENT)
@@ -243,7 +243,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             dna_concordance = extract_concordance(patient, sample_type)
             try:
                 if float(dna_concordance)<99:
-                    fail.append('Concordance')
+                    fails.append('Concordance')
             except TypeError:
                 pass
             # Concordance = extract_concordance(Sample,PATIENT)
@@ -256,7 +256,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             dna_tumour_purity = extract_purity(sample, patient)
             try:
                 if float(dna_tumour_purity)<30:
-                    fail.append('Purity')
+                    fails.append('Purity')
             except TypeError:
                 pass
             # Purity = extract_purity(Sample,PATIENT)
@@ -280,7 +280,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 if float(rna_exonic_rate)<0.6:
                     fail.append('WTS_Exonic_Rate')
                 elif float(rna_exonic_rate)<0.8:
-                    flag.append('WTS_Exonic_Rate')
+                    flags.append('WTS_Exonic_Rate')
             except TypeError:
                 pass
             # WTS_Exonic_Rate = extract_WTS_exonic(Sample)
@@ -301,9 +301,9 @@ def extract_data(samples_list, connection, paired_samples_dict):
             try:
                 rna_ribosomal_contamination_count = int(rrna_count)/int(rna_aligned_reads_count)
                 if float(rna_ribosomal_contamination_count)>0.35:
-                    fail.append('WTS_rRNA_contamination')
+                    fails.append('WTS_rRNA_contamination')
                 elif float(rna_ribosomal_contamination_count)>0.1:
-                    flag.append('WTS_rRNA_contamination')
+                    flags.append('WTS_rRNA_contamination')
             except (TypeError, ValueError):
                 rna_ribosomal_contamination_count = None
             # rRNA_count = extract_WTS_rRNA(Sample)
@@ -322,8 +322,8 @@ def extract_data(samples_list, connection, paired_samples_dict):
             # Flags
             flags.extend(extract_value(connection, "KEY_METRICS", sample, "Flags").split(";"))
             fails.extend(extract_value(connection, "KEY_METRICS", sample, "Fails").split(";"))
-            flags = ';'.join(set(flag))
-            fails = ';'.join(set(fail))
+            flags = ';'.join(set(flags))
+            fails = ';'.join(set(fails))
             # Yellow_Flags=';'.join(flag)
             # Red_Flags=';'.join(fail)
 
