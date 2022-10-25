@@ -395,7 +395,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
 
 def parse_run_metrics(sample, run):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics', run + '.align_bwa_mem.csv')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics', run + '.align_bwa_mem.csv')
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split(",")
@@ -415,7 +415,7 @@ def parse_run_metrics(sample, run):
 
 def extract_rna_ribosomal(sample):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.rRNA_counts.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.rRNA_counts.txt')
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             line = lines[0]
@@ -439,7 +439,7 @@ def extract_rna_ribosomal(sample):
 
 def parse_rnaseqc_metrics_tmp(sample):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.metrics.tmp.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.metrics.tmp.txt')
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             rna_aligned_reads_count = lines[3].split("\t")[0]
@@ -517,7 +517,7 @@ def parse_rnaseqc_metrics_tmp(sample):
 
 def extract_purity(sample, patient):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             line = lines[1]
@@ -543,7 +543,7 @@ def extract_purity(sample, patient):
 
 def extract_contamination(patient, sample_type):
     if sample_type in ('DN', 'DT'):
-        filename = "".join(glob.glob(os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.contamination.tsv')))
+        filename = "".join(glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.contamination.tsv')))
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
@@ -576,7 +576,7 @@ def extract_contamination(patient, sample_type):
 
 def extract_concordance(patient, sample_type):
     if sample_type in ('DN', 'DT'):
-        filename = "".join(glob.glob(os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.concordance.tsv')))
+        filename = "".join(glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.concordance.tsv')))
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
@@ -629,14 +629,14 @@ def extract_concordance(patient, sample_type):
 def extract_insert_size(sample, patient, sample_type):
     try:
         if sample_type == 'RT':
-            filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
             with open(filename, 'r', encoding="utf-8") as file:
                 lines = file.readlines()
                 line = lines[7]
                 metrics = line.split("\t")
                 ret = metrics[0]
         elif sample_type in ('DN', 'DT'):
-            filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
                     parsed_line = line.split("\t")
@@ -664,7 +664,7 @@ def extract_insert_size(sample, patient, sample_type):
 
 def extract_dedup_coverage(sample):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             line = lines[71]
@@ -695,7 +695,7 @@ def extract_dedup_coverage(sample):
 
 def extract_min_aln_rds(sample, patient):
     try:
-        filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split("\t")
@@ -750,9 +750,9 @@ def extract_min_aln_rds(sample, patient):
 def extract_bs_over_q30(sample, sample_type):
     try:
         if sample_type in ('DT', 'DN'):
-            filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'picard_metrics', sample + '.all.metrics.quality_distribution_metrics')
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'picard_metrics', sample + '.all.metrics.quality_distribution_metrics')
         elif sample_type == 'RT':
-            filename = os.path.join('/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.quality_distribution_metrics')
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.quality_distribution_metrics')
         tester = re.compile('(\d+)\W+(\d+)')
         with open(filename, 'r', encoding="utf-8") as file:
             above_30 = 0
