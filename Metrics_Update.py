@@ -29,7 +29,7 @@ def main():
         for index, patient in enumerate(patients, 1):
             # run_sample = extract_sample_field(connection, patient, "run")
             dna_n_sample = extract_sample_field(connection, patient, "DNA_N")
-            if dna_n != "NA" and dna_n != "":
+            if dna_n_sample != "NA" and dna_n_sample != "":
                 samples_list.append(dna_n_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_BAM_DNA_N").split("/")[7]
@@ -37,7 +37,7 @@ def main():
                     run_sample = ""
                 paired_samples_dict[dna_n_sample] = (patient, run_sample)
             dna_t_sample = extract_sample_field(connection, patient, "DNA_T")
-            if dna_t != "NA" and dna_t != "":
+            if dna_t_sample != "NA" and dna_t_sample != "":
                 samples_list.append(dna_t_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_BAM_DNA_T").split("/")[7]
@@ -45,7 +45,7 @@ def main():
                     run_sample = ""
                 paired_samples_dict[dna_t_sample] = (patient, run_sample)
             rna_sample = extract_sample_field(connection, patient, "RNA")
-            if rna != "NA" and rna != "":
+            if rna_sample != "NA" and rna_sample != "":
                 samples_list.append(rna_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_fastq_1_RNA").split("/")[7]
