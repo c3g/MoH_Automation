@@ -542,6 +542,7 @@ def extract_purity(sample, patient):
 
 
 def extract_contamination(patient, sample_type):
+    ret = None
     if sample_type in ('DN', 'DT'):
         filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.contamination.tsv'))
         try:
@@ -553,8 +554,6 @@ def extract_contamination(patient, sample_type):
                         ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
             ret = None
-    else:
-        ret = None
     return ret
 
 #WGS N % Contamination,WGS T % Contamination,
@@ -575,6 +574,7 @@ def extract_contamination(patient, sample_type):
 #                         return output
 
 def extract_concordance(patient, sample_type):
+    ret = None
     if sample_type in ('DN', 'DT'):
         filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.concordance.tsv'))
         try:
@@ -584,8 +584,6 @@ def extract_concordance(patient, sample_type):
                         ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
             ret = None
-    else:
-        ret = None
     return ret
 
 # def extract_concordance(ID,PATIENT):
