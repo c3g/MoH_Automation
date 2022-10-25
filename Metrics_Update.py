@@ -576,7 +576,7 @@ def extract_contamination(patient, sample_type):
 
 def extract_concordance(patient, sample_type):
     if sample_type in ('DN', 'DT'):
-        filename = "".join(glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.concordance.tsv')))
+        filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.concordance.tsv'))
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
