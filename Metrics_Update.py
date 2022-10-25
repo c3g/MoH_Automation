@@ -29,7 +29,7 @@ def main():
         for index, patient in enumerate(patients, 1):
             # run_sample = extract_sample_field(connection, patient, "run")
             dna_n_sample = extract_sample_field(connection, patient, "DNA_N")
-            if dna_n_sample != "NA" and dna_n_sample != "":
+            if dna_n_sample not in ("NA", ""):
                 samples_list.append(dna_n_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_BAM_DNA_N").split("/")[7]
@@ -37,7 +37,7 @@ def main():
                     run_sample = ""
                 paired_samples_dict[dna_n_sample] = (patient, run_sample)
             dna_t_sample = extract_sample_field(connection, patient, "DNA_T")
-            if dna_t_sample != "NA" and dna_t_sample != "":
+            if dna_t_sample not in ("NA", ""):
                 samples_list.append(dna_t_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_BAM_DNA_T").split("/")[7]
@@ -45,7 +45,7 @@ def main():
                     run_sample = ""
                 paired_samples_dict[dna_t_sample] = (patient, run_sample)
             rna_sample = extract_sample_field(connection, patient, "RNA")
-            if rna_sample != "NA" and rna_sample != "":
+            if rna_sample not in ("NA", ""):
                 samples_list.append(rna_sample)
                 try:
                     run_sample = extract_fileloc_field(connection, patient, "Run_Proc_fastq_1_RNA").split("/")[7]
@@ -94,9 +94,9 @@ def extract_data(samples_list, connection, paired_samples_dict):
     #         fail=[]
     with progressbar.ProgressBar(max_value=len(samples_list), widgets=WIDGETS) as progress:
         for index, sample in enumerate(samples_list, 1):
-            # print(sample + "\n")
             patient = paired_samples_dict[sample][0]
             run = paired_samples_dict[sample][1]
+            print(sample, run + "\n")
             # sample_type = ''
             if sample.endswith('DN'):
                 sample_type = 'DN'
@@ -305,7 +305,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 elif float(rna_ribosomal_contamination_count)>0.1:
                     flags.append('WTS_rRNA_contamination')
             except (TypeError, ValueError):
-                rna_ribosomal_contamination_count = None
+                rna_ribosomal_contamination_count = "NA"
             # rRNA_count = extract_WTS_rRNA(Sample)
             # if  rRNA_count == None or rRNA_count == '' or WTS_Unique_Reads == '':
             #     WTS_rRNA_contamination = ''
@@ -406,11 +406,11 @@ def parse_run_metrics(sample, run):
                     raw_mean_insert_size = parsed_line[38]
                     raw_duplication_rate = parsed_line[15]
     except FileNotFoundError:
-        raw_reads_count = None
-        raw_mean_coverage = None
-        raw_median_insert_size = None
-        raw_mean_insert_size = None
-        raw_duplication_rate = None
+        raw_reads_count = "NA"
+        raw_mean_coverage = "NA"
+        raw_median_insert_size = "NA"
+        raw_mean_insert_size = "NA"
+        raw_duplication_rate = "NA"
     return raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate
 
 def extract_rna_ribosomal(sample):
@@ -422,7 +422,7 @@ def extract_rna_ribosomal(sample):
             fields = line.split("\t")
             ret = fields[0]
     except FileNotFoundError:
-        ret = None
+        ret = "NA"
     return ret
 
 # def extract_WTS_rRNA(ID):
@@ -445,8 +445,8 @@ def parse_rnaseqc_metrics_tmp(sample):
             rna_aligned_reads_count = lines[3].split("\t")[0]
             rna_exonic_rate = round(float(lines[7].split("\t")[1])*100, 2)
     except FileNotFoundError:
-        rna_aligned_reads_count = None
-        rna_exonic_rate = None
+        rna_aligned_reads_count = "NA"
+        rna_exonic_rate = "NA"
     return rna_aligned_reads_count, rna_exonic_rate
 
 # def extract_WTS_unique(ID):
@@ -524,7 +524,7 @@ def extract_purity(sample, patient):
             fields = line.split("\t")
             ret = float(fields[0])*100
     except FileNotFoundError:
-        ret = None
+        ret = "NA"
     return ret
 
 # def extract_purity(ID,PATIENT):
@@ -542,7 +542,7 @@ def extract_purity(sample, patient):
 
 
 def extract_contamination(patient, sample_type):
-    ret = None
+    ret = "NA"
     if sample_type in ('DN', 'DT'):
         filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.contamination.tsv'))
         try:
@@ -553,7 +553,7 @@ def extract_contamination(patient, sample_type):
                     elif line.startswith('Tumor') and sample_type == 'DT':
                         ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
-            ret = None
+            ret = "NA"
     return ret
 
 #WGS N % Contamination,WGS T % Contamination,
@@ -574,7 +574,7 @@ def extract_contamination(patient, sample_type):
 #                         return output
 
 def extract_concordance(patient, sample_type):
-    ret = None
+    ret = "NA"
     if sample_type in ('DN', 'DT'):
         filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.concordance.tsv'))
         try:
@@ -583,7 +583,7 @@ def extract_concordance(patient, sample_type):
                     if line.startswith('Concordance'):
                         ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
-            ret = None
+            ret = "NA"
     return ret
 
 # def extract_concordance(ID,PATIENT):
@@ -625,7 +625,7 @@ def extract_concordance(patient, sample_type):
 #             return float(DUPS)
 
 def extract_insert_size(sample, patient, sample_type):
-    ret = None
+    ret = "NA"
     try:
         if sample_type == 'RT':
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
@@ -642,7 +642,7 @@ def extract_insert_size(sample, patient, sample_type):
                     if parsed_line[0] == sample:
                         ret = round(float(parsed_line[7]), 0)
     except FileNotFoundError:
-        ret = None
+        ret = "NA"
     return ret
 
 # def extract_insert_size(ID,PATIENT):
@@ -669,7 +669,7 @@ def extract_dedup_coverage(sample):
             metrics = line.split(" ")
             ret = float(metrics[-1].replace('X', ''))
     except (FileNotFoundError, ValueError):
-        ret = None
+        ret = "NA"
     return ret
 
 # def extract_ded_coverage(ID,PATIENT):
@@ -691,7 +691,7 @@ def extract_dedup_coverage(sample):
 #             return float(OUTPUT)
 
 def extract_min_aln_rds(sample, patient):
-    ret = None
+    ret = "NA"
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -700,7 +700,7 @@ def extract_min_aln_rds(sample, patient):
                 if parsed_line[0] == sample:
                     ret = round(float(parsed_line[3]), 0)
     except FileNotFoundError:
-        ret = None
+        ret = "NA"
     return ret
 
 # def extract_min_aln_rds(ID,PATIENT):
@@ -766,7 +766,7 @@ def extract_bs_over_q30(sample, sample_type):
                         above_30 += int(count)
             percent_abv = round((above_30/(above_30+below_30))*100, 2)
     except FileNotFoundError:
-        percent_abv = None
+        percent_abv = "NA"
     return percent_abv
 
 # def extract_bs_over_q30(ID,PATIENT):
