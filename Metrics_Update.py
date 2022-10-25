@@ -694,9 +694,9 @@ def extract_dedup_coverage(sample):
 #             return float(OUTPUT)
 
 def extract_min_aln_rds(sample, patient):
+    ret = None
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
-        print(filename)
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split("\t")
