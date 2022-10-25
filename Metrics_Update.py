@@ -543,7 +543,7 @@ def extract_purity(sample, patient):
 
 def extract_contamination(patient, sample_type):
     if sample_type in ('DN', 'DT'):
-        filename = "".join(glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*DT.contamination.tsv')))
+        filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.contamination.tsv'))
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
