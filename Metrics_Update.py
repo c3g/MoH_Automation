@@ -394,6 +394,11 @@ def extract_data(samples_list, connection, paired_samples_dict):
             #print (Red_Flags)
 
 def parse_run_metrics(sample, run):
+    raw_reads_count = "NA"
+    raw_mean_coverage = "NA"
+    raw_median_insert_size = "NA"
+    raw_mean_insert_size = "NA"
+    raw_duplication_rate = "NA"
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics', run + '-run.align_bwa_mem.csv')
         with open(filename, 'r', encoding="utf-8") as file:
