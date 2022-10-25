@@ -94,7 +94,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
     #         fail=[]
     with progressbar.ProgressBar(max_value=len(samples_list), widgets=WIDGETS) as progress:
         for index, sample in enumerate(samples_list, 1):
-            print(sample + "\n")
+            # print(sample + "\n")
             patient = paired_samples_dict[sample][0]
             run = paired_samples_dict[sample][1]
             # sample_type = ''
@@ -696,6 +696,7 @@ def extract_dedup_coverage(sample):
 def extract_min_aln_rds(sample, patient):
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
+        print(filename)
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split("\t")
