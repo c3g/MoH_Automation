@@ -124,8 +124,7 @@ MET_LOC=$(ls $Location/*-novaseq-run.align_bwa_mem.csv)
 F_NAME=${MET_LOC##*/}
 ##########ALTER THIS###########
 #globus transfer --notify off -s size $ABA_EP:$MET_LOC $BEL_EP:/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/$F_NAME
-echo $MET_LOC '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/'$F_NAME
->>$TEMP"/"$LISTFILE;
+echo $MET_LOC '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/'$F_NAME>>$TEMP"/"$LISTFILE;
 
 # Load globus module
 module load mugqic/globus-cli/3.7.0
