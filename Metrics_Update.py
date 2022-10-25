@@ -278,7 +278,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             rna_aligned_reads_count, rna_exonic_rate = parse_rnaseqc_metrics_tmp(sample)
             try:
                 if float(rna_exonic_rate)<0.6:
-                    fail.append('WTS_Exonic_Rate')
+                    fails.append('WTS_Exonic_Rate')
                 elif float(rna_exonic_rate)<0.8:
                     flags.append('WTS_Exonic_Rate')
             except TypeError:
