@@ -17,7 +17,7 @@ def main():
     print (Mol_type)
     if Mol_type != 'DNA' and Mol_type != 'RNA':
         raise NameError('You must specify DNA or RNA')
-    
+
     #file locations.
     Output_RR = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads/"
     Work_dir = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/"
@@ -28,7 +28,7 @@ def main():
     #Input_RR = "/home/dipop/MOH/TEST/raw_reads/"
     #SQL_DB = "/home/dipop/MOH/TEST/TEST.db"
     date = datetime.date.today()
-    TIME = date.strftime("%Y-%m-%d")   
+    TIME = date.strftime("%Y-%m-%d")
     #Connect to the db
     connection = create_connection(SQL_DB)
 
@@ -60,7 +60,7 @@ def main():
             for line in Bad_Names:
                 f.write(f"{line}\n")
         print (f"We found poorly named files in {Input_RR}. A list of files that need to be corrected/reprocessed can be found at {Work_dir}bad_names.txt")
-    #RNA 
+    #RNA
     if Mol_type == 'RNA':
         #Check to see if any files have already present in the final directory
         duplicates = []
@@ -72,23 +72,23 @@ def main():
                 for line in duplicates:
                     f.write(f"{line}\n")
             print (f"We found directories in both your input {Input_RR} and the output {Output_RR} A list of files that need to be corrected/reprocessed can be found at {Work_dir}duplicates.txt. ")
-            sys.exit("Program will not produce readsets until this is solved. Exiting") 
+            sys.exit("Program will not produce readsets until this is solved. Exiting")
 
         #readset Generation
         if RNA_Samples:
             readset = []
             readset.append('Sample	Readset	LibraryType	RunType	Run	Lane	Adapter1	Adapter2	QualityOffset	BED	FASTQ1	FASTQ2	BAM\n')
             for name in RNA_Samples:
-                mylines = []                             
-                with open (f'{Input_RR}{name}/{name}_readset.tsv', 'rt') as myfile: 
-                    for myline in myfile:                
-                        mylines.append(myline)             
+                mylines = []
+                with open (f'{Input_RR}{name}/{name}_readset.tsv', 'rt') as myfile:
+                    for myline in myfile:
+                        mylines.append(myline)
                 readset = readset + mylines[1:]
             with open(f"{Work_dir}{TIME}_RNA_readset.tsv", "w+") as f:
                 for line in readset:
                     f.write(f"{line}")
                 print (f"Generated {Work_dir}{TIME}_RNA_readset.tsv")
-            
+
             #move files
             for name in RNA_Samples:
                 shutil.move(f"{Input_RR}{name}",f"{Output_RR}{name}")
@@ -118,8 +118,8 @@ def main():
                 for line in duplicates:
                     f.write(f"{line}\n")
             print (f"We found directories in both your input {Input_RR} and the output {Output_RR} A list of files that need to be corrected/reprocessed can be found at {Work_dir}duplicates.txt. ")
-            sys.exit("Program will not produce readsets or pairs until this is solved. Exiting") 
-        
+            sys.exit("Program will not produce readsets or pairs until this is solved. Exiting")
+
         #Find matching pairs
         pair_dict = {}
         #print("Normal len: " + str(len(Normal_Samples)))
@@ -135,7 +135,7 @@ def main():
                 if Sample == patient:
                     print("Pair found for sample " + Sample)
                     pair_dict[Normal] = Tumour
-        DNA_Samples = [] 
+        DNA_Samples = []
         if pair_dict:
             readset = []
             readset.append('Sample	Readset	LibraryType	RunType	Run	Lane	Adapter1	Adapter2	QualityOffset	BED	FASTQ1	FASTQ2	BAM\n')
@@ -145,17 +145,17 @@ def main():
                 tumor = pair_dict[normal]
                 DNA_Samples.append(tumor)
                 #readset
-                mylines = []                             
-                with open (f'{Input_RR}{normal}/{normal}_readset.tsv', 'rt') as myfile: 
-                    for myline in myfile:                
-                        mylines.append(myline)             
+                mylines = []
+                with open (f'{Input_RR}{normal}/{normal}_readset.tsv', 'rt') as myfile:
+                    for myline in myfile:
+                        mylines.append(myline)
                 readset = readset + mylines[1:]
-                mylines = []                             
-                with open (f'{Input_RR}{tumor}/{tumor}_readset.tsv', 'rt') as myfile: 
-                    for myline in myfile:                
-                        mylines.append(myline)             
+                mylines = []
+                with open (f'{Input_RR}{tumor}/{tumor}_readset.tsv', 'rt') as myfile:
+                    for myline in myfile:
+                        mylines.append(myline)
                 readset = readset + mylines[1:]
-               #Add to db 
+               #Add to db
                 result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", normal)
                 Sample = result.group(1)
                 Cohort = result.group(2)
