@@ -425,13 +425,13 @@ class Tool(BaseTable):
         deleted boolean
         extra_metadata json
     """
-    __tablename__ = "file"
+    __tablename__ = "tool"
 
     job_id = Column(Integer, ForeignKey("job.id"))
     name = Column(String, nullable=True, default=None)
     version = Column(String, nullable=True, default=None)
 
-    job = relationship("Job", backref="file", lazy=False)
+    job = relationship("Job", backref="tool", lazy=False)
 
     # def __init__(self, path=None, type=None, description=None, creation=None):
     #     super().__init__()
