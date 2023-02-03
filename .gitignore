@@ -50,3 +50,6 @@ Thumbs.db
 
 # Test file
 test.py
+
+# Specific scripts
+manually_transferring_run46_TP.sh
