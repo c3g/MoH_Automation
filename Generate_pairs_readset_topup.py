@@ -119,21 +119,24 @@ def main():
                 if not args.dry_run:
                     # Move file
                     rna_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample))
-                    # for file_name in rna_files:
-                    #     shutil.move(os.path.join(beluga_transferred_raw_reads_folder, file_name), os.path.join(beluga_main_raw_reads_folder, rna_sample))
-                    # Update_Samples_Table(
-                    #     connection,
-                    #     patient,
-                    #     patient,
-                    #     institution,
-                    #     cohort,
-                    #     "NA",
-                    #     "NA",
-                    #     "NA",
-                    #     "NA",
-                    #     rna_sample,
-                    #     rna_sample
-                    #     )
+                    for file_name in rna_files:
+                        # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample, file_name))
+                        shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample, file_name), os.path.join(beluga_main_raw_reads_folder, rna_sample))
+                    os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample))
+                    # Update database
+                    Update_Samples_Table(
+                        connection,
+                        patient,
+                        patient,
+                        institution,
+                        cohort,
+                        "NA",
+                        "NA",
+                        "NA",
+                        "NA",
+                        rna_sample,
+                        rna_sample
+                        )
                 # else:
                 #     print(" ".join([sample.sample for _, sample in sample.items()]))
             # if not args.dry_run:
@@ -223,25 +226,29 @@ def main():
                     if not args.dry_run:
                         # Move file
                         dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n))
-                        # for file_name in dna_n_files:
-                        #     shutil.move(os.path.join(beluga_transferred_raw_reads_folder, file_name), os.path.join(beluga_main_raw_reads_folder, sample_n))
+                        for file_name in dna_n_files:
+                            # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n, file_name))
+                            shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, sample_n))
+                        os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n))
                         dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
-                        # for file_name in dna_t_files:
-                        #     shutil.move(os.path.join(beluga_transferred_raw_reads_folder, file_name), os.path.join(beluga_main_raw_reads_folder, sample_t))
+                        for file_name in dna_t_files:
+                            # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name))
+                            shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, sample_t))
+                        os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
                         # Update database
-                        # Update_Samples_Table(
-                        #     connection,
-                        #     patient,
-                        #     patient,
-                        #     institution,
-                        #     cohort,
-                        #     sample_n,
-                        #     sample_n,
-                        #     sample_t,
-                        #     sample_t,
-                        #     "NA",
-                        #     "NA"
-                        #     )
+                        Update_Samples_Table(
+                            connection,
+                            patient,
+                            patient,
+                            institution,
+                            cohort,
+                            sample_n,
+                            sample_n,
+                            sample_t,
+                            sample_t,
+                            "NA",
+                            "NA"
+                            )
                     # else:
                     #     print(" ".join([sample.sample for _, sample in sample.items()]))
                 # Topup not pair
@@ -281,8 +288,10 @@ def main():
                         if not args.dry_run:
                             # Move file
                             dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
-                            # for file_name in dna_n_files:
-                            #     shutil.move(os.path.join(beluga_transferred_raw_reads_folder, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n))
+                            for file_name in dna_n_files:
+                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name))
+                                shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n))
+                            os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
                     # else:
                     #     print(" ".join([sample.sample for _, sample in sample.items()]))
                 elif sample_t:
@@ -321,8 +330,10 @@ def main():
                         if not args.dry_run:
                             # Move file
                             dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
-                            # for file_name in dna_t_files:
-                            #     shutil.move(os.path.join(beluga_transferred_raw_reads_folder, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
+                            for file_name in dna_t_files:
+                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name))
+                                shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
+                            os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
                         # else:
                         #     print(" ".join([sample.sample for _, sample in sample.items()]))
             # if not args.dry_run:

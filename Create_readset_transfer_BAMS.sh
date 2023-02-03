@@ -44,18 +44,19 @@ for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         # Make the oneliner readset file
         touch "$TEMP/"$readset_name"_readset.tsv";
         echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/"$readset_name"_readset.tsv";
-        DETAILS=$(cat "$Location"*run.csv|grep $sample_name;)
-        RUNTYPE=$( echo $DETAILS | awk -F "\"*,\"*" '{print $4}' )
-        RUNID=$( echo $DETAILS | awk -F "\"*,\"*" '{print $2}' )
-        LANE=$( echo $DETAILS | awk -F "\"*,\"*" '{print $3}' )
-        ADAP1=$( echo $DETAILS | awk -F "\"*,\"*" '{print $28}' )
-        ADAP2=$( echo $DETAILS | awk -F "\"*,\"*" '{print $29}' )
+        DETAILS=$(cat "$Location"*run.csv | grep $sample_name;)
+        RUN_NAME=$(echo $DETAILS | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
+        RUNTYPE=$(echo $DETAILS | awk -F "\"*,\"*" '{print $4}')
+        RUNID=$(echo $DETAILS | awk -F "\"*,\"*" '{print $2}')
+        LANE=$(echo $DETAILS | awk -F "\"*,\"*" '{print $3}')
+        ADAP1=$(echo $DETAILS | awk -F "\"*,\"*" '{print $28}')
+        ADAP2=$(echo $DETAILS | awk -F "\"*,\"*" '{print $29}')
         QUAL_OF=33
         BED=""
         BAM="raw_reads/"$sample_name"/"$file_name
         FASTQ1=""
         FASTQ2=""
-        echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUNID"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
+        echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUN_NAME"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
         # Adding readset to be transferred in a list file
         echo $TEMP"/"$readset_name"_readset.tsv" $BEL_LOC$sample_name"/"$readset_name"_readset.tsv">>$TEMP"/"$LISTFILE;
         # Adding bam to be transferred in a list file
@@ -84,6 +85,7 @@ for i in "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         touch "$TEMP/"$readset_name"_readset.tsv";
         echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/"$readset_name"_readset.tsv";
         DETAILS=$(cat "$Location"*run.csv|grep $sample_name)
+        RUN_NAME=$(echo $DETAILS | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$( echo $DETAILS | awk -F "\"*,\"*" '{print $4}' )
         RUNID=$( echo $DETAILS | awk -F "\"*,\"*" '{print $2}' )
         LANE=$( echo $DETAILS | awk -F "\"*,\"*" '{print $3}' )
@@ -94,7 +96,7 @@ for i in "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         BAM=""
         FASTQ1="raw_reads/"$sample_name"/"$file_name1
         FASTQ2="raw_reads/"$sample_name"/"$file_name2
-        echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUNID"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
+        echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUN_NAME"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
 
         # Adding readset to be transferred in a list file
         echo $TEMP"/"$readset_name"_readset.tsv" $BEL_LOC$sample_name"/"$readset_name"_readset.tsv">>$TEMP"/"$LISTFILE;
