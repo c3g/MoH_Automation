@@ -13,7 +13,7 @@ WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), '
 
 def main():
     # widgets = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
-    connection = create_connection(r"/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
 
     patients = extract_sample_names(connection)
     #TEST CASE
@@ -240,7 +240,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             #     fail.append('WGS_Contamination')
 
             #Concordance
-            dna_concordance = extract_concordance(patient, sample_type)
+            dna_concordance = extract_concordance(patient, sample, sample_type)
             try:
                 if float(dna_concordance)<99:
                     fails.append('Concordance')
@@ -405,11 +405,16 @@ def parse_run_metrics(sample, run):
             for line in file:
                 parsed_line = line.split(",")
                 if sample == parsed_line[6]:
-                    raw_reads_count = parsed_line[12]
-                    raw_mean_coverage = parsed_line[41]
-                    raw_median_insert_size = parsed_line[37]
-                    raw_mean_insert_size = parsed_line[38]
-                    raw_duplication_rate = parsed_line[15]
+                    if parsed_line[12]:
+                        raw_reads_count = parsed_line[12]
+                    if parsed_line[41]:
+                        raw_mean_coverage = parsed_line[41]
+                    if parsed_line[37]:
+                        raw_median_insert_size = parsed_line[37]
+                    if parsed_line[38]:
+                        raw_mean_insert_size = parsed_line[38]
+                    if parsed_line[15]:
+                        raw_duplication_rate = parsed_line[15]
     except FileNotFoundError:
         raw_reads_count = "NA"
         raw_mean_coverage = "NA"
@@ -549,14 +554,15 @@ def extract_purity(sample, patient):
 def extract_contamination(patient, sample_type):
     ret = "NA"
     if sample_type in ('DN', 'DT'):
-        filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.contamination.tsv'))
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*.contamination.tsv')
         try:
-            with open(filename, 'r', encoding="utf-8") as file:
-                for line in file:
-                    if line.startswith('Normal') and sample_type == 'DN':
-                        ret = line.split(" ")[-1][:-2]
-                    elif line.startswith('Tumor') and sample_type == 'DT':
-                        ret = line.split(" ")[-1][:-2]
+            for filen in glob.glob(filename):
+                with open(filen, 'r', encoding="utf-8") as file:
+                    for line in file:
+                        if line.startswith('Normal') and sample_type == 'DN':
+                            ret = line.split(" ")[-1][:-2]
+                        elif line.startswith('Tumor') and sample_type == 'DT':
+                            ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
             ret = "NA"
     return ret
@@ -578,16 +584,29 @@ def extract_contamination(patient, sample_type):
 #                     elif words[0].startswith('T') and ID.endswith('T'):
 #                         return output
 
-def extract_concordance(patient, sample_type):
+def extract_concordance(patient, sample, sample_type):
     ret = "NA"
-    if sample_type in ('DN', 'DT'):
-        filename = "".join(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '.concordance.tsv'))
+    if sample_type == 'DT':
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', sample + '.concordance.tsv')
         try:
             with open(filename, 'r', encoding="utf-8") as file:
                 for line in file:
                     if line.startswith('Concordance'):
                         ret = line.split(" ")[-1][:-2]
         except FileNotFoundError:
+            ret = "NA"
+    elif sample_type == 'DN':
+        filename = glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', f"{patient}-*DT.concordance.tsv"))
+        # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
+        # It has to print nothing to be ok, otherwise it means a manual check is required.
+        # if len(filename) > 1:
+        #     print(sample)
+        try:
+            with open(filename[0], 'r', encoding="utf-8") as file:
+                for line in file:
+                    if line.startswith('Concordance'):
+                        ret = line.split(" ")[-1][:-2]
+        except (FileNotFoundError, IndexError):
             ret = "NA"
     return ret
 
@@ -702,7 +721,7 @@ def extract_min_aln_rds(sample, patient):
         with open(filename, 'r', encoding="utf-8") as file:
             for line in file:
                 parsed_line = line.split("\t")
-                if parsed_line[0] == sample:
+                if parsed_line[0] == sample and parsed_line[3]:
                     ret = round(float(parsed_line[3]), 0)
     except FileNotFoundError:
         ret = "NA"
