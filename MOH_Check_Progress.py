@@ -790,7 +790,7 @@ def main():
     print("Committing changes to Database...")
     connection.commit()
     connection.close()
-    print("Done.")
+    print("...Done.")
 
 
 if __name__ == '__main__':

@@ -78,7 +78,7 @@ def main():
     print("Committing changes to Database...")
     connection.commit()
     connection.close()
-    print("Done.")
+    print("...Done.")
 
 def extract_data(samples_list, connection, paired_samples_dict):
     print("Updating metrics in Database by Sample...")
