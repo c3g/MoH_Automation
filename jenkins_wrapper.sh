@@ -30,9 +30,9 @@ echo "Running Create_CSVs.sh ..."
 echo -e "Done.\n"
 
 # Make sure previous job is done interacting with db
-sleep 30
+# sleep 30
 
 ##################################################
 # STEP 4: Deliver data
-echo "Running MOH_ln_output.py ..."
-./MOH_ln_output.py
+#echo "Running MOH_ln_output.py ..."
+#./MOH_ln_output.py

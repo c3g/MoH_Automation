@@ -6,6 +6,9 @@ import os
 import datetime
 import progressbar
 import pandas as pd
+import markdown
+from pymdownx import emoji
+
 from  DB_OPS import (
     create_connection,
     extract_sample_metrics,
@@ -17,14 +20,41 @@ from  DB_OPS import (
 
 WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
 
+extensions = [
+    'markdown.extensions.tables',
+    'pymdownx.magiclink',
+    'pymdownx.betterem',
+    'pymdownx.tilde',
+    'pymdownx.emoji',
+    'pymdownx.tasklist',
+    'pymdownx.superfences',
+    'pymdownx.saneheaders',
+    'footnotes'
+]
+
+extension_configs = {
+    "pymdownx.magiclink": {
+        "repo_url_shortener": True,
+        "repo_url_shorthand": True,
+        "provider": "github",
+        "user": "facelessuser",
+        "repo": "pymdown-extensions"
+    },
+    "pymdownx.tilde": {
+        "subscript": False
+    },
+    "pymdownx.emoji": {
+        "emoji_index": emoji.emojione,
+        "emoji_generator": emoji.to_png_sprite,
+    }
+}
+
 def main():
     parser = argparse.ArgumentParser(prog='MOH_ln_output.py', description="Hardlinks files matching criterias into /lustre03/project/6007512/C3G/projects/share/MOH for delivery.")
     parser.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
-    # Test String
-    # patients = ["MoHQ-CM-3-1-17057-1D","MoHQ-CM-3-2-61285-1D","MoHQ-CM-1-9-2804-1-D"]
     patients = extract_sample_names(connection)
 
     black_list = []
@@ -34,39 +64,30 @@ def main():
                 black_list.append(line.strip())
 
     patients = list(filter(lambda i: i not in black_list, patients))
-    # print(patients)
 
-    # exit()
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
         for index, patient in enumerate(patients, 1):
-            # if patient != "MoHQ-MU-16-4":
             sample = SampleData(connection, patient)
-            # print(f"{sample.Sample} {sample.DNA_N} {sample.DNA_T}")
             # Check if samples reach the threashold for delivery
             # Check that DNA_T dedup coverage is over 80
             # Check that DNA_N dedup coverage is over 30
             # Check that processing is complete
             # Check that RNA spots is over 100000000
-            # if sample.rna not in ("MoHQ-GC-17-197-OC1-1RT", "MoHQ-GC-17-749-OC1-1RT", "MoHQ-GC-17-997-OC1-1RT"):
             dna = False
             rna = False
-            # print(f"\n{sample.dna_n} {sample.dna_t}")
             if  extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
                 dna = False
             elif float(extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage")) > 80:
-                # print(patient, sample.dna_n, extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage"), sample.dna_t, extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage"), sep=",")
                 dna = True
             if  extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
                 rna = False
-            elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 100000000:
+            elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 80000000:
                 rna = True
-                # print(sample.rna)
 
-            # if patient == "MoHQ-JG-9-5":
-            #     print(dna)
             # Folders used for Delivery
             # base_folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/' # Base Folder
             out_folder = '/lustre03/project/6007512/C3G/projects/share/MOH' # Output Folder
+            # out_folder = '/scratch/stretenp/MOH' # Output Folder
             # Contains Warnings.txt Readme.txt Log.txt and all subfolders
             out_folder = os.path.join(out_folder, sample.institution, sample.cohort, sample.sample_true)
             # Contains raw bams and fastqs
@@ -92,53 +113,53 @@ def main():
             updated = False
             old_log = {}
             # See if the directory is created and if so check for file updates.
-            log = os.path.join(out_folder, "log.txt")
-            warn = os.path.join(out_folder, "Warnings.txt")
-            if os.path.isdir(out_folder):
-                # Load the log file into a dictionary for checking if updates are necessary.
+            log = os.path.join(out_folder, "log.csv")
+            warning_file = os.path.join(out_folder, "Warnings.html")
+            readme_file = os.path.join(out_folder, "Readme.html")
+            methods_file = os.path.join(out_folder, "Methods.html")
+            key_metrics_file = os.path.join(out_folder, "Key_metrics.csv")
+
+            os.makedirs(out_folder, exist_ok=True)
+
+            # Load the log file into a dictionary for checking if updates are necessary.
+            try:
                 with open(log, "r") as log_in:
                     #print("logging")
                     for line in log_in:
                         line.rstrip()
                         fields = line.split(",")
                         old_log[fields[0]] = fields[1]
-                #log = open(os.path.join(out_folder, "log.txt"), "a")
-
-            elif dna or rna:
-                os.makedirs(out_folder)
-                os.makedirs(raw_folder)
-                os.makedirs(var_folder)
-                os.makedirs(raw_cnv_folder)
-                os.makedirs(cal_folder)
-                os.makedirs(align_folder)
-                os.makedirs(param_folder)
-                # os.makedirs(tracks_folder)
-                os.makedirs(reports_folder)
-                os.makedirs(pcgr_folder)
-                os.makedirs(expression_folder)
-
-                # Populate the general files
+            except FileNotFoundError:
                 with open(log, "w") as log_file:
-                    log_file.write("File,File_Creation_Date,Date_Added,Details\n")
+                    log_file.write("File,Creation,Delivery,Details\n")
 
-                generate_readme(out_folder, sample.sample_true, sample.dna_n, sample.dna_t, sample.rna)
-                log_new("Readme.txt", log, None, "Created")
+            # elif dna or rna:
+            #     os.makedirs(out_folder, exist_ok=True)
+            #     # os.makedirs(tracks_folder)
+            #     # Populate the general files
+            #     with open(log, "w") as log_file:
+            #         log_file.write("File,Creation,Delivery,Details\n")
+
             # else:
             #     continue
 
             # Populate dna data
             if dna:
+                os.makedirs(raw_folder, exist_ok=True)
                 beluga_bam_dna_n = extract_fileloc_field(connection, sample.sample, "Beluga_BAM_DNA_N")
                 updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{sample.dna_n}.bam", log, updated, old_log)
                 beluga_bam_dna_t = extract_fileloc_field(connection, sample.sample, "Beluga_BAM_DNA_T")
                 updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{sample.dna_t}.bam", log, updated, old_log)
 
+                os.makedirs(var_folder, exist_ok=True)
                 dna_vcf_g = extract_fileloc_field(connection, sample.sample, "DNA_VCF_G")
                 updated = get_link_log(dna_vcf_g, var_folder, f"{sample.sample_true}.ensemble.germline.vt.annot.vcf.gz", log, updated, old_log)
                 dna_vcf_s = extract_fileloc_field(connection, sample.sample, "DNA_VCF_S")
                 updated = get_link_log(dna_vcf_s, var_folder, f"{sample.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
+
+                os.makedirs(cal_folder, exist_ok=True)
                 mutect2_germline_vcf = extract_fileloc_field(connection, sample.sample, "Mutect2_Germline_vcf")
-                updated = get_link_log(mutect2_germline_vcf, cal_folder, f"{sample.sample_true}.mutect2.germline.vcf.gz", log, updated, old_log)
+                updated = get_link_log(mutect2_germline_vcf, cal_folder, f"{sample.sample_true}.mutect2.germline.vt.vcf.gz", log, updated, old_log)
                 mutect2_somatic_vcf = extract_fileloc_field(connection, sample.sample, "Mutect2_Somatic_vcf")
                 updated = get_link_log(mutect2_somatic_vcf, cal_folder, f"{sample.sample_true}.mutect2.somatic.vt.vcf.gz", log, updated, old_log)
                 strelka2_germline_vcf = extract_fileloc_field(connection, sample.sample, "strelka2_Germline_vcf")
@@ -153,9 +174,12 @@ def main():
                 updated = get_link_log(varscan2_germline_vcf, cal_folder, f"{sample.sample_true}.varscan2.germline.vt.vcf.gz", log, updated, old_log)
                 varscan2_somatic_vcf = extract_fileloc_field(connection, sample.sample, "varscan2_Somatic_vcf")
                 updated = get_link_log(varscan2_somatic_vcf, cal_folder, f"{sample.sample_true}.varscan2.somatic.vt.vcf.gz", log, updated, old_log)
+
+                os.makedirs(raw_cnv_folder, exist_ok=True)
                 cnvkit_vcf = extract_fileloc_field(connection, sample.sample, "cnvkit_vcf")
                 updated = get_link_log(cnvkit_vcf, raw_cnv_folder, f"{sample.sample_true}.cnvkit.vcf.gz", log, updated, old_log)
-                # Add md5s and index
+
+                os.makedirs(align_folder, exist_ok=True)
                 final_dna_bam_n = extract_fileloc_field(connection, sample.sample, "Final_DNA_BAM_N")
                 updated = get_link_log(final_dna_bam_n, align_folder, f"{sample.dna_n}.bam", log, updated, old_log)
                 if final_dna_bam_n != "NA":
@@ -175,11 +199,13 @@ def main():
                     if os.path.exists(final_dna_bam_t_md5):
                         updated = get_link_log(final_dna_bam_t_md5, align_folder, f"{sample.dna_t}.bam.md5", log, updated, old_log)
 
+                os.makedirs(reports_folder, exist_ok=True)
                 dna_multiqc = extract_fileloc_field(connection, sample.sample, "DNA_MultiQC")
                 updated = get_link_log(dna_multiqc, reports_folder, f"{sample.sample_true}_D.multiqc.html", log, updated, old_log)
                 pcgr_report = extract_fileloc_field(connection, sample.sample, "pcgr_report")
                 updated = get_link_log(pcgr_report, reports_folder, f"{sample.sample_true}.pcgr.html", log, updated, old_log)
 
+                os.makedirs(pcgr_folder, exist_ok=True)
                 pcgr_maf = extract_fileloc_field(connection, sample.sample, "pcgr_maf")
                 updated = get_link_log(pcgr_maf, pcgr_folder, f"{sample.sample_true}.acmg.grch38.maf", log, updated, old_log)
                 pcgr_snvs_indels = extract_fileloc_field(connection, sample.sample, "pcgr_snvs_indels")
@@ -187,16 +213,18 @@ def main():
                 pcgr_cna_segments = extract_fileloc_field(connection, sample.sample, "pcgr_cna_segments")
                 updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{sample.sample_true}.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
 
+                os.makedirs(param_folder, exist_ok=True)
                 tp_ini = extract_fileloc_field(connection, sample.sample, "TP_ini")
                 updated = get_link_log(tp_ini, param_folder, f"{sample.sample_true}.TumourPair.ini", log, updated, old_log)
 
             if rna:
-                # print ("rna_TEST")
+                os.makedirs(raw_folder, exist_ok=True)
                 beluga_fastq_1_rna = extract_fileloc_field(connection, sample.sample, "Beluga_fastq_1_RNA")
                 updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{sample.rna}_R1.fastq.gz", log, updated, old_log)
                 beluga_fastq_2_rna = extract_fileloc_field(connection, sample.sample, "Beluga_fastq_2_RNA")
                 updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{sample.rna}_R2.fastq.gz", log, updated, old_log)
 
+                os.makedirs(expression_folder, exist_ok=True)
                 rna_abundance = extract_fileloc_field(connection, sample.sample, "RNA_Abundance")
                 updated = get_link_log(rna_abundance, expression_folder, f"{sample.rna}.abundance_transcripts.tsv", log, updated, old_log)
                 if rna_abundance != "NA":
@@ -205,10 +233,12 @@ def main():
                         updated = get_link_log(rna_abundance_genes, expression_folder, f"{sample.rna}.abundance_genes.tsv", log, updated, old_log)
 
                 # Not implemented yet
+                # os.makedirs(var_folder, exist_ok=True)
                 # rna_vcf = extract_fileloc_field(connection, sample.sample, "RNA_VCF")
                 # updated = get_link_log(rna_vcf, var_folder, f"{sample.rna}.rna.hc.vcf.gz", log, updated, old_log)
 
                 # Not implemented yet
+                # os.makedirs(align_folder, exist_ok=True)
                 # final_rna_bam_variants = extract_fileloc_field(connection, sample.sample, "Final_RNA_BAM_variants")
                 # updated = get_link_log(final_rna_bam_variants, align_folder, f"{sample.rna}.variants.bam", log, updated, old_log)
                 # if final_rna_bam_variants != "NA":
@@ -220,6 +250,7 @@ def main():
                 #         updated = get_link_log(final_rna_bam_md5, align_folder, f"{sample.rna}.bam.md5", log, updated, old_log)
 
                 # Not implemented yet
+                # os.makedirs(reports_folder, exist_ok=True)
                 # rna_multiqc = extract_fileloc_field(connection, sample.sample, "RNA_MultiQC")
                 # updated = get_link_log(rna_multiqc, reports_folder, f"{sample.sample_true}_R.multiqc.html", log, updated, old_log)
                 # annofuse = extract_fileloc_field(connection, sample.sample, "AnnoFuse")
@@ -227,6 +258,7 @@ def main():
                 # gridss = extract_fileloc_field(connection, sample.sample, "GRIDSS")
                 # updated = get_link_log(gridss, reports_folder, f"{sample.rna}.gridss", log, updated, old_log)
 
+                os.makedirs(param_folder, exist_ok=True)
                 rna_expression_ini = extract_fileloc_field(connection, sample.sample, "RNA_Abundance_ini")
                 updated = get_link_log(rna_expression_ini, param_folder, f"{sample.sample_true}.RNA.Light.ini", log, updated, old_log)
                 # Not implemented yet
@@ -235,31 +267,37 @@ def main():
 
             # Not implemented yet
             # if rna and dna:
+            #     os.makedirs(var_folder, exist_ok=True)
             #     final_vcf = extract_fileloc_field(connection, sample.sample, "Final_VCF")
             #     updated = get_link_log(final_vcf, var_folder, f"{sample.sample_true}.vcf.gz", log, updated, old_log)
 
             # If any updates were made, Delete the old warning file and populate a new one.
             if updated:
-                if os.path.exists(warn):
-                    os.remove(warn)
-                    log_new("Warnings.txt", log, None, "Updated")
-                    log_new("Key_metrics.csv", log, None, "Updated")
-                else:
-                    log_new("Warnings.txt", log, None, "Created")
-                    log_new("Key_metrics.csv", log, None, "Updated")
-
+                # print(f" {sample.sample}")
                 # Add key metrics table for samples
+                get_local_file_log(key_metrics_file, log, updated, old_log)
                 metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{sample.dna_n}" or Sample="{sample.dna_t}" or Sample="{sample.rna}"', connection)
-                metrics.to_csv(f"{reports_folder}.{sample.sample_true}.Key_metrics.csv", index=False)
+                metrics.to_csv(key_metrics_file, index=False)
 
                 # Add warnings file
+                warnings_l = []
                 warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{sample.dna_n}" or Sample="{sample.dna_t}" or Sample="{sample.rna}"', connection)
-                warnings.to_csv(warn, index=False)
-                with open(warn, 'r+') as warnings_file:
-                    content = warnings_file.read()
-                    warnings_file.seek(0)
-                    warnings_file.write("Below are three columns, \"Flags\" indicates values that may be troublesome while \"Fails\" indicates a point of failure. Data may be useable when marked as \"Flags\", but \"Fails\" marked data should be carefully considered. If nothing is present, this data exceeded all standards.\n Data will not be delivered when coverage is labelled \"Fails\" at this time.\n" + content)
-            #log.close()
+                for _, row in warnings.iterrows():
+                    sample_name = row["Sample"]
+                    flags = " - ".join(row["Flags"].split(";"))
+                    fails = " - ".join(row["Fails"].split(";"))
+                    warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
+                get_local_file_log(warning_file, log, updated, old_log)
+                generate_warning(warning_file, warnings_l)
+
+                # Add methods file
+                get_local_file_log(methods_file, log, updated, old_log)
+                generate_methods(methods_file)
+
+                # Add readme file
+                get_local_file_log(readme_file, log, updated, old_log)
+                generate_readme(readme_file, sample.sample_true, sample.dna_n, sample.dna_t, sample.rna)
+
             progress.update(index)
 
 # Key function. Basiclly updates the logs and links the files based on the database.
@@ -267,19 +305,48 @@ def get_link_log(input_file, output_folder, output_file, log, updated, old_log):
     # data = extract_fileloc_field(connection, name, column)
     if input_file != "NA":
         new_time = getime(input_file)
-        #Portion for updating files if they have been modified
+        # Portion for updating files if they have been modified
         if os.path.exists(os.path.join(output_folder, output_file)):
-            old_time = old_log[output_file]
+            try:
+                old_time = old_log[os.path.join(os.path.basename(output_folder), output_file)]
+            except KeyError:
+                old_time = getime(input_file)
+                log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             if old_time != new_time:
                 os.remove(os.path.join(output_folder, output_file))
                 os.link(input_file, os.path.join(output_folder, output_file))
-                log_new(output_file, log, new_time, "Updated")
+                log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "Updated")
                 updated = True
         else:
             os.link(input_file, os.path.join(output_folder, output_file))
-            log_new(output_file, log, new_time, "File Added")
+            log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             updated = True
     return updated
+
+def get_local_file_log(file, log, updated, old_log):
+    #Portion for updating files if they have been modified
+    if os.path.exists(file):
+        new_time = getime(file)
+        old_time = old_log[os.path.basename(file)]
+        if old_time != new_time:
+            log_new(os.path.basename(file), log, new_time, "Updated")
+            updated = True
+    else:
+        log_new(os.path.basename(file), log, datetime.datetime.today().strftime("%Y/%m/%d"), "New")
+        updated = True
+    return updated
+
+def log_new(file, log, file_date, message):
+    """Update this!!!"""
+    if not file_date:
+        file_date = datetime.date.today()
+        file_date = file_date.strftime("%Y/%m/%d")
+    today = datetime.date.today()
+    date = today.strftime("%Y/%m/%d")
+    # print(file + "," + file_date + "," + date + "," + f"{message}")
+    data = file + "," + file_date + "," + date + "," + f"{message}\n"
+    with open(log, "a") as log_file:
+        log_file.write(data)
 
 def getime(path):
     """Finding timestamp from file"""
@@ -306,87 +373,155 @@ class SampleData:
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
+def generate_warning(warn_file, warnings_l):
+    warnings = "\n".join(warnings_l)
+    data = f"""Below are three columns, "Flags" indicates values that may be troublesome while "Fails" indicates a point of failure. Data may be useable when marked as "Flags", but "Fails" marked data should be carefully considered. If "NA" is present, this data exceeded all standards. Data will not be delivered when coverage is labelled "Fails" at this time.
 
-def log_new(file, log, file_date, message):
-    """Update this!!!"""
-    if not file_date:
-        file_date = datetime.date.today()
-        file_date = file_date.strftime("%Y/%m/%d")
-    today = datetime.date.today()
-    date = today.strftime("%Y/%m/%d")
-    # print(file + "," + file_date + "," + date + "," + f"{message}")
-    data = file + "," + file_date + "," + date + "," + f"{message}\n"
-    with open(log, "a") as log_file:
-        log_file.write(data)
+|  Sample | &nbsp; Flags &nbsp; | &nbsp; Fails |
+| :------ | :------------------ | :----------- |
+{warnings}
+"""
+    html = markdown.markdown(data, extensions=extensions, extension_configs=extension_configs)
+    with open(warn_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
+        out_file.write(html)
 
+def file_exist_check(file):
+    ret = ""
+    if os.path.exists(file):
+        ret = ":white_check_mark:"
+    else:
+        ret = ":clock2:"
+    return ret
 
-
-def generate_readme(location, patient, dna_n, dna_t, rna):
+def generate_readme(readme_file, patient, dna_n, dna_t, rna):
     # Add timestamp
+    out_folder = os.path.dirname(readme_file)
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
-    data = f"""This directory contains the delivered data for {patient} processed by the Canadian Centre for Computational Genomics.
+    data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
-Within this directory you will find the results of the analysis for a single patient contained in 7 subdirectories and three files:
+Within this directory you will find the results of the analysis for a single patient contained in 7 subdirectories and 6 files (when :white_check_mark: is present the file is available, when :clock2: is present the file is coming soon):
 
-Readme.txt      This file
-log.txt         Log file containing the dates of transfers and if files have been updated
-Warnings.txt    Contains details of any warnings and whether they caused a failure of this analysis
+* `Readme.html` *This file* :white_check_mark:
+* `log.csv` *Log file containing the dates of transfers and if files have been updated* {file_exist_check(os.path.join(out_folder, "log.csv"))}
+* [`Warnings.html`](Warnings.html) *Contains details of any warnings and whether they caused a failure of this analysis* {file_exist_check(os.path.join(out_folder, "Warnings.html"))}
+* [`Methods.html`](Methods.html) *Contains details on pipelines and references used for the analysis* {file_exist_check(os.path.join(out_folder, "Methods.html"))}
+* `Key_metrics.csv` *File with metrics for the patient in csv format* {file_exist_check(os.path.join(out_folder, "Key_metrics.csv"))}
+* `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*
+    * `{dna_n}.bam` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{dna_n}.bam"))}
+    * `{dna_t}.bam` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{dna_t}.bam"))}
+    * `{rna}_R1.fastq.gz` *Raw RNA R1 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R1.fastq.gz"))}
+    * `{rna}_R2.fastq.gz` *Raw RNA R2 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R2.fastq.gz"))}
+* `variants/` *Contains the vcfs related to variant calls*
+    * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz"))}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz"))}
+    * `{patient}.rna.hc.vcf.gz` *Variants found using RNA sample (:warning: Not yet available)*
+    * `{patient}.vcf.gz` *Contains the results of all callers for both DNA and RNA (:warning: Not yet available)*
+    * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
+        * `{patient}.mutect2.germline.vt.vcf.gz` *Germline results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.germline.vt.vcf.gz"))}
+        * `{patient}.mutect2.somatic.vt.vcf.gz` *Somatic results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.somatic.vt.vcf.gz"))}
+        * `{patient}.strelka2.germline.vt.vcf.gz` *Germline results for strelka2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.strelka2.germline.vt.vcf.gz"))}
+        * `{patient}.strelka2.somatic.vt.vcf.gz` *Somatic results for strelka2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.strelka2.somatic.vt.vcf.gz"))}
+        * `{patient}.vardict.germline.vt.vcf.gz` *Germline results for vardict* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.vardict.germline.vt.vcf.gz"))}
+        * `{patient}.vardict.somatic.vt.vcf.gz` *Somatic results for vardict* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.vardict.somatic.vt.vcf.gz"))}
+        * `{patient}.varscan2.germline.vt.vcf.gz` *Germline results for varscan2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.varscan2.germline.vt.vcf.gz"))}
+        * `{patient}.varscan2.somatic.vt.vcf.gz` *Somatic results for varscan2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.varscan2.somatic.vt.vcf.gz"))}
+* `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
+    * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz"))}
+* `alignment/` *Contains the alignment data for each sample*
+    * `{dna_n}.bam` *Alignment of normal against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_n}.bam"))}
+    * `{dna_n}.bam.bai` *Index of Alignment of normal against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_n}.bam.bai"))}
+    * `{dna_t}.bam` *Alignment of tumor against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_t}.bam"))}
+    * `{dna_t}.bam.bai` *Index of Alignment of tumor against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_t}.bam.bai"))}
+    * `{rna}.variants.bam` *Alignment of tumor RNA against the reference used in variants analysis (:warning: Not yet available)*
+    * `{rna}.variants.bam.bai` *Index of Alignment of tumor RNA against the reference used in variants analysis (:warning: Not yet available)*
+* `expression/` *Contains the transcripts and genes abundance estimation from Kallisto*
+    * `{rna}.abundance_transcripts.tsv` *Table with transcript abundance from Kallisto* {file_exist_check(os.path.join(out_folder, "expression", f"{rna}.abundance_transcripts.tsv"))}
+    * `{rna}.abundance_genes.tsv` *Table with gene abundance from Kallisto* {file_exist_check(os.path.join(out_folder, "expression", f"{rna}.abundance_genes.tsv"))}
+* `reports/` *Contains the reports for the experiment*
+    * [`{patient}_D.multiqc.html`](reports/{patient}_D.multiqc.html) *QC report for the DNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.multiqc.html"))}
+    * `{patient}_R.multiqc.html` *QC report for the RNA analysis (:warning: Not yet available)*
+    * [`{patient}.pcgr.html`](reports/{patient}.pcgr.html) *Personal Cancer Genome Reporter report; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}.pcgr.html"))}
+    * `{rna}.anno_fuse` *Report for fusions detected using RNA (:warning: Not yet available)*
+    * `{patient}.gridss` *Annotated structural variant calls with GRIDSS (:warning: Not yet available)*
+    * `{patient}.Key_metrics.csv` *Metrics used to determine whether the analysis was successful (:warning: Not yet available)*
+    * `pcgr/` *Contains raw tables used to generate PCGR report*
+        * `{patient}.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.maf"))}
+        * `{patient}.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.snvs_indels.tiers.tsv"))}
+        * `{patient}.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.cna_segments.tsv.gz"))}
+* `parameters/` *Contains the records of all the Parameters used in the pipeline analysis*
+    * `{patient}.TumourPair.ini` *Parameters used in the tumor pair analysis* {file_exist_check(os.path.join(out_folder, "parameters", f"{patient}.TumourPair.ini"))}
+    * `{patient}.RNA.Light.ini` *Parameters used in the RNA expression analysis* {file_exist_check(os.path.join(out_folder,"parameters", f"{patient}.RNA.Light.ini"))}
+    * `{patient}.RNA.Variants.ini` *Parameters used in the RNA variant analysis (:warning: Not yet available)*
 
-raw_data/               Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.
-    {dna_n}.bam         Raw DNA reads for the Normal sample
-    {dna_t}.bam         Raw DNA reads for the Tumor sample
-    {rna}.fastq         Raw RNA reads for the Tumor sample
+Generated {timestamp}."""
+    html = markdown.markdown(data, extensions=extensions, extension_configs=extension_configs)
+    with open(readme_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
+        out_file.write(html)
 
-variants/                                       Contains the vcfs related to variant calls
-    {patient}.ensemble.germline.vt.annot.vcf.gz         Germline Variants found in any of the callers
-    {patient}.ensemble.somatic.vt.annot.vcf.gz          Somatic Variants found in any of the callers
-*   {patient}.rna.hc.vcf.gz                             Variants found using RNA sample (/!\\ Not yet available)
-*   {patient}.vcf.gz                                    Contains the results of all callers for both DNA and RNA (/!\\ Not yet available)
-    caller_vcfs/                                Contains the vcfs produced from individual callers on the DNA samples
-        {patient}.mutect2.germline.vcf.gz              Germline results for mutect2
-        {patient}.mutect2.somatic.vt.vcf.gz            Somatic results for mutect2
-        {patient}.strelka2.germline.vt.vcf.gz          Germline results for strelka2
-        {patient}.strelka2.somatic.vt.vcf.gz           Somatic results for strelka2
-        {patient}.vardict.germline.vt.vcf.gz           Germline results for vardict
-        {patient}.vardict.somatic.vt.vcf.gz            Somatic results for vardict
-        {patient}.varscan2.germline.vt.vcf.gz          Germline results for varscan2
-        {patient}.varscan2.somatic.vt.vcf.gz           Somatic results for varscan2
+def generate_methods(methods_file):
+    data = """# Methods
+Using an Illumina NovaSeq 6000 instrument, Whole Genome Sequencing (WGS) was performed on the tumor and matched normal samples, with a target depth of coverage of 80X and 30X respectively. Similarly, Whole Transcriptome Sequencing (WTS) was done on tumour samples, with a target of 100 million paired-end reads per sample.
 
-raw_cnv/                Contains the raw copy number calls for each patient DNA
-    {patient}.cnvkit.vcf.gz     Raw cnvkit output
+Bioinformatics analyses were performed using the [GenPipes][GenPipes_BB][^GenPipes_] Tumor-Pair and RNA-seq analytical pipelines (detailed documentation can be found [here][GenPipes_RTD]). Specific parameter values and reference databases are tracked in corresponding *\*.ini* files found under the `parameters` directory. An explanation of the various steps is detailed below.
 
-alignment/              Contains the alignment data for each sample
-    {dna_n}.bam                 Alignment of normal against the reference
-    {dna_n}.bam.bai             Index of Alignment of normal against the reference
-    {dna_t}.bam                 Alignment of tumor against the reference
-    {dna_t}.bam.bai             Index of Alignment of tumor against the reference
-*   {rna}.variants.bam          Alignment of tumor RNA against the reference used in variants analysis (/!\\ Not yet available)
-*   {rna}.variants.bam.bai      Index of Alignment of tumor RNA against the reference used in variants analysis (/!\\ Not yet available)
+## WGS
+For WGS samples, [GATK][GATK_]’s best practices and procedures were followed. Quality trimmed and adapter-clipped reads were first aligned to the GRCh38 reference[^genome_ref_] with BWA-MEM[^BWA-MEM_]. Alignments were then sorted, realigned around Indels, and marked for duplicates. Base qualities were improved using Base Quality Score Recalibration (BQSR). A MultiQC[^MultiQC_] report was generated per patient to flag any inconsistency in overall coverage, QC bias, tumor purity ([PURPLE][purple_]) and normal or tumor contamination and concordance estimations (ConPair[^ConPair_]).  Somatic and germline calls were generated using an ensemble approach combining four independent variant callers: GATK MuTect2, Strelka2[^Strelka2_], VarDict[^VarDict_] and VarScan2[^VarScan2_]. Somatic and germline variants identified in two or more callers were further annotated and prioritized using the PCGR/CSPR[^PCGR_] reporting system to classify somatic and germline calls using ACMP/AMP classification, perform tumor mutation burden (TMB) estimation, microsatellite instability (MSI) classification, mutational signature estimations, and kataegis detection. Structural Variants were called using GRIDSS with PURPLE and LINX[^GRIDSS_PURPLE_LINX_] as an interpretation tool, and CNAs were called with [Sequenza][Sequenza_] and CNVKit[^CNVKit_]. 
 
-expression/             Contains the transcripts abundance estimation from Kallisto
-    {rna}.abundance_transcripts.tsv       Table with transcript abundance feom Kallisto
+## WTS
+For WTS, transcript abundance was estimated using the Kallisto[^Kallisto_] pseudoaligner from quality trimmed and adapter-clipped reads. For WTS variant calling, a full alignment to the same GRCh38 reference was performed using STAR[^STAR_] and the alignments were sorted, realigned and duplicates were marked using GATK best practices and procedures. Fusions in WTS data were assessed using both STAR-FUSION[^STAR-FUSION_] and Arriba[^Arriba_] fusion callers and reported using AnnoFuse[^AnnoFuse_]. Finally, aligned reads were used to call variants with the GATK haplotype caller. Variant calls were then filtered, annotated and prioritized using PCGR/CSPR reporting systems.
 
-reports/                Contains the reports for the experiment
-    {patient}_D.multiqc.html    QC report for the DNA analysis
-*   {patient}_R.multiqc.html    QC report for the RNA analysis (/!\\ Not yet available)
-    {patient}.pcgr.html         Personal Cancer Genome Reporter report; Cf. https://pcgr.readthedocs.io/en/latest
-*   {rna}.anno_fuse             Report for fusions detected using RNA (/!\\ Not yet available)
-*   {patient}.gridss            Annotated structural variant calls with GRIDSS (/!\\ Not yet available)
-*   {patient}.Key_metrics.csv   Metrics used to determine whether the analysis was successful (/!\\ Not yet available)
-    pcgr/               Contains raw tables used to generate PCGR report
-        {patient}.acmg.grch38.maf
-        {patient}.acmg.grch38.snvs_indels.tiers.tsv
-        {patient}.acmg.grch38.cna_segments.tsv.gz
+In both WGS and WTS, reports were generated with MultiQC for visualization of key quality metrics and allow for manual validation.    
 
-parameters/             Contains the records of all the Parameters used in the pipeline analysis
-    tumorPair.config.trace.ini              Parameters used in the tumor pair analysis
-    RNAseq.expression.config.trace.ini      Parameters used in the RNA expression analysis
-*   RNAseq.variants.config.trace.ini        Parameters used in the RNA variant analysis (/!\\ Not yet available)
+# References
+[^GenPipes_]: Bourgey M, Dali R, Eveleigh R, Chen KC, Letourneau L, Fillon J, Michaud M, Caron M, Sandoval J, Lefebvre F, Leveque G, Mercier E, Bujold D, Marquis P, Van PT, Anderson de Lima Morais D, Tremblay J, Shao X, Henrion E, Gonzalez E, Quirion PO, Caron B, Bourque G. GenPipes: an open-source framework for distributed and scalable genomic analyses. Gigascience. 2019 Jun 1;8(6):giz037. doi: 10.1093/gigascience/giz037. PMID: 31185495; PMCID: PMC6559338.
 
-Generated {timestamp}"""
-    with open(os.path.join(location, "Readme.txt"), "w") as readme_file:
-        readme_file.write(data)
+[GenPipes_RTD]: https://genpipes.readthedocs.io
+
+
+[GenPipes_BB]: https://bitbucket.org/mugqic/genpipes
+
+[GATK_]: https://gatk.broadinstitute.org/hc/en-us/sections/360007226651-Best-Practices-Workflows
+
+[^genome_ref_]: GCA_000001405.15 no alt analysis set downloaded from ftp://ftp.ncbi.nlm.nih.gov/genomes/all/GCA/000/001/405/GCA_000001405.15_GRCh38/seqs_for_alignment_pipelines.ucsc_ids/GCA_000001405.15_GRCh38_no_alt_analysis_set.fna.gz
+
+
+[^BWA-MEM_]: Li H. (2013) Aligning sequence reads, clone sequences and assembly contigs with BWA-MEM. arXiv:1303.3997v2 [q-bio.GN]
+
+
+[^MultiQC_]: Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PMID: 27312411; PMCID: PMC5039924.
+
+
+[purple_]: https://github.com/hartwigmedical/hmftools/tree/master/purple
+
+[^ConPair_]: Bergmann EA, Chen BJ, Arora K, Vacic V, Zody MC. Conpair: concordance and contamination estimator for matched tumor-normal pairs. Bioinformatics. 2016 Oct 15;32(20):3196-3198. doi: 10.1093/bioinformatics/btw389. Epub 2016 Jun 26. PMID: 27354699; PMCID: PMC5048070.
+
+[^Strelka2_]: Kim S, Scheffler K, Halpern AL, Bekritsky MA, Noh E, Källberg M, Chen X, Kim Y, Beyter D, Krusche P, Saunders CT. Strelka2: fast and accurate calling of germline and somatic variants. Nat Methods. 2018 Aug;15(8):591-594. doi: 10.1038/s41592-018-0051-x. Epub 2018 Jul 16. PMID: 30013048.
+
+[^VarDict_]: Lai Z, Markovets A, Ahdesmaki M, Chapman B, Hofmann O, McEwen R, Johnson J, Dougherty B, Barrett JC, Dry JR. VarDict: a novel and versatile variant caller for next-generation sequencing in cancer research. Nucleic Acids Res. 2016 Jun 20;44(11):e108. doi: 10.1093/nar/gkw227. Epub 2016 Apr 7. PMID: 27060149; PMCID: PMC4914105.
+
+[^VarScan2_]: Koboldt DC, Zhang Q, Larson DE, Shen D, McLellan MD, Lin L, Miller CA, Mardis ER, Ding L, Wilson RK. VarScan 2: somatic mutation and copy number alteration discovery in cancer by exome sequencing. Genome Res. 2012 Mar;22(3):568-76. doi: 10.1101/gr.129684.111. Epub 2012 Feb 2. PMID: 22300766; PMCID: PMC3290792.
+
+[^PCGR_]: Nakken S, Fournous G, Vodák D, Aasheim LB, Myklebost O, Hovig E. Personal Cancer Genome Reporter: variant interpretation report for precision oncology. Bioinformatics. 2018 May 15;34(10):1778-1780. doi: 10.1093/bioinformatics/btx817. PMID: 29272339; PMCID: PMC5946881.
+
+[^GRIDSS_PURPLE_LINX_]: GRIDSS, PURPLE, LINX: Unscrambling the tumor genome via integrated analysis of structural variation and copy number. Daniel L. Cameron, Jonathan Baber, Charles Shale, Anthony T. Papenfuss, Jose Espejo Valle-Inclan, Nicolle Besselink, Edwin Cuppen, Peter Priestley. bioRxiv 781013; doi: https://doi.org/10.1101/781013
+
+[Sequenza_]: https://cran.r-project.org/web/packages/sequenza/vignettes/sequenza.html#content
+
+[^CNVKit_]: Talevich E, Shain AH, Botton T, Bastian BC. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol. 2016 Apr 21;12(4):e1004873. doi: 10.1371/journal.pcbi.1004873. PMID: 27100738; PMCID: PMC4839673.
+
+[^Kallisto_]: Bray NL, Pimentel H, Melsted P, Pachter L. Near-optimal probabilistic RNA-seq quantification. Nat Biotechnol. 2016 May;34(5):525-7. doi: 10.1038/nbt.3519. Epub 2016 Apr 4. Erratum in: Nat Biotechnol. 2016 Aug 9;34(8):888. PMID: 27043002.
+
+[^STAR_]: Dobin A, Davis CA, Schlesinger F, Drenkow J, Zaleski C, Jha S, Batut P, Chaisson M, Gingeras TR. STAR: ultrafast universal RNA-seq aligner. Bioinformatics. 2013 Jan 1;29(1):15-21. doi: 10.1093/bioinformatics/bts635. Epub 2012 Oct 25. PMID: 23104886; PMCID: PMC3530905.
+
+[^STAR-FUSION_]: STAR-Fusion: Fast and Accurate Fusion Transcript Detection from RNA-Seq. Brian J. Haas, Alex Dobin, Nicolas Stransky, Bo Li, Xiao Yang, Timothy Tickle, Asma Bankapur, Carrie Ganote, Thomas G. Doak, Nathalie Pochet, Jing Sun, Catherine J. Wu, Thomas R. Gingeras, Aviv Regev. bioRxiv 120295; doi: https://doi.org/10.1101/120295
+
+[^Arriba_]: Uhrig S, Ellermann J, Walther T, Burkhardt P, Fröhlich M, Hutter B, Toprak UH, Neumann O, Stenzinger A, Scholl C, Fröhling S, Brors B. Accurate and efficient detection of gene fusions from RNA sequencing data. Genome Res. 2021 Mar;31(3):448-460. doi: 10.1101/gr.257246.119. Epub 2021 Jan 13. PMID: 33441414; PMCID: PMC7919457.
+
+[^AnnoFuse_]: Gaonkar KS, Marini F, Rathi KS, Jain P, Zhu Y, Chimicles NA, Brown MA, Naqvi AS, Zhang B, Storm PB, Maris JM, Raman P, Resnick AC, Strauch K, Taroni JN, Rokita JL. annoFuse: an R Package to annotate, prioritize, and interactively explore putative oncogenic RNA fusions. BMC Bioinformatics. 2020 Dec 14;21(1):577. doi: 10.1186/s12859-020-03922-7. PMID: 33317447; PMCID: PMC7737294."""
+    html = markdown.markdown(data, extensions=extensions, extension_configs=extension_configs)
+    with open(methods_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
+        out_file.write(html)
 
 if __name__ == '__main__':
     main()

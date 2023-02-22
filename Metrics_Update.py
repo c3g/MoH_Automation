@@ -320,10 +320,31 @@ def extract_data(samples_list, connection, paired_samples_dict):
             # med_ins_size = extract_med_map_ins_size(Sample)
 
             # Flags
-            flags.extend(extract_value(connection, "KEY_METRICS", sample, "Flags").split(";"))
-            fails.extend(extract_value(connection, "KEY_METRICS", sample, "Fails").split(";"))
+            tmp_flags = extract_value(connection, "KEY_METRICS", sample, "Flags").split(";")
+            if len(tmp_flags) == 1 and tmp_flags[0] == "NA":
+                pass
+            else:
+                flags.extend(tmp_flags)
+            tmp_fails = extract_value(connection, "KEY_METRICS", sample, "Fails").split(";")
+            if len(tmp_fails) == 1 and tmp_fails[0] == "NA":
+                pass
+            else:
+                fails.extend(tmp_fails)
+
+            try:
+                flags.remove("NA")
+            except ValueError:
+                pass
             flags = ';'.join(set(flags))
+            if not flags:
+                flags = "NA"
+            try:
+                fails.remove("NA")
+            except ValueError:
+                pass
             fails = ';'.join(set(fails))
+            if not fails:
+                fails = "NA"
             # Yellow_Flags=';'.join(flag)
             # Red_Flags=';'.join(fail)
 
@@ -554,16 +575,20 @@ def extract_purity(sample, patient):
 def extract_contamination(patient, sample_type):
     ret = "NA"
     if sample_type in ('DN', 'DT'):
-        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '*.contamination.tsv')
+        # The file is named after tumour sample only
+        filename = glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '-*DT.contamination.tsv'))
+        # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
+        # It has to print nothing to be ok, otherwise it means a manual check is required.
+        if len(filename) > 1:
+            print(f" WARNING: Manual check reauired for patient {patient} as more than 1 concordance file is found: {filename}")
         try:
-            for filen in glob.glob(filename):
-                with open(filen, 'r', encoding="utf-8") as file:
-                    for line in file:
-                        if line.startswith('Normal') and sample_type == 'DN':
-                            ret = line.split(" ")[-1][:-2]
-                        elif line.startswith('Tumor') and sample_type == 'DT':
-                            ret = line.split(" ")[-1][:-2]
-        except FileNotFoundError:
+            with open(filename[0], 'r', encoding="utf-8") as file:
+                for line in file:
+                    if line.startswith('Normal') and sample_type == 'DN':
+                        ret = line.split(" ")[-1][:-2]
+                    elif line.startswith('Tumor') and sample_type == 'DT':
+                        ret = line.split(" ")[-1][:-2]
+        except (FileNotFoundError, IndexError):
             ret = "NA"
     return ret
 
@@ -586,21 +611,23 @@ def extract_contamination(patient, sample_type):
 
 def extract_concordance(patient, sample, sample_type):
     ret = "NA"
-    if sample_type == 'DT':
-        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', sample + '.concordance.tsv')
-        try:
-            with open(filename, 'r', encoding="utf-8") as file:
-                for line in file:
-                    if line.startswith('Concordance'):
-                        ret = line.split(" ")[-1][:-2]
-        except FileNotFoundError:
-            ret = "NA"
-    elif sample_type == 'DN':
+    # if sample_type == 'DT':
+    #     filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', sample + '.concordance.tsv')
+    #     try:
+    #         with open(filename, 'r', encoding="utf-8") as file:
+    #             for line in file:
+    #                 if line.startswith('Concordance'):
+    #                     ret = line.split(" ")[-1][:-2]
+    #     except FileNotFoundError:
+    #         ret = "NA"
+    # elif sample_type == 'DN':
+    if sample_type in ('DN', 'DT'):
+        # The file is named after tumour sample only
         filename = glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', f"{patient}-*DT.concordance.tsv"))
         # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
         # It has to print nothing to be ok, otherwise it means a manual check is required.
-        # if len(filename) > 1:
-        #     print(sample)
+        if len(filename) > 1:
+            print(f" WARNING: Manual check reauired for patient {patient} as more than 1 concordance file is found: {filename}")
         try:
             with open(filename[0], 'r', encoding="utf-8") as file:
                 for line in file:
