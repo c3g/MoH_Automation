@@ -53,3 +53,6 @@ test.py
 
 # Specific scripts
 manually_transferring_run46_TP.sh
+
+# DB file
+*.db
