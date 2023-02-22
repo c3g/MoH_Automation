@@ -210,11 +210,11 @@ class Progress(SampleData):
         base_dir = "/lustre03/project/6007512/C3G/projects/share/MOH"
         patient_dir = os.path.join(base_dir, self.institution, self.cohort, self.sample, "parameters")
         if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.TumourPair.ini")):
-            dna_delivered = "Cpmplete"
+            dna_delivered = "Complete"
         if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.RNA.Light.ini")):
-            rna_light_delivered = "Cpmplete"
+            rna_light_delivered = "Complete"
         if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.RNA.Variants.ini")):
-            rna_delivered = "Cpmplete"
+            rna_delivered = "Complete"
         return dna_delivered, rna_light_delivered, rna_delivered
 
     def Gather_Run_Proc_BAM(self):
