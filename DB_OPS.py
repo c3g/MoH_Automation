@@ -208,12 +208,15 @@ def update_status_db(
     dna_variant_call,
     dna_report,
     dna_pipeline_execution,
+    dna_delivered,
     rna_transferred,
     rna_pipeline_light_execution,
+    rna_light_delivered,
     rna_pseudoalignment,
     rna_variant_call,
     rna_report,
-    rna_pipeline_execution
+    rna_pipeline_execution,
+    rna_delivered
     ):
     cur = conn.cursor()
     cur.execute(f"SELECT * FROM status WHERE patient='{patient}'")
@@ -227,12 +230,15 @@ def update_status_db(
             dna_variant_call = :dna_variant_call,
             dna_report = :dna_report,
             dna_pipeline_execution = :dna_pipeline_execution,
+            dna_delivered = :dna_delivered,
             rna_transferred = :rna_transferred,
             rna_pipeline_light_execution = :rna_pipeline_light_execution,
+            rna_light_delivered = :rna_light_delivered
             rna_pseudoalignment = :rna_pseudoalignment,
             rna_variant_call = :rna_variant_call,
             rna_report = :rna_report,
-            rna_pipeline_execution = :rna_pipeline_execution
+            rna_pipeline_execution = :rna_pipeline_execution,
+            rna_delivered = :rna_delivered
             WHERE
                 patient = :patient
             ;
@@ -244,12 +250,15 @@ def update_status_db(
             "dna_variant_call": dna_variant_call,
             "dna_report": dna_report,
             "dna_pipeline_execution": dna_pipeline_execution,
+            "dna_delivered": dna_delivered,
             "rna_transferred": rna_transferred,
             "rna_pipeline_light_execution":rna_pipeline_light_execution,
+            "rna_light_delivered": rna_light_delivered,
             "rna_pseudoalignment": rna_pseudoalignment,
             "rna_variant_call": rna_variant_call,
             "rna_report": rna_report,
             "rna_pipeline_execution": rna_pipeline_execution,
+            "rna_delivered": rna_delivered,
             "patient": patient
             }
             )
@@ -263,12 +272,15 @@ def update_status_db(
                 dna_variant_call,
                 dna_report,
                 dna_pipeline_execution,
+                dna_delivered,
                 rna_transferred,
                 rna_pipeline_light_execution,
+                rna_light_delivered,
                 rna_pseudoalignment,
                 rna_variant_call,
                 rna_report,
-                rna_pipeline_execution
+                rna_pipeline_execution,
+                rna_delivered
                 )
             VALUES (
                 :patient,
@@ -278,12 +290,15 @@ def update_status_db(
                 :dna_variant_call,
                 :dna_report,
                 :dna_pipeline_execution,
+                :dna_delivered,
                 :rna_transferred,
                 :rna_pipeline_light_execution,
+                :rna_light_delivered,
                 :rna_pseudoalignment,
                 :rna_variant_call,
                 :rna_report,
-                :rna_pipeline_execution
+                :rna_pipeline_execution,
+                :rna_delivered,
                 )
             ;
             """,
@@ -294,12 +309,15 @@ def update_status_db(
             "dna_variant_call": dna_variant_call,
             "dna_report": dna_report,
             "dna_pipeline_execution": dna_pipeline_execution,
+            "dna_delivered": dna_delivered,
             "rna_transferred": rna_transferred,
             "rna_pipeline_light_execution":rna_pipeline_light_execution,
+            "rna_light_delivered":rna_light_delivered,
             "rna_pseudoalignment": rna_pseudoalignment,
             "rna_variant_call": rna_variant_call,
             "rna_report": rna_report,
             "rna_pipeline_execution": rna_pipeline_execution,
+            "rna_delivered": rna_delivered,
             "patient": patient
             }
             )

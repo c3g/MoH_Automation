@@ -75,11 +75,11 @@ def main():
             # Check that RNA spots is over 100000000
             dna = False
             rna = False
-            if  extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
+            if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
                 dna = False
             elif float(extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage")) > 80:
                 dna = True
-            if  extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
+            if extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
                 rna = False
             elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 80000000:
                 rna = True

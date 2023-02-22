@@ -141,61 +141,81 @@ class Progress(SampleData):
 #########################################################################################################
 
     def Update_status(self):
+        # DNA
         dna_n_transfered = "NA"
         if self.ts_run_proc_bam_dna_n != "NA":
             dna_n_transfered = "Complete"
         dna_t_transfered = "NA"
         if self.ts_run_proc_bam_dna_t != "NA":
             dna_t_transfered = "Complete"
-        alignment= "NA"
+        dna_alignment= "NA"
         if self.final_dna_bam_t != "NA":
-            alignment = "Complete"
-        variants = "NA"
+            dna_alignment = "Complete"
+        dna_variant_call = "NA"
         if self.dna_vcf_g != "NA" and self.dna_vcf_s != "NA" :
-            variants = "Complete"
-        reports = "NA"
+            dna_variant_call = "Complete"
+        dna_report = "NA"
         if self.dna_multiqc != "NA" and self.pcgr_report != "NA":
-            reports = "Complete"
-        tumour_pair_complete = "NA"
-        if reports != "NA" and alignment != "NA" and variants != "NA":
-            tumour_pair_complete = "Complete"
+            dna_report = "Complete"
+        dna_pipeline_execution = "NA"
+        if dna_n_transfered == dna_t_transfered == dna_alignment == dna_variant_call == dna_report == "Complete":
+            dna_pipeline_execution = "Complete"
+        # RNA
         rna_transferred = "NA"
         if self.beluga_fastq_1_rna != "NA":
             rna_transferred = "Complete"
         # For abundance
-        rna_abundance = "NA"
+        rna_pipeline_light_execution = "NA"
         if self.rna_abundance != "NA":
-            rna_abundance = "Complete"
-        rna_alignment_expression = "NA"
+            rna_pipeline_light_execution = "Complete"
+        rna_pseudoalignment = "NA"
         # if self.final_rna_bam_expression != "NA":
-        #     rna_alignment_expression = "Complete"
-        rna_alignment_variant = "NA"
+        #     rna_pseudoalignment = "Complete"
+        rna_variant_call = "NA"
         if self.final_rna_bam_variants != "NA":
-            rna_alignment_variant = "Complete"
-        rna_reports = "NA"
+            rna_variant_call = "Complete"
+        rna_report = "NA"
         if self.annofuse != "NA":
-            rna_reports = "Complete"
-        rna_complete = "NA"
-        # if self.big_wig_tracks_r != "NA" and rna_alignment_expression != "NA" and rna_alignment_variant != "NA" and rna_reports != "NA":
-        if rna_transferred == "Complete" and rna_abundance == "Complete":
-            rna_complete = "Complete"
+            rna_report = "Complete"
+        rna_pipeline_execution = "NA"
+        if rna_transferred == rna_pipeline_light_execution == rna_pseudoalignment == rna_variant_call == rna_report == "Complete":
+            rna_pipeline_execution = "Complete"
+        # DELIVERY
+        dna_delivered, rna_light_delivered, rna_delivered = self.check_delivery()
         update_status_db(
             self.conn,
             self.sample,
             dna_n_transfered,
             dna_t_transfered,
-            alignment,
-            variants,
-            reports,
-            tumour_pair_complete,
+            dna_alignment,
+            dna_variant_call,
+            dna_report,
+            dna_pipeline_execution,
+            dna_delivered,
             rna_transferred,
-            rna_abundance,
-            rna_alignment_expression,
-            rna_alignment_variant,
-            rna_reports,
-            rna_complete
+            rna_pipeline_light_execution,
+            rna_light_delivered,
+            rna_pseudoalignment,
+            rna_variant_call,
+            rna_report,
+            rna_pipeline_execution,
+            rna_delivered
             )
 
+    def check_delivery(self):
+        """
+        Checks delivery status for Tumour Pair Pipeline, RNASeq Light Pipeline and RNASeq Variants Pipeline
+        """
+        dna_delivered = rna_light_delivered = rna_delivered = "NA"
+        base_dir = "/lustre03/project/6007512/C3G/projects/share/MOH"
+        patient_dir = os.path.join(base_dir, self.institution, self.cohort, self.sample, "parameters")
+        if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.TumourPair.ini")):
+            dna_delivered = "Cpmplete"
+        if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.RNA.Light.ini")):
+            rna_light_delivered = "Cpmplete"
+        if os.path.isfile(os.path.join(patient_dir, f"{self.sample}.RNA.Variants.ini")):
+            rna_delivered = "Cpmplete"
+        return dna_delivered, rna_light_delivered, rna_delivered
 
     def Gather_Run_Proc_BAM(self):
         if self.dna_n_true == "NA":
@@ -740,6 +760,7 @@ class Progress(SampleData):
             #         if self.big_wig_tracks_r != getime(filename):
             #             self.ts_big_wig_tracks_r = getime(filename)
             #             self.big_wig_tracks_r = filename
+
 
 def getime(path):
     date = datetime.datetime.fromtimestamp(os.path.getmtime(path))
