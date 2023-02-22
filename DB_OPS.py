@@ -233,7 +233,7 @@ def update_status_db(
             dna_delivered = :dna_delivered,
             rna_transferred = :rna_transferred,
             rna_pipeline_light_execution = :rna_pipeline_light_execution,
-            rna_light_delivered = :rna_light_delivered
+            rna_light_delivered = :rna_light_delivered,
             rna_pseudoalignment = :rna_pseudoalignment,
             rna_variant_call = :rna_variant_call,
             rna_report = :rna_report,
