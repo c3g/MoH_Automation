@@ -52,7 +52,7 @@ Thumbs.db
 test.py
 
 # Specific scripts
-manually_transferring_run46_TP.sh
+manually_*.sh
 
 # DB file
 *.db
