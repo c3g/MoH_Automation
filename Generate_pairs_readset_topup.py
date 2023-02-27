@@ -180,16 +180,18 @@ def main():
                 # Pair
                 if sample_n and sample_t:
                     # if not args.dry_run:
-                    with open(glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))[0], 'rt') as readset_in:
-                        reader = csv.reader(readset_in, delimiter="\t")
-                        next(reader, None)
-                        for line in reader:
-                            readset_dna_out.append("\t".join(line))
-                    with open(glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv"))[0], 'rt') as readset_in:
-                        reader = csv.reader(readset_in, delimiter="\t")
-                        next(reader, None)
-                        for line in reader:
-                            readset_dna_out.append("\t".join(line))
+                    for transferred_readset in glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv")):
+                        with open(transferred_readset, 'rt') as readset_in:
+                            reader = csv.reader(readset_in, delimiter="\t")
+                            next(reader, None)
+                            for line in reader:
+                                readset_dna_out.append("\t".join(line))
+                    for transferred_readset in glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv")):
+                        with open(transferred_readset, 'rt') as readset_in:
+                            reader = csv.reader(readset_in, delimiter="\t")
+                            next(reader, None)
+                            for line in reader:
+                                readset_dna_out.append("\t".join(line))
                     # Already analyzed sample Normal
                     to_transfer_sample_n = sample_n
                     try:
@@ -260,13 +262,14 @@ def main():
                         analyzed_sample_n = "None"
                     if glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*.bam")):
                         # if not args.dry_run:
-                        with open(glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))[0], 'rt') as readset_in:
-                            reader = csv.reader(readset_in, delimiter="\t")
-                            next(reader, None)
-                            for line in reader:
-                                # Needed to match topup to existing sample even if name is not the exact same
-                                line[0] = analyzed_sample_n
-                                readset_dna_out.append("\t".join(line))
+                        for transferred_readset in glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv")):
+                            with open(transferred_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Needed to match topup to existing sample even if name is not the exact same
+                                    line[0] = analyzed_sample_n
+                                    readset_dna_out.append("\t".join(line))
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
                                 reader = csv.reader(readset_in, delimiter="\t")
@@ -302,13 +305,14 @@ def main():
                         analyzed_sample_t = "None"
                     if glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*.bam")):
                         # if not args.dry_run:
-                        with open(glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv"))[0], 'rt') as readset_in:
-                            reader = csv.reader(readset_in, delimiter="\t")
-                            next(reader, None)
-                            for line in reader:
-                                # Needed to match topup to existing sample even if name is not the exact same
-                                line[0] = analyzed_sample_t
-                                readset_dna_out.append("\t".join(line))
+                        for transferred_readset in glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv")):
+                            with open(transferred_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Needed to match topup to existing sample even if name is not the exact same
+                                    line[0] = analyzed_sample_t
+                                    readset_dna_out.append("\t".join(line))
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
                                 reader = csv.reader(readset_in, delimiter="\t")
