@@ -123,6 +123,7 @@ def main():
                 if not args.dry_run:
                     # Move file
                     rna_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample))
+                    os.makedirs(os.path.join(beluga_main_raw_reads_folder, rna_sample), exist_ok=True)
                     for file_name in rna_files:
                         # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample, file_name))
                         shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_rna_sample, file_name), os.path.join(beluga_main_raw_reads_folder, rna_sample))
@@ -237,11 +238,13 @@ def main():
                     if not args.dry_run:
                         # Move file
                         dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n))
+                        os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_n), exist_ok=True)
                         for file_name in dna_n_files:
                             # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n, file_name))
                             shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, sample_n))
                         os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_n))
                         dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
+                        os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_t), exist_ok=True)
                         for file_name in dna_t_files:
                             # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name))
                             shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, sample_t))
@@ -303,6 +306,7 @@ def main():
                         if not args.dry_run:
                             # Move file
                             dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
+                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_n), exist_ok=True)
                             for file_name in dna_n_files:
                                 # print(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n))
@@ -349,6 +353,7 @@ def main():
                         if not args.dry_run:
                             # Move file
                             dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
+                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_t), exist_ok=True)
                             for file_name in dna_t_files:
                                 # print(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
