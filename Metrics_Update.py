@@ -5,8 +5,6 @@ import os
 import re
 import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names, extract_fileloc_field, extract_value
-#TO DO::
-#FIX!
 
 WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
 
