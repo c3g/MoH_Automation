@@ -56,3 +56,7 @@ manually_*.sh
 
 # DB file
 *.db
+
+# Dev files
+jsons/
+transfer/
