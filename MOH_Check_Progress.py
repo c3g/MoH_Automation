@@ -260,13 +260,12 @@ class Progress(SampleData):
                             if fastq1 and fastq2:
                                 break
                             if self.rna in line:
-                                if "R1.fastq" in line:
-                                    fields = line.split(",")
+                                fields = line.split(",")
+                                if re.search(r"R1.*.fastq", os.path.basename(fields[0])):
                                     self.run_proc_fastq_1_rna = fields[0]
                                     self.ts_run_proc_fastq_1_rna = getime(filename)
                                     fastq1 = True
-                                elif "R2.fastq" in line:
-                                    fields = line.split(",")
+                                elif re.search(r"R2.*.fastq", os.path.basename(fields[0])):
                                     self.run_proc_fastq_2_rna = fields[0]
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2 = True
