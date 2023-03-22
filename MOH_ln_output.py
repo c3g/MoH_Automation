@@ -72,7 +72,7 @@ def main():
             # Check that DNA_T dedup coverage is over 80
             # Check that DNA_N dedup coverage is over 30
             # Check that processing is complete
-            # Check that RNA spots is over 100000000
+            # Check that RNA reads count is over 80000000
             dna = False
             rna = False
             if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
