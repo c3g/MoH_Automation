@@ -281,27 +281,27 @@ class Progress(SampleData):
             self.ts_beluga_bam_dna_n = "NA"
         else:
             # bam dna_n in raw_reads
-            dna_n_file = os.path.join(loc1, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
-            dna_n_file_old = os.path.join(loc1, self.dna_n, self.dna_n + ".bam")
-            if os.path.exists(dna_n_file):
-                self.beluga_bam_dna_n = dna_n_file
-                self.ts_beluga_bam_dna_n = getime(dna_n_file)
-            elif os.path.exists(dna_n_file_old):
-                self.beluga_bam_dna_n = dna_n_file_old
-                self.ts_beluga_bam_dna_n = getime(dna_n_file_old)
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file} nor {dna_n_file_old}")
+            dna_n_file_rr = os.path.join(loc1, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
+            dna_n_file_old_rr = os.path.join(loc1, self.dna_n, self.dna_n + ".bam")
+            if os.path.exists(dna_n_file_rr):
+                self.beluga_bam_dna_n = dna_n_file_rr
+                self.ts_beluga_bam_dna_n = getime(dna_n_file_rr)
+            elif os.path.exists(dna_n_file_old_rr):
+                self.beluga_bam_dna_n = dna_n_file_old_rr
+                self.ts_beluga_bam_dna_n = getime(dna_n_file_old_rr)
+            # else:
+            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in raw_reads
-            dna_t_file = os.path.join(loc1, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
-            dna_t_file_old = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
-            if os.path.exists(dna_t_file):
-                self.beluga_bam_dna_t = dna_t_file
-                self.ts_beluga_bam_dna_t = getime(dna_t_file)
-            elif os.path.exists(dna_t_file_old):
-                self.beluga_bam_dna_t = dna_t_file_old
-                self.ts_beluga_bam_dna_t = getime(dna_t_file_old)
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file} nor {dna_t_file_old}")
+            dna_t_file_rr = os.path.join(loc1, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
+            dna_t_file_old_rr = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
+            if os.path.exists(dna_t_file_rr):
+                self.beluga_bam_dna_t = dna_t_file_rr
+                self.ts_beluga_bam_dna_t = getime(dna_t_file_rr)
+            elif os.path.exists(dna_t_file_old_rr):
+                self.beluga_bam_dna_t = dna_t_file_old_rr
+                self.ts_beluga_bam_dna_t = getime(dna_t_file_old_rr)
+            # else:
+            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file} nor {dna_t_file_old}")
             # bam dna_n in MAIN/raw_reads
             dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
             dna_n_file_old = os.path.join(loc2, self.dna_n, self.dna_n + ".bam")
@@ -312,7 +312,7 @@ class Progress(SampleData):
                 self.beluga_bam_dna_n = dna_n_file_old
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_old)
             else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file} nor {dna_n_file_old}")
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file_rr} nor {dna_n_file_old_rr} nor {dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in MAIN/raw_reads
             dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
             dna_t_file_old = os.path.join(loc2, self.dna_t, self.dna_t + ".bam")
@@ -323,7 +323,7 @@ class Progress(SampleData):
                 self.beluga_bam_dna_t = dna_t_file_old
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_old)
             else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file} nor {dna_t_file_old}")
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file_rr} nor {dna_t_file_old_rr} nor {dna_t_file} nor {dna_t_file_old}")
         if self.rna_true == "NA":
             self.beluga_fastq_1_rna = "NA"
             self.beluga_fastq_2_rna = "NA"
@@ -331,27 +331,27 @@ class Progress(SampleData):
             self.ts_beluga_fastq_2_rna = "NA"
         else:
             # fastq1 in raw_reads
-            rna_fq1 = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
-            rna_fq1_old = os.path.join(loc1, self.rna, self.rna + "_R1.fastq.gz")
-            if os.path.exists(rna_fq1):
-                self.beluga_fastq_1_rna = rna_fq1
-                self.ts_beluga_fastq_1_rna = getime(rna_fq1)
-            elif os.path.exists(rna_fq1_old):
-                self.beluga_fastq_1_rna = rna_fq1_old
-                self.ts_beluga_fastq_1_rna = getime(rna_fq1_old)
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1} nor {rna_fq1_old}")
+            rna_fq1_rr = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
+            rna_fq1_old_rr = os.path.join(loc1, self.rna, self.rna + "_R1.fastq.gz")
+            if os.path.exists(rna_fq1_rr):
+                self.beluga_fastq_1_rna = rna_fq1_rr
+                self.ts_beluga_fastq_1_rna = getime(rna_fq1_rr)
+            elif os.path.exists(rna_fq1_old_rr):
+                self.beluga_fastq_1_rna = rna_fq1_old_rr
+                self.ts_beluga_fastq_1_rna = getime(rna_fq1_old_rr)
+            # else:
+            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1} nor {rna_fq1_old}")
             # fastq2 in raw_reads
-            rna_fq2 = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
-            rna_fq2_old = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
-            if os.path.exists(rna_fq2):
-                self.beluga_fastq_2_rna = rna_fq2
-                self.ts_beluga_fastq_2_rna = getime(rna_fq2)
-            elif os.path.exists(rna_fq2_old):
-                self.beluga_fastq_2_rna = rna_fq2_old
-                self.ts_beluga_fastq_2_rna = getime(rna_fq2_old)
-            else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2} nor {rna_fq2_old}")
+            rna_fq2_rr = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
+            rna_fq2_old_rr = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
+            if os.path.exists(rna_fq2_rr):
+                self.beluga_fastq_2_rna = rna_fq2_rr
+                self.ts_beluga_fastq_2_rna = getime(rna_fq2_rr)
+            elif os.path.exists(rna_fq2_old_rr):
+                self.beluga_fastq_2_rna = rna_fq2_old_rr
+                self.ts_beluga_fastq_2_rna = getime(rna_fq2_old_rr)
+            # else:
+            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2} nor {rna_fq2_old}")
             # fastq1 in MAIN/raw_reads
             rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
             rna_fq1_old = os.path.join(loc2, self.rna, self.rna + "_R1.fastq.gz")
@@ -362,7 +362,7 @@ class Progress(SampleData):
                 self.beluga_fastq_1_rna = rna_fq1_old
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_old)
             else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1} nor {rna_fq1_old}")
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1_rr} nor {rna_fq1_old_rr} nor {rna_fq1_old} nor {rna_fq1_old}")
             # fastq2 in MAIN/raw_reads
             rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
             rna_fq2_old = os.path.join(loc2, self.rna, self.rna + "_R2.fastq.gz")
@@ -373,7 +373,7 @@ class Progress(SampleData):
                 self.beluga_fastq_2_rna = rna_fq2_old
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_old)
             else:
-                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2} nor {rna_fq2_old}")
+                raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2_rr} nor {rna_fq2_old_rr} nor {rna_fq2_old} nor {rna_fq2_old}")
 
     def Gather_Final_BAMs(self):
         if self.dna_n_true == "NA":
