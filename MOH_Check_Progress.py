@@ -274,7 +274,7 @@ class Progress(SampleData):
     def Gather_BAM_loc(self):
         loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
         loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
-        if self.dna_n_true == "NA":
+        if self.dna_n_true == "NA" or self.dna_t_true == "NA":
             self.beluga_bam_dna_t = "NA"
             self.beluga_bam_dna_n= "NA"
             self.ts_beluga_bam_dna_t = "NA"
