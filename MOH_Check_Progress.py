@@ -279,7 +279,7 @@ class Progress(SampleData):
             self.ts_beluga_bam_dna_t = "NA"
             self.ts_beluga_bam_dna_n = "NA"
         else:
-            dna_n_file = os.path.join(loc1, self.dna_n, self.dna_n + ".bam")
+            dna_n_file = os.path.join(loc1, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
             try:
                 self.beluga_bam_dna_n = dna_n_file
                 self.ts_beluga_bam_dna_n = getime(dna_n_file)
@@ -289,7 +289,7 @@ class Progress(SampleData):
             #     self.beluga_bam_dna_n = filename
             #     self.ts_beluga_bam_dna_n = getime(filename)
             # path = loc1 + "/*" + self.dna_t + "*/*.bam"
-            dna_t_file = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
+            dna_t_file = os.path.join(loc1, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
             try:
                 self.beluga_bam_dna_t = dna_t_file
                 self.ts_beluga_bam_dna_t = getime(dna_t_file)
@@ -299,7 +299,7 @@ class Progress(SampleData):
             #     self.beluga_bam_dna_t = filename
             #     self.ts_beluga_bam_dna_t = getime(filename)
             # path = loc2 + "/*" + self.dna_n + "*/*.bam"
-            dna_n_file = os.path.join(loc2, self.dna_n, self.dna_n + ".bam")
+            dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
             try:
                 self.beluga_bam_dna_n = dna_n_file
                 self.ts_beluga_bam_dna_n = getime(dna_n_file)
@@ -309,7 +309,7 @@ class Progress(SampleData):
             #     self.beluga_bam_dna_n = filename
             #     self.ts_beluga_bam_dna_n = getime(filename)
             # path = loc2 + "/*" + self.dna_t + "*/*.bam"
-            dna_t_file = os.path.join(loc2, self.dna_t, self.dna_t + ".bam")
+            dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
             try:
                 self.beluga_bam_dna_t = dna_t_file
                 self.ts_beluga_bam_dna_t = getime(dna_t_file)
@@ -324,25 +324,25 @@ class Progress(SampleData):
             self.ts_beluga_fastq_1_rna = "NA"
             self.ts_beluga_fastq_2_rna = "NA"
         else:
-            rna_fq1 = os.path.join(loc1, self.rna, self.rna + "_R1.fastq.gz")
+            rna_fq1 = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
             try:
                 self.beluga_fastq_1_rna = rna_fq1
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1)
             except FileNotFoundError:
                 pass
-            rna_fq2 = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
+            rna_fq2 = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
             try:
                 self.beluga_fastq_2_rna = rna_fq2
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2)
             except FileNotFoundError:
                 pass
-            rna_fq1 = os.path.join(loc2, self.rna, self.rna + "_R1.fastq.gz")
+            rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
             try:
                 self.beluga_fastq_1_rna = rna_fq1
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1)
             except FileNotFoundError:
                 pass
-            rna_fq2 = os.path.join(loc2, self.rna, self.rna + "_R2.fastq.gz")
+            rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
             try:
                 self.beluga_fastq_2_rna = rna_fq2
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2)
