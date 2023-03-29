@@ -94,7 +94,7 @@ def jsonify_run_processing(patient_dict):
                                     if ".bam" in line:
                                         file_json = [
                                             {
-                                                "file_content": f"{os.path.basename(fields[0])}"
+                                                "file_name": f"{os.path.basename(fields[0])}"
                                                 }
                                             ]
                                         break
@@ -106,12 +106,12 @@ def jsonify_run_processing(patient_dict):
                                         if fastq1 and fastq2:
                                             file_json = [
                                             {
-                                                "file_content": f"{fastq1}",
-                                                "file_extra_metadata": "R1"
+                                                "file_name": f"{fastq1}",
+                                                "file_extra_metadata": {"read_type": "R1"}
                                                 },
                                             {
-                                                "file_content": f"{fastq2}",
-                                                "file_extra_metadata": "R2"
+                                                "file_name": f"{fastq2}",
+                                                "file_extra_metadata": {"read_type": "R2"}
                                                 }
                                             ]
                                             break
@@ -218,7 +218,7 @@ def jsonify_transfer(sample_dict):
 
                         elif ".fastq" in line:
                             run_name = fields[0].split("/")[7]
-                            readset_name = sample + "." + run_name.split("_")[1] + "_" + run_name.split("_")[2] + fields[0].split("/")[8].split(".")[1]
+                            readset_name = sample + "." + run_name.split("_")[1] + "_" + run_name.split("_")[2] + "_" + fields[0].split("/")[8].split(".")[1]
                             if readset_name in transfer_dict:
                                 transfer_dict[readset_name]["bundle_uri"] = bundle_uri
                             else:
@@ -236,18 +236,18 @@ def jsonify_transfer(sample_dict):
             if "bam_file" in transfer_dict[readset]:
                 file_json = [
                     {
-                        "file_content": transfer_dict[readset]["bam_file"]
+                        "file_name": transfer_dict[readset]["bam_file"]
                         }
                     ]
             if "fastq1_file" in transfer_dict[readset]:
                 file_json = [
                     {
-                        "file_content": transfer_dict[readset]["fastq1_file"],
-                        "file_extra_metadata": "R1"
+                        "file_name": transfer_dict[readset]["fastq1_file"],
+                        "file_extra_metadata": {"read_type": "R1"}
                         },
                     {
-                        "file_content": transfer_dict[readset]["fastq2_file"],
-                        "file_extra_metadata": "R2"
+                        "file_name": transfer_dict[readset]["fastq2_file"],
+                        "file_extra_metadata": {"read_type": "R2"}
                         }
                     ]
             readset_json = {
