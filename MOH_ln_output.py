@@ -51,38 +51,55 @@ extension_configs = {
 
 def main():
     parser = argparse.ArgumentParser(prog='MOH_ln_output.py', description="Hardlinks files matching criterias into /lustre03/project/6007512/C3G/projects/share/MOH for delivery.")
-    parser.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
+    group.add_argument('--white_list', required=False, help="path/to file for patients to be delivered to matter thresholds.")
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
     patients = extract_sample_names(connection)
 
-    black_list = []
     if args.black_list:
+        black_list = []
         with open(args.black_list, "r") as black_list_file:
             for line in black_list_file:
                 black_list.append(line.strip())
-
-    patients = list(filter(lambda i: i not in black_list, patients))
+        patients = list(filter(lambda i: i not in black_list, patients))
+    elif args.white_list:
+        white_list = []
+        with open(args.white_list, "r") as white_list_file:
+            for line in white_list_file:
+                white_list.append(line.strip())
+        patients = list(filter(lambda i: i in white_list, patients))
 
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
         for index, patient in enumerate(patients, 1):
             sample = SampleData(connection, patient)
-            # Check if samples reach the threashold for delivery
-            # Check that DNA_T dedup coverage is over 80
-            # Check that DNA_N dedup coverage is over 30
-            # Check that processing is complete
-            # Check that RNA spots is over 100000000
             dna = False
             rna = False
-            if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
-                dna = False
-            elif float(extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage")) > 80:
-                dna = True
-            if extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
-                rna = False
-            elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 80000000:
-                rna = True
+            if args.white_list:
+                if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
+                    dna = False
+                else:
+                    dna = True
+                if extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
+                    rna = False
+                else:
+                    rna = True
+            else:
+                # Check if samples reach the threashold for delivery
+                # Check that DNA_T dedup coverage is over 80
+                # Check that DNA_N dedup coverage is over 30
+                # Check that processing is complete
+                # Check that RNA spots is over 100000000
+                if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
+                    dna = False
+                elif float(extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage")) > 80:
+                    dna = True
+                if extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
+                    rna = False
+                elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 80000000:
+                    rna = True
 
             # Folders used for Delivery
             # base_folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/' # Base Folder
