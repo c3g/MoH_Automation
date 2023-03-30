@@ -747,12 +747,12 @@ def extract_min_aln_rds(sample, patient):
         with open(filename, 'r', encoding="utf-8") as csvfile:
             reader = csv.DictReader(csvfile, delimiter="\t")
             for row in reader:
-                if row["Sample"] == sample and "QualiMap_mqc-generalstats-qualimap-mapped_reads" in row.keys() and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
-                    ret = round(float(row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]), 0)
+                if row["Sample"] == sample and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
+                    ret = row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]
                 # parsed_line = line.split("\t")
                 # if parsed_line[0] == sample and parsed_line[16]:
                 #     ret = round(float(parsed_line[16]), 0)
-    except FileNotFoundError:
+    except (FileNotFoundError, KeyError):
         ret = "NA"
     return ret
 
