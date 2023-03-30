@@ -27,12 +27,10 @@ def jsonify_run_processing(patient_dict):
             for row in reader:
                 run_list.append(row)
         json_output = {
-                "bundle_config_uri": f"abacus:///lb/robot/research/processing/novaseq/20{run_list[0]['Processing Folder Name'][0:2]}/{run_list[0]['Processing Folder Name']}",
-                "file_config_content": "",
-                "file_config_type": "event",
-                "project_fms_id": "",
+                "operation_platform": "abacus",
+                "project_fms_id": None,
                 "project_name": "MOH-Q",
-                "run_fms_id": "",
+                "run_fms_id": None,
                 "run_name": f"{run_list[0]['Processing Folder Name']}",
                 "run_instrument": "novaseq",
                 "run_date": f"{datetime.strptime(run_list[0]['Processing Folder Name'][0:6], '%y%m%d')}",
@@ -56,7 +54,7 @@ def jsonify_run_processing(patient_dict):
                         # print(existing_patient, "\n")
                     else:
                         patient_json = {
-                            "patient_fms_id": "",
+                            "patient_fms_id": None,
                             "patient_name": f"{patient_dict[patient][sample][0]}",
                             "patient_cohort": f"{patient_dict[patient][sample][3]}",
                             "patient_institution": f"{patient_dict[patient][sample][4]}",
@@ -76,7 +74,7 @@ def jsonify_run_processing(patient_dict):
                         else:
                             sample_tumour = False
                         sample_json = {
-                            "sample_fms_id": "",
+                            "sample_fms_id": None,
                             "sample_name": sample_name,
                             "sample_tumour": sample_tumour,
                             "readset": []
@@ -84,16 +82,16 @@ def jsonify_run_processing(patient_dict):
 
                     # transfer_folder = '/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
                     transfer_folder = 'transfer/*'
-                    fastq1 = fastq2 = bundle_uri = ""
+                    fastq1 = fastq2 = ""
                     for filename in glob.glob(transfer_folder):
                         with open(filename, 'r') as file:
                             for line in file:
                                 if patient_dict[patient][sample][1] in line and run_row['Processing Folder Name'] in line:
                                     fields = line.split(",")
-                                    bundle_uri = "abacus://" + os.path.dirname(fields[0])
                                     if ".bam" in line:
                                         file_json = [
                                             {
+                                                "location_uri": f"abacus://{fields[0]}",
                                                 "file_name": f"{os.path.basename(fields[0])}"
                                                 }
                                             ]
@@ -101,15 +99,19 @@ def jsonify_run_processing(patient_dict):
                                     elif ".fastq" in line:
                                         if "R1.fastq" in line:
                                             fastq1 = os.path.basename(fields[0])
+                                            fastq1_location_uri = fields[0]
                                         elif "R2.fastq" in line:
                                             fastq2 = os.path.basename(fields[0])
+                                            fastq2_location_uri = fields[0]
                                         if fastq1 and fastq2:
                                             file_json = [
                                             {
+                                                "location_uri": f"abacus://{fastq1_location_uri}",
                                                 "file_name": f"{fastq1}",
                                                 "file_extra_metadata": {"read_type": "R1"}
                                                 },
                                             {
+                                                "location_uri": f"abacus://{fastq2_location_uri}",
                                                 "file_name": f"{fastq2}",
                                                 "file_extra_metadata": {"read_type": "R2"}
                                                 }
@@ -156,17 +158,16 @@ def jsonify_run_processing(patient_dict):
                     readset_name = f"{run_row['Sample Name']}.{run_row['Run ID']}_{run_row['Lane']}"
                     readset_dict[readset_name] = (patient, sample)
                     readset_json = {
-                        "experiment_sequencing_technology": "",
+                        "experiment_sequencing_technology": None,
                         "experiment_type": f"{run_row['Library Type']}",
-                        "experiment_library_kit": "",
-                        "experiment_kit_expiration_date": "",
+                        "experiment_library_kit": None,
+                        "experiment_kit_expiration_date": None,
                         "readset_name": readset_name,
                         "readset_lane": f"{run_row['Lane']}",
                         "readset_adapter1": f"{run_row['i7 Adapter Sequence']}",
                         "readset_adapter2": f"{run_row['i5 Adapter Sequence']}",
                         "readset_sequencing_type": f"{run_row['Run Type']}",
                         "readset_quality_offset": "33",
-                        "bundle_uri": bundle_uri,
                         "file": file_json,
                         "metric": metric_json
                         }
@@ -195,6 +196,7 @@ def jsonify_transfer(sample_dict):
         transfer_dict = {}
         json_output = {
             "operation_platform": "beluga",
+            "operation_cmd_line": f"globus transfer --submission-id $sub_id --label $label --batch /lb/project/mugqic/projects/MOH/TEMP/{os.path.basename(filename)} 6c66d53d-a79d-11e8-96fa-0a6d4e044368 278b9bfe-24da-11e9-9fa2-0a06afd4a22e",
             "readset": []
             }
         with open(filename, 'r') as file:
@@ -204,55 +206,67 @@ def jsonify_transfer(sample_dict):
                     fields = line.split(",")
                     sample = os.path.dirname(fields[1])
                     if sample in sample_dict:
-                        bundle_uri = "beluga:///lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads/" + sample
+                        abacus_uri = "abacus://"
+                        beluga_uri = "beluga:///lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads/" + sample
                         if ".bam" in line:
                             readset_name = sample + "." + fields[0].split("/")[11].replace("run", "")
-                            bam_file = os.path.basename(fields[1].strip())
+                            bam_src_location_uri = abacus_uri + fields[0]
+                            bam_dest_location_uri = os.path.join(beluga_uri, os.path.basename(fields[1].strip()))
                             if readset_name in transfer_dict:
-                                transfer_dict[readset_name]["bundle_uri"] = bundle_uri
+                                transfer_dict[readset_name]["bam_dest_location_uri"] = bam_dest_location_uri
                             else:
                                 transfer_dict[readset_name] = {
-                                    "bundle_uri": bundle_uri
+                                    "bam_dest_location_uri": bam_dest_location_uri
                                 }
-                            transfer_dict[readset_name]["bam_file"] = bam_file
+                            transfer_dict[readset_name]["bam_src_location_uri"] = bam_src_location_uri
 
                         elif ".fastq" in line:
                             run_name = fields[0].split("/")[7]
                             readset_name = sample + "." + run_name.split("_")[1] + "_" + run_name.split("_")[2] + "_" + fields[0].split("/")[8].split(".")[1]
-                            if readset_name in transfer_dict:
-                                transfer_dict[readset_name]["bundle_uri"] = bundle_uri
-                            else:
-                                transfer_dict[readset_name] = {
-                                    "bundle_uri": bundle_uri
-                                }
                             if "R1.fastq" in line:
-                                fastq1_file = os.path.basename(fields[1].strip())
-                                transfer_dict[readset_name]["fastq1_file"] = fastq1_file
+                                fastq1_src_location_uri = abacus_uri + fields[0]
+                                fastq1_dest_location_uri = os.path.join(beluga_uri, os.path.basename(fields[1].strip()))
+                                if readset_name in transfer_dict:
+                                    transfer_dict[readset_name]["fastq1_dest_location_uri"] = fastq1_dest_location_uri
+                                else:
+                                    transfer_dict[readset_name] = {
+                                        "fastq1_dest_location_uri": fastq1_dest_location_uri
+                                    }
+                                transfer_dict[readset_name]["fastq1_src_location_uri"] = fastq1_src_location_uri
                             elif "R2.fastq" in line:
-                                fastq2_file = os.path.basename(fields[1].strip())
-                                transfer_dict[readset_name]["fastq2_file"] = fastq2_file
+                                fastq2_src_location_uri = abacus_uri + fields[0]
+                                fastq2_dest_location_uri = os.path.join(beluga_uri, os.path.basename(fields[1].strip()))
+                                if readset_name in transfer_dict:
+                                    transfer_dict[readset_name]["fastq2_dest_location_uri"] = fastq2_dest_location_uri
+                                else:
+                                    transfer_dict[readset_name] = {
+                                        "fastq2_dest_location_uri": fastq2_dest_location_uri
+                                    }
+                                transfer_dict[readset_name]["fastq2_src_location_uri"] = fastq2_src_location_uri
 
         for readset in transfer_dict:
-            if "bam_file" in transfer_dict[readset]:
+            if "bam_src_location_uri" in transfer_dict[readset]:
                 file_json = [
                     {
-                        "file_name": transfer_dict[readset]["bam_file"]
-                        }
-                    ]
-            if "fastq1_file" in transfer_dict[readset]:
+                        "src_location_uri": transfer_dict[readset]["bam_src_location_uri"],
+                        "dest_location_uri": transfer_dict[readset]["bam_dest_location_uri"]
+                    }
+                ]
+            if "fastq1_src_location_uri" in transfer_dict[readset]:
                 file_json = [
                     {
-                        "file_name": transfer_dict[readset]["fastq1_file"],
-                        "file_extra_metadata": {"read_type": "R1"}
-                        },
+                        "src_location_uri": transfer_dict[readset]["fastq1_src_location_uri"],
+                        "dest_location_uri": transfer_dict[readset]["fastq1_dest_location_uri"]
+
+                    },
                     {
-                        "file_name": transfer_dict[readset]["fastq2_file"],
-                        "file_extra_metadata": {"read_type": "R2"}
-                        }
-                    ]
+                        "src_location_uri": transfer_dict[readset]["fastq2_src_location_uri"],
+                        "dest_location_uri": transfer_dict[readset]["fastq2_dest_location_uri"],
+
+                    }
+                ]
             readset_json = {
                 "readset_name": readset,
-                "bundle_uri": transfer_dict[readset]["bundle_uri"],
                 "file": file_json,
                 }
             json_output["readset"].append(readset_json)
