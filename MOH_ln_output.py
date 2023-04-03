@@ -106,7 +106,7 @@ def main():
                     dna = False
                 elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
                     dna = True
-                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" (patient_name in black_list and "RNA" in black_list[patient_name]):
+                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" or (patient_name in black_list and "RNA" in black_list[patient_name]):
                     rna = False
                 elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
                     rna = True
