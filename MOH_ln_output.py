@@ -65,7 +65,7 @@ def main():
         with open(args.black_list, "r") as black_list_file:
             reader = csv.reader(black_list_file, delimiter="\t")
             for line in reader:
-                if line[0] not in black_list.keys():
+                if line[0] not in black_list:
                     black_list[line[0]] = [line[1]]
                 else:
                     black_list[line[0]].append(line[1])
@@ -76,7 +76,7 @@ def main():
         with open(args.white_list, "r") as white_list_file:
             reader = csv.reader(white_list_file, delimiter="\t")
             for line in reader:
-                if line[0] not in white_list.keys():
+                if line[0] not in white_list:
                     white_list[line[0]] = [line[1]]
                 else:
                     white_list[line[0]].append(line[1])
@@ -102,11 +102,11 @@ def main():
                 # Check that DNA_N dedup coverage is over 30
                 # Check that processing is complete
                 # Check that RNA spots is over 100000000
-                if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA" or "DNA" in black_list[patient_name]:
+                if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA" or (patient_name in black_list and "DNA" in black_list[patient_name]):
                     dna = False
                 elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
                     dna = True
-                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" or "RNA" in black_list[patient_name]:
+                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" (patient_name in black_list and "RNA" in black_list[patient_name]):
                     rna = False
                 elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
                     rna = True
