@@ -116,7 +116,7 @@ def extract_sample_details(conn,sample_true):
     result = cur.fetchone()
     if result:
         #return an aray that gets turned into an object for all the data from a sample.
-        return result 
+        return result
     else:
         return 'NA'
 
@@ -128,7 +128,7 @@ def extract_sample_names(conn):
     result = cur.fetchall()
     cur.row_factory = None
     if result:
-        return result 
+        return result
     else:
         return []
 
@@ -137,7 +137,7 @@ def extract_fileloc_details(conn,sample):
     cur.execute(f"""SELECT * FROM File_Locations WHERE Sample='{sample}'""")
     result = cur.fetchone()
     if result:
-        return result 
+        return result
     else:
         result = ['NA'] * 50
         return result
