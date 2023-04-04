@@ -3,6 +3,7 @@
 import glob
 import os
 import re
+import csv
 import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names, extract_fileloc_field, extract_value
 
@@ -743,12 +744,15 @@ def extract_min_aln_rds(sample, patient):
     ret = "NA"
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
-        with open(filename, 'r', encoding="utf-8") as file:
-            for line in file:
-                parsed_line = line.split("\t")
-                if parsed_line[0] == sample and parsed_line[3]:
-                    ret = round(float(parsed_line[3]), 0)
-    except FileNotFoundError:
+        with open(filename, 'r', encoding="utf-8") as csvfile:
+            reader = csv.DictReader(csvfile, delimiter="\t")
+            for row in reader:
+                if row["Sample"] == sample and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
+                    ret = row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]
+                # parsed_line = line.split("\t")
+                # if parsed_line[0] == sample and parsed_line[16]:
+                #     ret = round(float(parsed_line[16]), 0)
+    except (FileNotFoundError, KeyError):
         ret = "NA"
     return ret
 

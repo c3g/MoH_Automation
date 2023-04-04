@@ -7,6 +7,7 @@ import datetime
 import progressbar
 import pandas as pd
 import markdown
+import csv
 from pymdownx import emoji
 
 from  DB_OPS import (
@@ -51,45 +52,71 @@ extension_configs = {
 
 def main():
     parser = argparse.ArgumentParser(prog='MOH_ln_output.py', description="Hardlinks files matching criterias into /lustre03/project/6007512/C3G/projects/share/MOH for delivery.")
-    parser.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
+    group.add_argument('--white_list', required=False, help="path/to file for patients to be delivered no matter thresholds.")
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
     patients = extract_sample_names(connection)
 
-    black_list = []
     if args.black_list:
+        black_list = {}
         with open(args.black_list, "r") as black_list_file:
-            for line in black_list_file:
-                black_list.append(line.strip())
-
-    patients = list(filter(lambda i: i not in black_list, patients))
-
+            reader = csv.reader(black_list_file, delimiter="\t")
+            for line in reader:
+                if line[0] not in black_list:
+                    black_list[line[0]] = [line[1]]
+                else:
+                    black_list[line[0]].append(line[1])
+        # list(set(patients).difference(black_list_))
+        # patients = [patient_name for patient_name in black_list.keys() if patient_name in patients]
+    elif args.white_list:
+        white_list = {}
+        with open(args.white_list, "r") as white_list_file:
+            reader = csv.reader(white_list_file, delimiter="\t")
+            for line in reader:
+                if line[0] not in white_list:
+                    white_list[line[0]] = [line[1]]
+                else:
+                    white_list[line[0]].append(line[1])
+        patients = white_list.keys()
+        # patients = list(filter(lambda i: i[0] in white_list, patients))
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
-        for index, patient in enumerate(patients, 1):
-            sample = SampleData(connection, patient)
-            # Check if samples reach the threashold for delivery
-            # Check that DNA_T dedup coverage is over 80
-            # Check that DNA_N dedup coverage is over 30
-            # Check that processing is complete
-            # Check that RNA reads count is over 80000000
+        for index, patient_name in enumerate(patients, 1):
+            patient = PatientData(connection, patient_name)
             dna = False
             rna = False
-            if extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(sample.conn, sample.sample, "dna_pipeline_execution") == "NA":
-                dna = False
-            elif float(extract_sample_metrics(sample.conn, sample.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(sample.conn, sample.dna_t, "WGS_Dedup_Coverage")) > 80:
-                dna = True
-            if extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(sample.conn, sample.sample, "rna_pipeline_light_execution") == "NA":
-                rna = False
-            elif float(extract_sample_metrics(sample.conn, sample.rna, "Raw_Reads_Count")) > 80000000:
-                rna = True
+            if args.white_list:
+                if extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA":
+                    dna = False
+                elif "DNA" in white_list[patient_name]:
+                    dna = True
+                if extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA":
+                    rna = False
+                elif "RNA" in white_list[patient_name]:
+                    rna = True
+            else:
+                # Check if samples reach the threashold for delivery
+                # Check that DNA_T dedup coverage is over 80
+                # Check that DNA_N dedup coverage is over 30
+                # Check that processing is complete
+                # Check that RNA spots is over 100000000
+                if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA" or (patient_name in black_list and "DNA" in black_list[patient_name]):
+                    dna = False
+                elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
+                    dna = True
+                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" or (patient_name in black_list and "RNA" in black_list[patient_name]):
+                    rna = False
+                elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
+                    rna = True
 
             # Folders used for Delivery
             # base_folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/' # Base Folder
             out_folder = '/lustre03/project/6007512/C3G/projects/share/MOH' # Output Folder
             # out_folder = '/scratch/stretenp/MOH' # Output Folder
             # Contains Warnings.txt Readme.txt Log.txt and all subfolders
-            out_folder = os.path.join(out_folder, sample.institution, sample.cohort, sample.sample_true)
+            out_folder = os.path.join(out_folder, patient.institution, patient.cohort, patient.sample_true)
             # Contains raw bams and fastqs
             raw_folder = os.path.join(out_folder, "raw_data")
             # Contains all variants the subfolder
@@ -133,137 +160,40 @@ def main():
                 with open(log, "w") as log_file:
                     log_file.write("File,Creation,Delivery,Details\n")
 
-            # elif dna or rna:
-            #     os.makedirs(out_folder, exist_ok=True)
-            #     # os.makedirs(tracks_folder)
-            #     # Populate the general files
-            #     with open(log, "w") as log_file:
-            #         log_file.write("File,Creation,Delivery,Details\n")
-
-            # else:
-            #     continue
-
             # Populate dna data
             if dna:
-                os.makedirs(raw_folder, exist_ok=True)
-                beluga_bam_dna_n = extract_fileloc_field(connection, sample.sample, "Beluga_BAM_DNA_N")
-                updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{sample.dna_n}.bam", log, updated, old_log)
-                beluga_bam_dna_t = extract_fileloc_field(connection, sample.sample, "Beluga_BAM_DNA_T")
-                updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{sample.dna_t}.bam", log, updated, old_log)
-
-                os.makedirs(var_folder, exist_ok=True)
-                dna_vcf_g = extract_fileloc_field(connection, sample.sample, "DNA_VCF_G")
-                updated = get_link_log(dna_vcf_g, var_folder, f"{sample.sample_true}.ensemble.germline.vt.annot.vcf.gz", log, updated, old_log)
-                dna_vcf_s = extract_fileloc_field(connection, sample.sample, "DNA_VCF_S")
-                updated = get_link_log(dna_vcf_s, var_folder, f"{sample.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
-
-                os.makedirs(cal_folder, exist_ok=True)
-                mutect2_germline_vcf = extract_fileloc_field(connection, sample.sample, "Mutect2_Germline_vcf")
-                updated = get_link_log(mutect2_germline_vcf, cal_folder, f"{sample.sample_true}.mutect2.germline.vt.vcf.gz", log, updated, old_log)
-                mutect2_somatic_vcf = extract_fileloc_field(connection, sample.sample, "Mutect2_Somatic_vcf")
-                updated = get_link_log(mutect2_somatic_vcf, cal_folder, f"{sample.sample_true}.mutect2.somatic.vt.vcf.gz", log, updated, old_log)
-                strelka2_germline_vcf = extract_fileloc_field(connection, sample.sample, "strelka2_Germline_vcf")
-                updated = get_link_log(strelka2_germline_vcf, cal_folder, f"{sample.sample_true}.strelka2.germline.vt.vcf.gz", log, updated, old_log)
-                strelka2_somatic_vcf = extract_fileloc_field(connection, sample.sample, "strelka2_Somatic_vcf")
-                updated = get_link_log(strelka2_somatic_vcf, cal_folder, f"{sample.sample_true}.strelka2.somatic.vt.vcf.gz", log, updated, old_log)
-                vardict_germline_vcf = extract_fileloc_field(connection, sample.sample, "vardict_Germline_vcf")
-                updated = get_link_log(vardict_germline_vcf, cal_folder, f"{sample.sample_true}.vardict.germline.vt.vcf.gz", log, updated, old_log)
-                vardict_somatic_vcf = extract_fileloc_field(connection, sample.sample, "vardict_Somatic_vcf")
-                updated = get_link_log(vardict_somatic_vcf, cal_folder, f"{sample.sample_true}.vardict.somatic.vt.vcf.gz", log, updated, old_log)
-                varscan2_germline_vcf = extract_fileloc_field(connection, sample.sample, "varscan2_Germline_vcf")
-                updated = get_link_log(varscan2_germline_vcf, cal_folder, f"{sample.sample_true}.varscan2.germline.vt.vcf.gz", log, updated, old_log)
-                varscan2_somatic_vcf = extract_fileloc_field(connection, sample.sample, "varscan2_Somatic_vcf")
-                updated = get_link_log(varscan2_somatic_vcf, cal_folder, f"{sample.sample_true}.varscan2.somatic.vt.vcf.gz", log, updated, old_log)
-
-                os.makedirs(raw_cnv_folder, exist_ok=True)
-                cnvkit_vcf = extract_fileloc_field(connection, sample.sample, "cnvkit_vcf")
-                updated = get_link_log(cnvkit_vcf, raw_cnv_folder, f"{sample.sample_true}.cnvkit.vcf.gz", log, updated, old_log)
-
-                os.makedirs(align_folder, exist_ok=True)
-                final_dna_bam_n = extract_fileloc_field(connection, sample.sample, "Final_DNA_BAM_N")
-                updated = get_link_log(final_dna_bam_n, align_folder, f"{sample.dna_n}.bam", log, updated, old_log)
-                if final_dna_bam_n != "NA":
-                    final_dna_bam_n_index = final_dna_bam_n + ".bai"
-                    if os.path.exists(final_dna_bam_n_index):
-                        updated = get_link_log(final_dna_bam_n_index, align_folder, f"{sample.dna_n}.bam.bai", log, updated, old_log)
-                    final_dna_bam_n_md5 = final_dna_bam_n + ".md5"
-                    if os.path.exists(final_dna_bam_n_md5):
-                        updated = get_link_log(final_dna_bam_n_md5, align_folder, f"{sample.dna_n}.bam.md5", log, updated, old_log)
-                final_dna_bam_t = extract_fileloc_field(connection, sample.sample, "Final_DNA_BAM_T")
-                updated = get_link_log(final_dna_bam_t, align_folder, f"{sample.dna_t}.bam", log, updated, old_log)
-                if final_dna_bam_t != "NA":
-                    final_dna_bam_t_index = final_dna_bam_t + ".bai"
-                    if os.path.exists(final_dna_bam_t_index):
-                        updated = get_link_log(final_dna_bam_t_index, align_folder, f"{sample.dna_t}.bam.bai", log, updated, old_log)
-                    final_dna_bam_t_md5 = final_dna_bam_t + ".md5"
-                    if os.path.exists(final_dna_bam_t_md5):
-                        updated = get_link_log(final_dna_bam_t_md5, align_folder, f"{sample.dna_t}.bam.md5", log, updated, old_log)
-
-                os.makedirs(reports_folder, exist_ok=True)
-                dna_multiqc = extract_fileloc_field(connection, sample.sample, "DNA_MultiQC")
-                updated = get_link_log(dna_multiqc, reports_folder, f"{sample.sample_true}_D.multiqc.html", log, updated, old_log)
-                pcgr_report = extract_fileloc_field(connection, sample.sample, "pcgr_report")
-                updated = get_link_log(pcgr_report, reports_folder, f"{sample.sample_true}.pcgr.html", log, updated, old_log)
-
-                os.makedirs(pcgr_folder, exist_ok=True)
-                pcgr_maf = extract_fileloc_field(connection, sample.sample, "pcgr_maf")
-                updated = get_link_log(pcgr_maf, pcgr_folder, f"{sample.sample_true}.acmg.grch38.maf", log, updated, old_log)
-                pcgr_snvs_indels = extract_fileloc_field(connection, sample.sample, "pcgr_snvs_indels")
-                updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{sample.sample_true}.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
-                pcgr_cna_segments = extract_fileloc_field(connection, sample.sample, "pcgr_cna_segments")
-                updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{sample.sample_true}.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
-
-                os.makedirs(param_folder, exist_ok=True)
-                tp_ini = extract_fileloc_field(connection, sample.sample, "TP_ini")
-                updated = get_link_log(tp_ini, param_folder, f"{sample.sample_true}.TumourPair.ini", log, updated, old_log)
+                # print(f"\n\nDelivering {patient.sample} DNA\n\n")
+                updated = deliver_dna(
+                    raw_folder,
+                    var_folder,
+                    cal_folder,
+                    raw_cnv_folder,
+                    align_folder,
+                    reports_folder,
+                    pcgr_folder,
+                    param_folder,
+                    connection,
+                    patient,
+                    log,
+                    updated,
+                    old_log,
+                    )
 
             if rna:
-                os.makedirs(raw_folder, exist_ok=True)
-                beluga_fastq_1_rna = extract_fileloc_field(connection, sample.sample, "Beluga_fastq_1_RNA")
-                updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{sample.rna}_R1.fastq.gz", log, updated, old_log)
-                beluga_fastq_2_rna = extract_fileloc_field(connection, sample.sample, "Beluga_fastq_2_RNA")
-                updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{sample.rna}_R2.fastq.gz", log, updated, old_log)
-
-                os.makedirs(expression_folder, exist_ok=True)
-                rna_abundance = extract_fileloc_field(connection, sample.sample, "RNA_Abundance")
-                updated = get_link_log(rna_abundance, expression_folder, f"{sample.rna}.abundance_transcripts.tsv", log, updated, old_log)
-                if rna_abundance != "NA":
-                    rna_abundance_genes = rna_abundance.replace("transcripts", "genes")
-                    if os.path.exists(rna_abundance_genes):
-                        updated = get_link_log(rna_abundance_genes, expression_folder, f"{sample.rna}.abundance_genes.tsv", log, updated, old_log)
-
-                # Not implemented yet
-                # os.makedirs(var_folder, exist_ok=True)
-                # rna_vcf = extract_fileloc_field(connection, sample.sample, "RNA_VCF")
-                # updated = get_link_log(rna_vcf, var_folder, f"{sample.rna}.rna.hc.vcf.gz", log, updated, old_log)
-
-                # Not implemented yet
-                # os.makedirs(align_folder, exist_ok=True)
-                # final_rna_bam_variants = extract_fileloc_field(connection, sample.sample, "Final_RNA_BAM_variants")
-                # updated = get_link_log(final_rna_bam_variants, align_folder, f"{sample.rna}.variants.bam", log, updated, old_log)
-                # if final_rna_bam_variants != "NA":
-                #     final_rna_bam_index = final_rna_bam_variants + ".bai"
-                #     if os.path.exists(final_rna_bam_index):
-                #         updated = get_link_log(final_rna_bam_index, align_folder, f"{sample.rna}.bam.bai", log, updated, old_log)
-                #     final_rna_bam_md5 = final_rna_bam_variants + ".md5"
-                #     if os.path.exists(final_rna_bam_md5):
-                #         updated = get_link_log(final_rna_bam_md5, align_folder, f"{sample.rna}.bam.md5", log, updated, old_log)
-
-                # Not implemented yet
-                # os.makedirs(reports_folder, exist_ok=True)
-                # rna_multiqc = extract_fileloc_field(connection, sample.sample, "RNA_MultiQC")
-                # updated = get_link_log(rna_multiqc, reports_folder, f"{sample.sample_true}_R.multiqc.html", log, updated, old_log)
-                # annofuse = extract_fileloc_field(connection, sample.sample, "AnnoFuse")
-                # updated = get_link_log(annofuse, reports_folder, f"{sample.rna}.anno_fuse", log, updated, old_log)
-                # gridss = extract_fileloc_field(connection, sample.sample, "GRIDSS")
-                # updated = get_link_log(gridss, reports_folder, f"{sample.rna}.gridss", log, updated, old_log)
-
-                os.makedirs(param_folder, exist_ok=True)
-                rna_expression_ini = extract_fileloc_field(connection, sample.sample, "RNA_Abundance_ini")
-                updated = get_link_log(rna_expression_ini, param_folder, f"{sample.sample_true}.RNA.Light.ini", log, updated, old_log)
-                # Not implemented yet
-                # rna_variants_ini = extract_fileloc_field(connection, sample.sample, "RNA_Variants_ini")
-                # updated = get_link_log(rna_variants_ini, param_folder, f"{sample.sample_true}.RNA.Variants.ini", log, updated, old_log)
+                # print(f"\n\nDelivering {patient.sample} RNA\n\n")
+                updated = deliver_rna(
+                    raw_folder,
+                    expression_folder,
+                    var_folder,
+                    align_folder,
+                    reports_folder,
+                    param_folder,
+                    connection,
+                    patient,
+                    log,
+                    updated,
+                    old_log,
+                    )
 
             # Not implemented yet
             # if rna and dna:
@@ -273,15 +203,14 @@ def main():
 
             # If any updates were made, Delete the old warning file and populate a new one.
             if updated:
-                # print(f" {sample.sample}")
                 # Add key metrics table for samples
                 get_local_file_log(key_metrics_file, log, updated, old_log)
-                metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{sample.dna_n}" or Sample="{sample.dna_t}" or Sample="{sample.rna}"', connection)
+                metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
                 metrics.to_csv(key_metrics_file, index=False)
 
                 # Add warnings file
                 warnings_l = []
-                warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{sample.dna_n}" or Sample="{sample.dna_t}" or Sample="{sample.rna}"', connection)
+                warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
                 for _, row in warnings.iterrows():
                     sample_name = row["Sample"]
                     flags = " - ".join(row["Flags"].split(";"))
@@ -296,9 +225,163 @@ def main():
 
                 # Add readme file
                 get_local_file_log(readme_file, log, updated, old_log)
-                generate_readme(readme_file, sample.sample_true, sample.dna_n, sample.dna_t, sample.rna)
+                generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna)
 
             progress.update(index)
+
+
+def deliver_dna(
+    raw_folder,
+    var_folder,
+    cal_folder,
+    raw_cnv_folder,
+    align_folder,
+    reports_folder,
+    pcgr_folder,
+    param_folder,
+    connection,
+    patient,
+    log,
+    updated,
+    old_log,
+    ):
+    os.makedirs(raw_folder, exist_ok=True)
+    beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
+    updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
+    beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
+    updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
+
+    os.makedirs(var_folder, exist_ok=True)
+    dna_vcf_g = extract_fileloc_field(connection, patient.sample, "DNA_VCF_G")
+    updated = get_link_log(dna_vcf_g, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz", log, updated, old_log)
+    dna_vcf_s = extract_fileloc_field(connection, patient.sample, "DNA_VCF_S")
+    updated = get_link_log(dna_vcf_s, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
+
+    os.makedirs(cal_folder, exist_ok=True)
+    mutect2_germline_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Germline_vcf")
+    updated = get_link_log(mutect2_germline_vcf, cal_folder, f"{patient.sample_true}.mutect2.germline.vt.vcf.gz", log, updated, old_log)
+    mutect2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Somatic_vcf")
+    updated = get_link_log(mutect2_somatic_vcf, cal_folder, f"{patient.sample_true}.mutect2.somatic.vt.vcf.gz", log, updated, old_log)
+    strelka2_germline_vcf = extract_fileloc_field(connection, patient.sample, "strelka2_Germline_vcf")
+    updated = get_link_log(strelka2_germline_vcf, cal_folder, f"{patient.sample_true}.strelka2.germline.vt.vcf.gz", log, updated, old_log)
+    strelka2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "strelka2_Somatic_vcf")
+    updated = get_link_log(strelka2_somatic_vcf, cal_folder, f"{patient.sample_true}.strelka2.somatic.vt.vcf.gz", log, updated, old_log)
+    vardict_germline_vcf = extract_fileloc_field(connection, patient.sample, "vardict_Germline_vcf")
+    updated = get_link_log(vardict_germline_vcf, cal_folder, f"{patient.sample_true}.vardict.germline.vt.vcf.gz", log, updated, old_log)
+    vardict_somatic_vcf = extract_fileloc_field(connection, patient.sample, "vardict_Somatic_vcf")
+    updated = get_link_log(vardict_somatic_vcf, cal_folder, f"{patient.sample_true}.vardict.somatic.vt.vcf.gz", log, updated, old_log)
+    varscan2_germline_vcf = extract_fileloc_field(connection, patient.sample, "varscan2_Germline_vcf")
+    updated = get_link_log(varscan2_germline_vcf, cal_folder, f"{patient.sample_true}.varscan2.germline.vt.vcf.gz", log, updated, old_log)
+    varscan2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "varscan2_Somatic_vcf")
+    updated = get_link_log(varscan2_somatic_vcf, cal_folder, f"{patient.sample_true}.varscan2.somatic.vt.vcf.gz", log, updated, old_log)
+
+    os.makedirs(raw_cnv_folder, exist_ok=True)
+    cnvkit_vcf = extract_fileloc_field(connection, patient.sample, "cnvkit_vcf")
+    updated = get_link_log(cnvkit_vcf, raw_cnv_folder, f"{patient.sample_true}.cnvkit.vcf.gz", log, updated, old_log)
+
+    os.makedirs(align_folder, exist_ok=True)
+    final_dna_bam_n = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_N")
+    updated = get_link_log(final_dna_bam_n, align_folder, f"{patient.dna_n}.bam", log, updated, old_log)
+    if final_dna_bam_n != "NA":
+        final_dna_bam_n_index = final_dna_bam_n + ".bai"
+        if os.path.exists(final_dna_bam_n_index):
+            updated = get_link_log(final_dna_bam_n_index, align_folder, f"{patient.dna_n}.bam.bai", log, updated, old_log)
+        final_dna_bam_n_md5 = final_dna_bam_n + ".md5"
+        if os.path.exists(final_dna_bam_n_md5):
+            updated = get_link_log(final_dna_bam_n_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
+    final_dna_bam_t = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_T")
+    updated = get_link_log(final_dna_bam_t, align_folder, f"{patient.dna_t}.bam", log, updated, old_log)
+    if final_dna_bam_t != "NA":
+        final_dna_bam_t_index = final_dna_bam_t + ".bai"
+        if os.path.exists(final_dna_bam_t_index):
+            updated = get_link_log(final_dna_bam_t_index, align_folder, f"{patient.dna_t}.bam.bai", log, updated, old_log)
+        final_dna_bam_t_md5 = final_dna_bam_t + ".md5"
+        if os.path.exists(final_dna_bam_t_md5):
+            updated = get_link_log(final_dna_bam_t_md5, align_folder, f"{patient.dna_t}.bam.md5", log, updated, old_log)
+
+    os.makedirs(reports_folder, exist_ok=True)
+    dna_multiqc = extract_fileloc_field(connection, patient.sample, "DNA_MultiQC")
+    updated = get_link_log(dna_multiqc, reports_folder, f"{patient.sample_true}_D.multiqc.html", log, updated, old_log)
+    pcgr_report = extract_fileloc_field(connection, patient.sample, "pcgr_report")
+    updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}.pcgr.html", log, updated, old_log)
+
+    os.makedirs(pcgr_folder, exist_ok=True)
+    pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
+    updated = get_link_log(pcgr_maf, pcgr_folder, f"{patient.sample_true}.acmg.grch38.maf", log, updated, old_log)
+    pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "pcgr_snvs_indels")
+    updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
+    pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "pcgr_cna_segments")
+    updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
+
+    os.makedirs(param_folder, exist_ok=True)
+    tp_ini = extract_fileloc_field(connection, patient.sample, "TP_ini")
+    updated = get_link_log(tp_ini, param_folder, f"{patient.sample_true}.TumourPair.ini", log, updated, old_log)
+
+    return updated
+
+
+def deliver_rna(
+    raw_folder,
+    expression_folder,
+    var_folder,
+    align_folder,
+    reports_folder,
+    param_folder,
+    connection,
+    patient,
+    log,
+    updated,
+    old_log,
+    ):
+    os.makedirs(raw_folder, exist_ok=True)
+    beluga_fastq_1_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_1_RNA")
+    updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{patient.rna}_R1.fastq.gz", log, updated, old_log)
+    beluga_fastq_2_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_2_RNA")
+    updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{patient.rna}_R2.fastq.gz", log, updated, old_log)
+
+    os.makedirs(expression_folder, exist_ok=True)
+    rna_abundance = extract_fileloc_field(connection, patient.sample, "RNA_Abundance")
+    updated = get_link_log(rna_abundance, expression_folder, f"{patient.rna}.abundance_transcripts.tsv", log, updated, old_log)
+    if rna_abundance != "NA":
+        rna_abundance_genes = rna_abundance.replace("transcripts", "genes")
+        if os.path.exists(rna_abundance_genes):
+            updated = get_link_log(rna_abundance_genes, expression_folder, f"{patient.rna}.abundance_genes.tsv", log, updated, old_log)
+
+    # Not implemented yet
+    # os.makedirs(var_folder, exist_ok=True)
+    # rna_vcf = extract_fileloc_field(connection, patient.sample, "RNA_VCF")
+    # updated = get_link_log(rna_vcf, var_folder, f"{patient.rna}.rna.hc.vcf.gz", log, updated, old_log)
+
+    # Not implemented yet
+    # os.makedirs(align_folder, exist_ok=True)
+    # final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM_variants")
+    # updated = get_link_log(final_rna_bam_variants, align_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
+    # if final_rna_bam_variants != "NA":
+    #     final_rna_bam_index = final_rna_bam_variants + ".bai"
+    #     if os.path.exists(final_rna_bam_index):
+    #         updated = get_link_log(final_rna_bam_index, align_folder, f"{patient.rna}.bam.bai", log, updated, old_log)
+    #     final_rna_bam_md5 = final_rna_bam_variants + ".md5"
+    #     if os.path.exists(final_rna_bam_md5):
+    #         updated = get_link_log(final_rna_bam_md5, align_folder, f"{patient.rna}.bam.md5", log, updated, old_log)
+
+    # Not implemented yet
+    # os.makedirs(reports_folder, exist_ok=True)
+    # rna_multiqc = extract_fileloc_field(connection, patient.sample, "RNA_MultiQC")
+    # updated = get_link_log(rna_multiqc, reports_folder, f"{patient.sample_true}_R.multiqc.html", log, updated, old_log)
+    # annofuse = extract_fileloc_field(connection, patient.sample, "AnnoFuse")
+    # updated = get_link_log(annofuse, reports_folder, f"{patient.rna}.anno_fuse", log, updated, old_log)
+    # gridss = extract_fileloc_field(connection, patient.sample, "GRIDSS")
+    # updated = get_link_log(gridss, reports_folder, f"{patient.rna}.gridss", log, updated, old_log)
+
+    os.makedirs(param_folder, exist_ok=True)
+    rna_expression_ini = extract_fileloc_field(connection, patient.sample, "RNA_Abundance_ini")
+    updated = get_link_log(rna_expression_ini, param_folder, f"{patient.sample_true}.RNA.Light.ini", log, updated, old_log)
+    # Not implemented yet
+    # rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
+    # updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
+
+    return updated
+
 
 # Key function. Basiclly updates the logs and links the files based on the database.
 def get_link_log(input_file, output_folder, output_file, log, updated, old_log):
@@ -353,13 +436,13 @@ def getime(path):
     date = datetime.datetime.fromtimestamp(os.path.getmtime(path))
     return date.strftime("%Y/%m/%d")
 
-class SampleData:
-    def __init__(self, connection, sample):
+class PatientData:
+    def __init__(self, connection, patient):
         data = []
         self.conn = connection
-        data = extract_sample_details(connection, sample)
+        data = extract_sample_details(connection, patient)
         if len(data) <10:
-            raise Exception(f'No database entry for {sample}')
+            raise Exception(f'No database entry for {patient}')
         self.sample = data[1]
         self.sample_true = data[1]
         self.institution = data[2]
