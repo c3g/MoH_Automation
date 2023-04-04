@@ -162,38 +162,38 @@ def main():
 
             # Populate dna data
             if dna:
-                print(f"\n\nDelivering {patient.sample} DNA\n\n")
-                # updated = deliver_dna(
-                #     raw_folder,
-                #     var_folder,
-                #     cal_folder,
-                #     raw_cnv_folder,
-                #     align_folder,
-                #     reports_folder,
-                #     pcgr_folder,
-                #     param_folder,
-                #     connection,
-                #     patient,
-                #     log,
-                #     updated,
-                #     old_log,
-                #     )
+                # print(f"\n\nDelivering {patient.sample} DNA\n\n")
+                updated = deliver_dna(
+                    raw_folder,
+                    var_folder,
+                    cal_folder,
+                    raw_cnv_folder,
+                    align_folder,
+                    reports_folder,
+                    pcgr_folder,
+                    param_folder,
+                    connection,
+                    patient,
+                    log,
+                    updated,
+                    old_log,
+                    )
 
             if rna:
-                print(f"\n\nDelivering {patient.sample} RNA\n\n")
-                # updated = deliver_rna(
-                #     raw_folder,
-                #     expression_folder,
-                #     var_folder,
-                #     align_folder,
-                #     reports_folder,
-                #     param_folder,
-                #     connection,
-                #     patient,
-                #     log,
-                #     updated,
-                #     old_log,
-                #     )
+                # print(f"\n\nDelivering {patient.sample} RNA\n\n")
+                updated = deliver_rna(
+                    raw_folder,
+                    expression_folder,
+                    var_folder,
+                    align_folder,
+                    reports_folder,
+                    param_folder,
+                    connection,
+                    patient,
+                    log,
+                    updated,
+                    old_log,
+                    )
 
             # Not implemented yet
             # if rna and dna:
@@ -202,30 +202,30 @@ def main():
             #     updated = get_link_log(final_vcf, var_folder, f"{sample.sample_true}.vcf.gz", log, updated, old_log)
 
             # If any updates were made, Delete the old warning file and populate a new one.
-            # if updated:
-            #     # Add key metrics table for samples
-            #     get_local_file_log(key_metrics_file, log, updated, old_log)
-            #     metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
-            #     metrics.to_csv(key_metrics_file, index=False)
+            if updated:
+                # Add key metrics table for samples
+                get_local_file_log(key_metrics_file, log, updated, old_log)
+                metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+                metrics.to_csv(key_metrics_file, index=False)
 
-            #     # Add warnings file
-            #     warnings_l = []
-            #     warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
-            #     for _, row in warnings.iterrows():
-            #         sample_name = row["Sample"]
-            #         flags = " - ".join(row["Flags"].split(";"))
-            #         fails = " - ".join(row["Fails"].split(";"))
-            #         warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
-            #     get_local_file_log(warning_file, log, updated, old_log)
-            #     generate_warning(warning_file, warnings_l)
+                # Add warnings file
+                warnings_l = []
+                warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+                for _, row in warnings.iterrows():
+                    sample_name = row["Sample"]
+                    flags = " - ".join(row["Flags"].split(";"))
+                    fails = " - ".join(row["Fails"].split(";"))
+                    warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
+                get_local_file_log(warning_file, log, updated, old_log)
+                generate_warning(warning_file, warnings_l)
 
-            #     # Add methods file
-            #     get_local_file_log(methods_file, log, updated, old_log)
-            #     generate_methods(methods_file)
+                # Add methods file
+                get_local_file_log(methods_file, log, updated, old_log)
+                generate_methods(methods_file)
 
-            #     # Add readme file
-            #     get_local_file_log(readme_file, log, updated, old_log)
-            #     generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna)
+                # Add readme file
+                get_local_file_log(readme_file, log, updated, old_log)
+                generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna)
 
             progress.update(index)
 
