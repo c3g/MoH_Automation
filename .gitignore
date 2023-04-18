@@ -50,6 +50,9 @@ Thumbs.db
 
 # Test file
 test.py
+jsons/
+transfer/
+jsons.tar.gz
 
 # Specific scripts
 manually_*.sh

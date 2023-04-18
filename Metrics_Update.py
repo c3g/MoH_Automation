@@ -11,7 +11,6 @@ WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), '
 
 
 def main():
-    # widgets = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
 
     patients = extract_sample_names(connection)
@@ -52,28 +51,7 @@ def main():
                     run_sample = ""
                 paired_samples_dict[rna_sample] = (patient, run_sample)
             progress.update(index)
-    # with progressbar.ProgressBar(max_value=len(patients), widgets=widgets) as bar:
-    #     for index, sample in enumerate(patients, 1):
-    #         dna_n = extract_sample_field(connection,sample,"DNA_N")
-    #         if dna_n != "NA" and dna_n != "":
-    #             All_Samples.append(dna_n)
-    #             PAIRED_SAMPLES[dna_n] = sample
-    #         dna_t = extract_sample_field(connection,sample,"DNA_T")
-    #         if dna_t != "NA" and dna_t != "":
-    #             All_Samples.append(dna_t)
-    #             PAIRED_SAMPLES[dna_t] = sample
-    #         rna = extract_sample_field(connection,sample,"RNA")
-    #         if rna != "NA" and rna != "":
-    #             All_Samples.append(rna)
-    #             PAIRED_SAMPLES[rna] = sample
-    #         bar.update(index)
-    #print(All_Samples)
-    #All_Samples = [x for x in All_Samples if x != "NA" and x != ""]
-    #print(len(All_Samples))
-    #print(len(PAIRED_SAMPLES))
-    #exit()
     extract_data(samples_list, connection, paired_samples_dict)
-    # extract_data(All_Samples, connection, PAIRED_SAMPLES)
     print("Committing changes to Database...")
     connection.commit()
     connection.close()
@@ -81,22 +59,10 @@ def main():
 
 def extract_data(samples_list, connection, paired_samples_dict):
     print("Updating metrics in Database by Sample...")
-    # with progressbar.ProgressBar(max_value=len(SAMP), widgets=WIDGETS) as bar:
-    #     for index, Sample in enumerate(SAMP, 1):
-    #         PATIENT = PAIRED_SAMPLES[Sample]
-    #         TYPE=''
-    #         if Sample.endswith('N'):
-    #             TYPE = 'N'
-    #         elif Sample.endswith('T'):
-    #             TYPE = 'T'
-    #         flag=[]
-    #         fail=[]
     with progressbar.ProgressBar(max_value=len(samples_list), widgets=WIDGETS) as progress:
         for index, sample in enumerate(samples_list, 1):
             patient = paired_samples_dict[sample][0]
             run = paired_samples_dict[sample][1]
-            # print(sample, run + "\n")
-            # sample_type = ''
             if sample.endswith('DN'):
                 sample_type = 'DN'
             elif sample.endswith('DT'):
@@ -114,55 +80,30 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     flags.append('WGS_Bases_Over_Q30')
             except (TypeError, ValueError):
                 pass
-            # if dna_bases_over_q30_percent is None:
-            #     dna_bases_over_q30_percent = ''
-            # elif float(dna_bases_over_q30_percent)<75:
-            #     fail.append('WGS_Bases_Over_Q30')
-            # elif float(dna_bases_over_q30_percent)<80:
-            #     flag.append('WGS_Bases_Over_Q30')
 
             dna_aligned_reads_count = extract_min_aln_rds(sample, patient)
-            try:
-                if int(dna_aligned_reads_count)<260000000 and sample_type == 'DN':
-                    fails.append('WGS_Min_Aligned_Reads_Delivered')
-                elif int(dna_aligned_reads_count)<660000000 and sample_type == 'DN':
-                    flags.append('WGS_Min_Aligned_Reads_Delivered')
-                elif int(dna_aligned_reads_count)<530000000 and sample_type == 'DT':
-                    fails.append('WGS_Min_Aligned_Reads_Delivered')
-                elif int(dna_aligned_reads_count)<1330000000 and sample_type == 'DT':
-                    flags.append('WGS_Min_Aligned_Reads_Delivered')
-            except (TypeError, ValueError):
-                pass
-            # if dna_aligned_reads_count in (None, ''):
-            #     dna_aligned_reads_count = ''
-            # elif (float(dna_aligned_reads_count)<260000000 and sample_type == 'DN'):
-            #     fail.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(dna_aligned_reads_count)<660000000 and sample_type == 'DN'):
-            #     flag.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(dna_aligned_reads_count)<530000000 and sample_type == 'DT'):
-            #     fail.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(dna_aligned_reads_count)<1330000000 and sample_type == 'DT'):
-            #     flag.append('WGS_Min_Aligned_Reads_Delivered')
-            # if WGS_Min_Aligned_Reads_Delivered == None or WGS_Min_Aligned_Reads_Delivered == '' :
-            #     WGS_Min_Aligned_Reads_Delivered = ''
-            # elif (float(WGS_Min_Aligned_Reads_Delivered)<260000000 and TYPE == 'N'):
-            #     fail.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(WGS_Min_Aligned_Reads_Delivered)<660000000 and TYPE == 'N'):
-            #     flag.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(WGS_Min_Aligned_Reads_Delivered)<530000000 and TYPE == 'T'):
-            #     fail.append('WGS_Min_Aligned_Reads_Delivered')
-            # elif (float(WGS_Min_Aligned_Reads_Delivered)<1330000000 and TYPE == 'T'):
-            #     flag.append('WGS_Min_Aligned_Reads_Delivered')
-
+            # QC Gates
+            # try:
+            #     if int(dna_aligned_reads_count)<260000000 and sample_type == 'DN':
+            #         fails.append('WGS_Min_Aligned_Reads_Delivered')
+            #     elif int(dna_aligned_reads_count)<660000000 and sample_type == 'DN':
+            #         flags.append('WGS_Min_Aligned_Reads_Delivered')
+            #     elif int(dna_aligned_reads_count)<530000000 and sample_type == 'DT':
+            #         fails.append('WGS_Min_Aligned_Reads_Delivered')
+            #     elif int(dna_aligned_reads_count)<1330000000 and sample_type == 'DT':
+            #         flags.append('WGS_Min_Aligned_Reads_Delivered')
+            # except (TypeError, ValueError):
+            #     pass
 
             raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate = parse_run_metrics(sample, run)
-            try:
-                if float(raw_mean_coverage)<30 and sample_type == 'DN':
-                    fails.append('Raw_Mean_Coverage')
-                elif float(raw_mean_coverage)<80 and sample_type == 'DT':
-                    fails.append('Raw_Mean_Coverage')
-            except (TypeError, ValueError):
-                pass
+            # QC Gates
+            # try:
+            #     if float(raw_mean_coverage)<30 and sample_type == 'DN':
+            #         fails.append('Raw_Mean_Coverage')
+            #     elif float(raw_mean_coverage)<80 and sample_type == 'DT':
+            #         fails.append('Raw_Mean_Coverage')
+            # except (TypeError, ValueError):
+            #     pass
             try:
                 if float(raw_reads_count)<80000000 and sample_type == 'RT':
                     fails.append('Raw_Reads_Count')
@@ -170,44 +111,16 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     flags.append('Raw_Reads_Count')
             except (TypeError, ValueError):
                 pass
-            try:
-                if float(raw_duplication_rate)>50 and sample_type in ('DT', 'DN'):
-                    fails.append('Raw_Duplication_Rate')
-                elif float(raw_duplication_rate)>20 and sample_type in ('DT', 'DN'):
-                    flags.append('Raw_Duplication_Rate')
-            except (TypeError, ValueError):
-                pass
-
-            # dna_raw_coverage = extract_raw_coverage(sample)
-            # if  dna_raw_coverage in (None, ''):
-            #     dna_raw_coverage = ''
-            # elif (float(dna_raw_coverage)<30 and sample_type == 'N'):
-            #     fail.append('WGS_Raw_Coverage')
-            # elif (float(dna_raw_coverage)<80 and sample_type == 'T'):
-            #     fail.append('WGS_Raw_Coverage')
-
-            # #WGS_Duplication_Rate
-            # WGS_duplicates = extract_sambama_dups(Sample,PATIENT)
-            # if  WGS_duplicates == None or WGS_duplicates == '' :
-            #     WGS_duplicates = ''
-            # elif (float(WGS_duplicates)>50):
-            #     fail.append('WGS_Duplication_Rate')
-            # elif (float(WGS_duplicates)>20):
-            #     flag.append('WGS_Duplication_Rate')
-
-            # WGS_Raw_Coverage = extract_raw_coverage(Sample)
-            # if  WGS_Raw_Coverage == None or WGS_Raw_Coverage == '' :
-            #     WGS_Raw_Coverage = ''
-            # elif (float(WGS_Raw_Coverage)<30 and TYPE == 'N'):
-            #     fail.append('WGS_Raw_Coverage')
-            # elif (float(WGS_Raw_Coverage)<80 and TYPE == 'T'):
-            #     fail.append('WGS_Raw_Coverage')
-
+            # QC Gates
+            # try:
+            #     if float(raw_duplication_rate)>50 and sample_type in ('DT', 'DN'):
+            #         fails.append('Raw_Duplication_Rate')
+            #     elif float(raw_duplication_rate)>20 and sample_type in ('DT', 'DN'):
+            #         flags.append('Raw_Duplication_Rate')
+            # except (TypeError, ValueError):
+            #     pass
 
             dna_dedup_coverage = extract_dedup_coverage(sample)
-            # WGS_Dedup_Coverage = extract_ded_coverage(Sample,PATIENT)
-            # if WGS_Dedup_Coverage  == None or WGS_Dedup_Coverage == '' :
-            #     WGS_Dedup_Coverage = ''
 
             median_insert_size = extract_insert_size(sample, patient, sample_type)
             try:
@@ -217,26 +130,16 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('Median_Insert_Size')
             except (TypeError, ValueError):
                 pass
-            # Median_Insert_Size = extract_insert_size(Sample,PATIENT)
-            # if  Median_Insert_Size == None or Median_Insert_Size == '' :
-            #     Median_Insert_Size = ''
-            # elif (float(Median_Insert_Size)<300):
-            #     flag.append('Median_Insert_Size')
-            # elif (float(Median_Insert_Size)<150):
-            #     fail.append('Median_Insert_Size')
 
             #WGS_Contamination
             dna_contamination = extract_contamination(patient, sample_type)
             try:
-                if float(dna_contamination)>5:
+                if float(dna_contamination)>0.5:
                     fails.append('WGS_Contamination')
+                elif float(dna_contamination)>0.05:
+                    flags.append('WGS_Contamination')
             except (TypeError, ValueError):
                 pass
-            # WGS_Contamination = extract_contamination(Sample,PATIENT)
-            # if WGS_Contamination  == None or WGS_Contamination == '' :
-            #     WGS_Contamination = ''
-            # elif (float(WGS_Contamination)>5):
-            #     fail.append('WGS_Contamination')
 
             #Concordance
             dna_concordance = extract_concordance(patient, sample, sample_type)
@@ -245,11 +148,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('Concordance')
             except (TypeError, ValueError):
                 pass
-            # Concordance = extract_concordance(Sample,PATIENT)
-            # if  Concordance == None or Concordance == '' :
-            #     Concordance = ''
-            # elif (float(Concordance)<99):
-            #     fail.append('Concordance')
 
             # Tumor_Purity
             dna_tumour_purity = extract_purity(sample, patient)
@@ -258,21 +156,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('Purity')
             except (TypeError, ValueError):
                 pass
-            # Purity = extract_purity(Sample,PATIENT)
-            # if  Purity == None or Purity == '' :
-            #     Purity = ''
-            # elif (float(Purity)<30):
-            #     fail.append('Purity')
-
-            #WTS_Clusters
-            # WTS_Clusters = extract_WTS_Clusters(Sample)
-            # if  WTS_Clusters == None or WTS_Clusters == '' :
-            #    WTS_Clusters  = ''
-            # elif (float(WTS_Clusters)<80000000):
-            #     fail.append('WTS_Clusters')
-            # elif (float(WTS_Clusters)<100000000):
-            #     flag.append('WTS_Clusters')
-
             #WTS_Exonic_Rate
             rna_aligned_reads_count, rna_exonic_rate = parse_rnaseqc_metrics_tmp(sample)
             try:
@@ -282,18 +165,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     flags.append('WTS_Exonic_Rate')
             except (TypeError, ValueError):
                 pass
-            # WTS_Exonic_Rate = extract_WTS_exonic(Sample)
-            # if WTS_Exonic_Rate  == None or WTS_Exonic_Rate == '' :
-            #     WTS_Exonic_Rate = ''
-            # elif (float(WTS_Exonic_Rate)<0.6):
-            #     fail.append('WTS_Exonic_Rate')
-            # elif (float(WTS_Exonic_Rate)<0.8):
-            #     flag.append('WTS_Exonic_Rate')
-
-            #WTS_Unique_Reads
-            # WTS_Unique_Reads = extract_WTS_unique(Sample)
-            # if  WTS_Unique_Reads == None or WTS_Unique_Reads == '' :
-            #     WTS_Unique_Reads = ''
 
             # WTS_rRA_contamination
             rrna_count = extract_rna_ribosomal(sample)
@@ -305,18 +176,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     flags.append('WTS_rRNA_contamination')
             except (TypeError, ValueError):
                 rna_ribosomal_contamination_count = "NA"
-            # rRNA_count = extract_WTS_rRNA(Sample)
-            # if  rRNA_count == None or rRNA_count == '' or WTS_Unique_Reads == '':
-            #     WTS_rRNA_contamination = ''
-            # else:
-            #     WTS_rRNA_contamination = int(rRNA_count)/int(WTS_Unique_Reads)
-            #     if (float(WTS_rRNA_contamination)>0.35):
-            #         fail.append('WTS_rRNA_contamination')
-            #     elif (float(WTS_rRNA_contamination)>0.1):
-            #         flag.append('WTS_rRNA_contamination')
-
-            # mean_ins_size = extract_mean_map_ins_size(Sample)
-            # med_ins_size = extract_med_map_ins_size(Sample)
 
             # Flags
             tmp_flags = extract_value(connection, "KEY_METRICS", sample, "Flags").split(";")
@@ -344,31 +203,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
             fails = ';'.join(set(fails))
             if not fails:
                 fails = "NA"
-            # Yellow_Flags=';'.join(flag)
-            # Red_Flags=';'.join(fail)
-
-            #print(Sample,dna_bases_over_q30_percent,WGS_Min_Aligned_Reads_Delivered,WGS_Raw_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,WGS_duplicates,WGS_Contamination,WTS_Clusters,WTS_Unique_Reads,WTS_Exonic_Rate,WTS_rRNA_contamination,Concordance,Purity,Yellow_Flags,Red_Flags,mean_ins_size,med_ins_size)
-            # update_metrics_db(
-            #     connection,
-            #     Sample,
-            #     WGS_Bases_Over_Q30,
-            #     WGS_Min_Aligned_Reads_Delivered,
-            #     WGS_Raw_Coverage,
-            #     WGS_Dedup_Coverage,
-            #     Median_Insert_Size,
-            #     WGS_duplicates,
-            #     WGS_Contamination,
-            #     WTS_Clusters,
-            #     WTS_Unique_Reads,
-            #     WTS_Exonic_Rate,
-            #     WTS_rRNA_contamination,
-            #     Concordance,
-            #     Purity,
-            #     Yellow_Flags,
-            #     Red_Flags,
-            #     mean_ins_size,
-            #     med_ins_size
-            #     )
 
             update_metrics_db(
                 connection,
@@ -393,25 +227,6 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 )
             progress.update(index)
 
-            #print (Sample)
-            #print (dna_bases_over_q30_percent)
-            #print (WGS_Min_Aligned_Reads_Delivered)
-            #print (WGS_Raw_Coverage)
-            #print (WGS_Dedup_Coverage)
-            #print (WGS_duplicates)
-            #print (Median_Insert_Size)
-            #print (mean_ins_size)
-            #print (med_ins_size)
-            #print (WGS_Contamination)
-            #print (Concordance)
-            #print (Purity)
-            #print (WTS_Clusters)
-            #print (WTS_Exonic_Rate)
-            #print (WTS_Unique_Reads)
-            #print ("HERE")
-            #print (WTS_rRNA_contamination)
-            #print (Yellow_Flags)
-            #print (Red_Flags)
 
 def parse_run_metrics(sample, run):
     raw_reads_count = "NA"
@@ -455,17 +270,6 @@ def extract_rna_ribosomal(sample):
         ret = "NA"
     return ret
 
-# def extract_WTS_rRNA(ID):
-#     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*rRNA_counts.txt'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[0]
-#                 fields = line.split("\t")
-#                 return fields[0]
 
 def parse_rnaseqc_metrics_tmp(sample):
     try:
@@ -479,71 +283,6 @@ def parse_rnaseqc_metrics_tmp(sample):
         rna_exonic_rate = "NA"
     return rna_aligned_reads_count, rna_exonic_rate
 
-# def extract_WTS_unique(ID):
-#     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[3]
-#                 fields = line.split("\t")
-#                 Output = fields[0]
-#                 return Output
-
-# def extract_WTS_exonic(ID):
-#     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/rnaseqc/*/*.metrics.tmp.txt'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[7]
-#                 fields = line.split("\t")
-#                 Output = float(fields[1])*100
-#                 return (f"%.2f" % round(Output, 2))
-
-# def extract_WTS_Clusters(ID):
-#     if 'DT' in ID or 'DN' in ID or 'D-T' in ID or 'D-N' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 for line in f:
-#                     if ID in line:
-#                         data = line.split(",")
-#                         return data[12]
-
-# def extract_raw_coverage(ID):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 for line in f:
-#                     if ID in line:
-#                         data = line.split(",")
-#                         return data[41]
-# def extract_med_map_ins_size(ID):
-#     path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
-#     for filename in glob.glob(path):
-#         with open(filename, 'r') as f:
-#             for line in f:
-#                 if ID in line:
-#                     data = line.split(",")
-#                     return data[38]
-# def extract_mean_map_ins_size(ID):
-#     path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
-#     for filename in glob.glob(path):
-#         with open(filename, 'r') as f:
-#             for line in f:
-#                 if ID in line:
-#                     data = line.split(",")
-#                     return data[39]
 
 def extract_purity(sample, patient):
     try:
@@ -556,19 +295,6 @@ def extract_purity(sample, patient):
     except FileNotFoundError:
         ret = "NA"
     return ret
-
-# def extract_purity(ID,PATIENT):
-#     if 'R' in ID or ID.endswith('N'):
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/' + PATIENT + '/purple/*.purity.tsv'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[1]
-#                 fields = line.split("\t")
-#                 Output = float(fields[0])*100
-#                 return Output
 
 
 def extract_contamination(patient, sample_type):
@@ -591,35 +317,9 @@ def extract_contamination(patient, sample_type):
             ret = "NA"
     return ret
 
-#WGS N % Contamination,WGS T % Contamination,
-# def extract_contamination(ID,PATIENT):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + PATIENT + '*.contamination.tsv'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 for line in f:
-#                     words = line.split(" ")
-#                     output = words[-1]
-#                     output = output[:-2]
-#                     if words[0].startswith('N') and ID.endswith('N'):
-#                         return output
-#                     elif words[0].startswith('T') and ID.endswith('T'):
-#                         return output
 
 def extract_concordance(patient, sample, sample_type):
     ret = "NA"
-    # if sample_type == 'DT':
-    #     filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', sample + '.concordance.tsv')
-    #     try:
-    #         with open(filename, 'r', encoding="utf-8") as file:
-    #             for line in file:
-    #                 if line.startswith('Concordance'):
-    #                     ret = line.split(" ")[-1][:-2]
-    #     except FileNotFoundError:
-    #         ret = "NA"
-    # elif sample_type == 'DN':
     if sample_type in ('DN', 'DT'):
         # The file is named after tumour sample only
         filename = glob.glob(os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', f"{patient}-*DT.concordance.tsv"))
@@ -636,43 +336,6 @@ def extract_concordance(patient, sample, sample_type):
             ret = "NA"
     return ret
 
-# def extract_concordance(ID,PATIENT):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         CON = None
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/' + PATIENT + '*.concordance.tsv'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 CON = f.readline()
-#         if CON:
-#             CON = CON.replace('Concordance:','')
-#             CON = CON.replace(' ','')
-#             CON = CON[:-1]
-#             CON = CON[:-1]
-#             if float(CON)<=1:
-#                 CON=float(CON)*100
-#             return CON
-#         else:
-#             return None
-
-
-# def extract_sambama_dups(ID,PATIENT):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         DUPS = None;
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 for line in f:
-#                     if ID in line:
-#                         data = line.split(",")
-#                         DUPS = data[15]
-#         if DUPS == None or DUPS == '':
-#             return ''
-#         else:
-#             return float(DUPS)
 
 def extract_insert_size(sample, patient, sample_type):
     ret = "NA"
@@ -695,19 +358,6 @@ def extract_insert_size(sample, patient, sample_type):
         ret = "NA"
     return ret
 
-# def extract_insert_size(ID,PATIENT):
-#     if 'R' in ID:
-#         OUTPUT = 0;
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' +  ID + '/*.insert_size_metrics'
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[7]
-#                 metrics = line.split("\t")
-#                 OUTPUT = metrics[0]
-#         return OUTPUT
-#     else:
-#         return parse_multiqc2(ID,'median_insert_size',2,PATIENT)
 
 def extract_dedup_coverage(sample):
     try:
@@ -722,23 +372,6 @@ def extract_dedup_coverage(sample):
         ret = "NA"
     return ret
 
-# def extract_ded_coverage(ID,PATIENT):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  ID + '/qualimap/' + ID + '/genome_results.txt'
-#         OUTPUT = ''
-#         for filename in glob.glob(path):
-#             with open(filename, 'r') as f:
-#                 lines=f.readlines()
-#                 line=lines[71]
-#                 #line is      mean coverageData = 304.9902X
-#                 metrics = line.split(" ")
-#                 OUTPUT = metrics[-1].replace('X', '')
-#         if OUTPUT == '' or OUTPUT == '':
-#             return ""
-#         else:
-#             return float(OUTPUT)
 
 def extract_min_aln_rds(sample, patient):
     ret = "NA"
@@ -749,54 +382,10 @@ def extract_min_aln_rds(sample, patient):
             for row in reader:
                 if row["Sample"] == sample and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
                     ret = row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]
-                # parsed_line = line.split("\t")
-                # if parsed_line[0] == sample and parsed_line[16]:
-                #     ret = round(float(parsed_line[16]), 0)
     except (FileNotFoundError, KeyError):
         ret = "NA"
     return ret
 
-# def extract_min_aln_rds(ID,PATIENT):
-#     if 'R' in ID:
-#         return ''
-#     else:
-#         return parse_multiqc(ID,'QualiMap_mqc-generalstats-qualimap-mapped_reads',0,PATIENT)
-
-# def parse_multiqc(ID,field,Round,PATIENT):
-#     path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  PATIENT + '*.multiqc_data/multiqc_general_stats.txt'
-#     for filename in glob.glob(path):
-#         with open(filename, 'r') as f:
-#             Output =''
-#             header = f.readline().split("\t")
-#             index = header.index(field)
-#             A = f.readline().split("\t")
-#             B = f.readline().split("\t")
-#             if A[0].endswith(ID[-1]):
-#                 Output = A[index]
-#             elif B[0].endswith(ID[-1]):
-#                 Output = B[index]
-#             if Output != '':
-#                 Output=float(Output)
-#                 Output=f"%.{Round}f" % round(Output, Round)
-#             return Output
-
-# def parse_multiqc2(ID,field,Round,PATIENT):
-#     path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' +  PATIENT + '*.multiqc_data/multiqc_qualimap_bamqc_genome_results.txt'
-#     for filename in glob.glob(path):
-#         with open(filename, 'r') as f:
-#             Output =''
-#             header = f.readline().split("\t")
-#             index = header.index(field)
-#             A = f.readline().split("\t")
-#             B = f.readline().split("\t")
-#             if A[0].endswith(ID[-1]):
-#                 Output = A[index]
-#             elif B[0].endswith(ID[-1]):
-#                 Output = B[index]
-#             if Output != '':
-#                 Output=float(Output)
-#                 Output=f"%.{Round}f" % round(Output, Round)
-#             return Output
 
 def extract_bs_over_q30(sample, sample_type):
     try:
@@ -821,30 +410,6 @@ def extract_bs_over_q30(sample, sample_type):
     except FileNotFoundError:
         percent_abv = "NA"
     return percent_abv
-
-# def extract_bs_over_q30(ID,PATIENT):
-#     path = ''
-#     if 'R' in ID:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna/' + ID + '/picard_metrics/*quality_distribution_metrics'
-#     else:
-#         path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/' + ID + '*/picard_metrics/*quality_distribution_metrics'
-#     Tester = re.compile('(\d+)\W+(\d+)')
-#     for filename in glob.glob(path):
-#         with open(filename, 'r') as f:
-#             Abv_30=0
-#             Blw_30=0
-#             for line in f:
-#                 if line[:1].isdigit():
-#                     Test = Tester.match(line)
-#                     Qual = Test.group(1)
-#                     count = Test.group(2)
-#                     if (int(Qual) < 30):
-#                         Blw_30 += int(count)
-#                     else :
-#                         Abv_30 += int(count)
-#             percent_abv=(Abv_30/(Abv_30+Blw_30))*100
-#             percent_abv = "%.2f" % round(percent_abv, 2)
-#             return percent_abv
 
 
 if __name__ == '__main__':

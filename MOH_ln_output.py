@@ -55,6 +55,9 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
     group.add_argument('--white_list', required=False, help="path/to file for patients to be delivered no matter thresholds.")
+    group.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.")
+    group.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.")
+    group.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.")
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
@@ -69,8 +72,6 @@ def main():
                     black_list[line[0]] = [line[1]]
                 else:
                     black_list[line[0]].append(line[1])
-        # list(set(patients).difference(black_list_))
-        # patients = [patient_name for patient_name in black_list.keys() if patient_name in patients]
     elif args.white_list:
         white_list = {}
         with open(args.white_list, "r") as white_list_file:
@@ -81,7 +82,6 @@ def main():
                 else:
                     white_list[line[0]].append(line[1])
         patients = white_list.keys()
-        # patients = list(filter(lambda i: i[0] in white_list, patients))
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
         for index, patient_name in enumerate(patients, 1):
             patient = PatientData(connection, patient_name)
@@ -162,7 +162,6 @@ def main():
 
             # Populate dna data
             if dna:
-                # print(f"\n\nDelivering {patient.sample} DNA\n\n")
                 updated = deliver_dna(
                     raw_folder,
                     var_folder,
@@ -180,7 +179,6 @@ def main():
                     )
 
             if rna:
-                # print(f"\n\nDelivering {patient.sample} RNA\n\n")
                 updated = deliver_rna(
                     raw_folder,
                     expression_folder,
@@ -201,31 +199,41 @@ def main():
             #     final_vcf = extract_fileloc_field(connection, sample.sample, "Final_VCF")
             #     updated = get_link_log(final_vcf, var_folder, f"{sample.sample_true}.vcf.gz", log, updated, old_log)
 
-            # If any updates were made, Delete the old warning file and populate a new one.
+            if args.update_metrics:
+                generate_key_metrics(key_metrics_file, log, updated, old_log, patient, connection)
+                generate_warning(patient, connection, warning_file, log, updated, old_log)
+            if args.update_methods:
+                generate_methods(methods_file, log, updated, old_log)
+            if args.update_readme:
+                generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna, log, updated, old_log)
+
+            # If any updates were made, generate methods, warning, key metrics and readme files.
             if updated:
                 # Add key metrics table for samples
-                get_local_file_log(key_metrics_file, log, updated, old_log)
-                metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
-                metrics.to_csv(key_metrics_file, index=False)
+                generate_key_metrics(key_metrics_file, log, updated, old_log, patient, connection)
+                # get_local_file_log(key_metrics_file, log, updated, old_log)
+                # metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+                # metrics.to_csv(key_metrics_file, index=False)
 
                 # Add warnings file
-                warnings_l = []
-                warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
-                for _, row in warnings.iterrows():
-                    sample_name = row["Sample"]
-                    flags = " - ".join(row["Flags"].split(";"))
-                    fails = " - ".join(row["Fails"].split(";"))
-                    warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
-                get_local_file_log(warning_file, log, updated, old_log)
-                generate_warning(warning_file, warnings_l)
+                generate_warning(patient, connection, warning_file, log, updated, old_log)
+                # warnings_l = []
+                # warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+                # for _, row in warnings.iterrows():
+                #     sample_name = row["Sample"]
+                #     flags = " - ".join(row["Flags"].split(";"))
+                #     fails = " - ".join(row["Fails"].split(";"))
+                #     warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
+                # get_local_file_log(warning_file, log, updated, old_log)
+                # generate_warning(warning_file, warnings_l)
 
                 # Add methods file
-                get_local_file_log(methods_file, log, updated, old_log)
-                generate_methods(methods_file)
+                # get_local_file_log(methods_file, log, updated, old_log)
+                generate_methods(methods_file, log, updated, old_log)
 
                 # Add readme file
-                get_local_file_log(readme_file, log, updated, old_log)
-                generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna)
+                # get_local_file_log(readme_file, log, updated, old_log)
+                generate_readme(readme_file, patient.sample_true, patient.dna_n, patient.dna_t, patient.rna, log, updated, old_log)
 
             progress.update(index)
 
@@ -456,16 +464,28 @@ class PatientData:
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
-def generate_warning(warn_file, warnings_l):
-    warnings = "\n".join(warnings_l)
+def generate_key_metrics(key_metrics_file, log, updated, old_log, patient, connection):
+    get_local_file_log(key_metrics_file, log, updated, old_log)
+    metrics = pd.read_sql_query(f'select * from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+    metrics.to_csv(key_metrics_file, index=False)
+
+def generate_warning(patient, connection, warning_file, log, updated, old_log):
+    warnings_l = []
+    warnings = pd.read_sql_query(f'select Sample,Flags,Fails from KEY_METRICS where Sample="{patient.dna_n}" or Sample="{patient.dna_t}" or Sample="{patient.rna}"', connection)
+    for _, row in warnings.iterrows():
+        sample_name = row["Sample"]
+        flags = " - ".join(row["Flags"].split(";"))
+        fails = " - ".join(row["Fails"].split(";"))
+        warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
+    get_local_file_log(warning_file, log, updated, old_log)
     data = f"""Below are three columns, "Flags" indicates values that may be troublesome while "Fails" indicates a point of failure. Data may be useable when marked as "Flags", but "Fails" marked data should be carefully considered. If "NA" is present, this data exceeded all standards. Data will not be delivered when coverage is labelled "Fails" at this time.
 
 |  Sample | &nbsp; Flags &nbsp; | &nbsp; Fails |
 | :------ | :------------------ | :----------- |
-{warnings}
+{{"\n".join(warnings_l)}}
 """
     html = markdown.markdown(data, extensions=extensions, extension_configs=extension_configs)
-    with open(warn_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
+    with open(warning_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
         out_file.write(html)
 
 def file_exist_check(file):
@@ -476,7 +496,8 @@ def file_exist_check(file):
         ret = ":clock2:"
     return ret
 
-def generate_readme(readme_file, patient, dna_n, dna_t, rna):
+def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_log):
+    get_local_file_log(readme_file, log, updated, old_log)
     # Add timestamp
     out_folder = os.path.dirname(readme_file)
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
@@ -542,7 +563,8 @@ Generated {timestamp}."""
     with open(readme_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
         out_file.write(html)
 
-def generate_methods(methods_file):
+def generate_methods(methods_file, log, updated, old_log):
+    get_local_file_log(methods_file, log, updated, old_log)
     data = """# Methods
 Using an Illumina NovaSeq 6000 instrument, Whole Genome Sequencing (WGS) was performed on the tumor and matched normal samples, with a target depth of coverage of 80X and 30X respectively. Similarly, Whole Transcriptome Sequencing (WTS) was done on tumour samples, with a target of 100 million paired-end reads per sample.
 
