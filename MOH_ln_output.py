@@ -55,9 +55,9 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
     group.add_argument('--white_list', required=False, help="path/to file for patients to be delivered no matter thresholds.")
-    parser.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.")
-    parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.")
-    parser.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.")
+    parser.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.", action='store_true')
+    parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.", action='store_true')
+    parser.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.", action='store_true')
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
