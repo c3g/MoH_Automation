@@ -478,11 +478,12 @@ def generate_warning(patient, connection, warning_file, log, updated, old_log):
         fails = " - ".join(row["Fails"].split(";"))
         warnings_l.append(f"| {sample_name} | &nbsp; {flags} &nbsp; | &nbsp; {fails} |")
     get_local_file_log(warning_file, log, updated, old_log)
+    warnings_l_joined = "\n".join(warnings_l)
     data = f"""Below are three columns, "Flags" indicates values that may be troublesome while "Fails" indicates a point of failure. Data may be useable when marked as "Flags", but "Fails" marked data should be carefully considered. If "NA" is present, this data exceeded all standards. Data will not be delivered when coverage is labelled "Fails" at this time.
 
 |  Sample | &nbsp; Flags &nbsp; | &nbsp; Fails |
 | :------ | :------------------ | :----------- |
-{{"\n".join(warnings_l)}}
+{warnings_l_joined}
 """
     html = markdown.markdown(data, extensions=extensions, extension_configs=extension_configs)
     with open(warning_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
