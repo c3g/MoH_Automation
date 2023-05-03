@@ -60,3 +60,4 @@ manually_*.sh
 # Dev files
 jsons/
 transfer/
+log_reports/

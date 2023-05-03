@@ -6,19 +6,27 @@ import sys
 import re
 import csv
 import os
+import hashlib
+import logging
 from datetime import datetime
 
+logger = logging.getLogger(__name__)
+
 def main():
-    main_raw_reads_folder = "/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
+    # prefix_path = "/Users/pstretenowich/Mount_points/beluga"
+    prefix_path = "/lustre03/project/6007512"
+    main_raw_reads_folder = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/raw_reads")
     patient_dict = get_patient_dict(main_raw_reads_folder)
-    readset_dict, sample_dict = jsonify_run_processing(patient_dict)
-    jsonify_transfer(sample_dict)
+    readset_dict, sample_dict = jsonify_run_processing(patient_dict, prefix_path)
+    jsonify_transfer(sample_dict, prefix_path)
+    jsonify_genpipes_tumourpair(sample_dict, prefix_path)
+    jsonify_genpipes_rnaseqlight(sample_dict, prefix_path)
 
 
-def jsonify_run_processing(patient_dict):
+def jsonify_run_processing(patient_dict, prefix_path):
     readset_dict = {}
     sample_dict = {}
-    run_metrics_csv = "/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*.csv"
+    run_metrics_csv = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/*.csv")
     # run_metrics_csv = "/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/220128_A00266_0620_BH527LDSX3_MOHRun01_Q008401-novaseq-run.align_bwa_mem.csv"
     for run_file in glob.glob(run_metrics_csv):
         run_list = []
@@ -80,8 +88,8 @@ def jsonify_run_processing(patient_dict):
                             "readset": []
                             }
 
-                    # transfer_folder = '/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
-                    transfer_folder = 'transfer/*'
+                    transfer_folder = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*')
+                    # transfer_folder = 'transfer/*'
                     fastq1 = fastq2 = ""
                     for filename in glob.glob(transfer_folder):
                         with open(filename, 'r') as file:
@@ -173,9 +181,9 @@ def jsonify_run_processing(patient_dict):
                         }
                     sample_json["readset"].append(readset_json)
                     if sample_name in sample_dict:
-                        sample_dict[sample_name].append(readset_name)
+                        sample_dict[sample_name].append((patient, readset_name))
                     else:
-                        sample_dict[sample_name] = [readset_name]
+                        sample_dict[sample_name] = [(patient, readset_name)]
                     patient_json["sample"].append(sample_json)
                     json_output["patient"].append(patient_json)
                     # for sample in patient_json["sample"]:
@@ -188,9 +196,9 @@ def jsonify_run_processing(patient_dict):
 
     return readset_dict, sample_dict
 
-def jsonify_transfer(sample_dict):
-    # transfer_folder = '/Users/pstretenowich/Mount_points/beluga/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
-    transfer_folder = 'transfer/*'
+def jsonify_transfer(sample_dict, prefix_path):
+    transfer_folder = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*')
+    # transfer_folder = 'transfer/*'
     # transfer_dict = {}
     for filename in glob.glob(transfer_folder):
         transfer_dict = {}
@@ -276,9 +284,155 @@ def jsonify_transfer(sample_dict):
                 json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
-def jsonify_genpipes():
-    pass
+def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
+    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/TumorPair.config.trace.ini")
+    to_parse = False
+    ini_content = []
+    with open(ini_file, 'r') as file:
+        for line in file:
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "[DEFAULT]" in line:
+                to_parse = True
+            if to_parse:
+                ini_content.append(line)
+    # From where to parse genpipes version and cmd line
+    json_output = {
+        "project_name": "MOH-Q",
+        "operation_config_name": "genpipes_ini",
+        "operation_config_version": f"{genpipes_version}",
+        "operation_config_md5sum": f"{md5(ini_file)}",
+        "operation_config_data": f"{''.join(ini_content)}",
+        "operation_platform": "beluga",
+        "operation_cmd_line": "module purge\nmodule load python/3.10.2 mugqic/genpipes/4.2.0\nrnaseq_light.py \n    -j slurm \n    -r readset.txt \n    -s 1-5 \n    -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini \n        $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini \n        $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini \n        RNA_light.custom.ini \n  > RNASeq_light_run.sh\nrm -r RNA_CHUNKS;\nmkdir RNA_CHUNKS;\n$MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh -n 100 RNASeq_light_run.sh RNA_CHUNKS",
+        "operation_name": "genpipes_rnaseq_light",
+        "sample": []
+        }
+    sample_dict_dna = {}
+    for sample in sample_dict:
+        if not sample.endswith("RT"):
+            sample_dict_dna[sample] = sample_dict[sample]
+        # if sample == "MoHQ-MU-17-1251-OC1-1DT":
+        #     sample_dict_dna[sample] = sample_dict[sample]
+    for sample in sample_dict_dna:
+        print(sample)
+        patient = sample_dict_dna[sample][0][0]
+        if sample.endswith("DT"):
+            tumour = True
+        else:
+            tumour = False
+        sample_json = {
+            "sample_name": f"{sample}",
+            "readset": []
+        }
+        job_jsons = []
 
+        job_jsons.append(sym_link_final_bam_tumourpair(patient, sample, tumour, prefix_path))
+        job_jsons.append(gatk_variant_annotator_germline_tumourpair(patient, prefix_path))
+        job_jsons.append(gatk_variant_annotator_somatic_tumourpair(patient, prefix_path))
+        job_jsons.append(paired_mutect2_tumourpair(patient, prefix_path))
+        job_jsons.append(vardict_paired_tumourpair(patient, prefix_path))
+        job_jsons.append(paired_varscan2_tumourpair(patient, prefix_path))
+        job_jsons.append(cnvkit_batch_tumourpair(patient, prefix_path))
+        job_jsons.append(recalibration_tumourpair(sample, prefix_path))
+        # job_jsons.append(run_pair_multiqc_tumourpair(patient))
+        job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
+
+        # Conpair
+        job_jsons.append(extract_conpair(patient, sample, tumour, prefix_path))
+        # Purple
+        job_jsons.append(extract_purple(sample, patient, prefix_path))
+        # Qualimap
+        job_json_qualimap, job_json_multiqc = extract_qualimap_multiqc(sample, patient, prefix_path)
+        job_jsons.append(job_json_qualimap)
+        job_jsons.append(job_json_multiqc)
+        # Picard
+        job_jsons.append(extract_picard_tumourpair(sample, prefix_path))
+        for (_, readset) in sample_dict_dna[sample]:
+            readset_json = {
+                "readset_name": f"{readset}",
+                "job": []
+            }
+            # readset_json["job"].append(job_json_conpair)
+            # readset_json["job"].append(job_json_purple)
+            # readset_json["job"].append(job_json_qualimap)
+            # readset_json["job"].append(job_json_multiqc)
+            # readset_json["job"].append(job_json_picard)
+            for job_json in job_jsons:
+                readset_json["job"].append(job_json)
+            if readset_json["job"]:
+                sample_json["readset"].append(readset_json)
+        if sample_json["readset"]:
+            json_output["sample"].append(sample_json)
+    # print(json.dumps(json_output, indent=4))
+    if json_output["sample"]:
+        with open(f"jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=4)
+
+
+def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
+    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/RnaSeq.config.trace.ini")
+    to_parse = False
+    ini_content = []
+    with open(ini_file, 'r') as file:
+        for line in file:
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "[DEFAULT]" in line:
+                to_parse = True
+            if to_parse:
+                ini_content.append(line)
+    # From where to parse genpipes version and cmd line
+    json_output = {
+        "project_name": "MOH-Q",
+        "operation_config_name": "genpipes_ini",
+        "operation_config_version": f"{genpipes_version}",
+        "operation_config_md5sum": f"{md5(ini_file)}",
+        "operation_config_data": f"{''.join(ini_content)}",
+        "operation_platform": "beluga",
+        "operation_cmd_line": "module purge\nmodule load python/3.10.2 mugqic/genpipes/4.2.0\nrnaseq_light.py \n    -j slurm \n    -r readset.txt \n    -s 1-5 \n    -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini \n        $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini \n        $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini \n        RNA_light.custom.ini \n  > RNASeq_light_run.sh\nrm -r RNA_CHUNKS;\nmkdir RNA_CHUNKS;\n$MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh -n 100 RNASeq_light_run.sh RNA_CHUNKS",
+        "operation_name": "genpipes_rnaseq_light",
+        "sample": []
+        }
+    sample_dict_rna = {}
+    for sample in sample_dict:
+        if sample.endswith("RT"):
+            sample_dict_rna[sample] = sample_dict[sample]
+        # if sample == "MoHQ-MU-17-1251-OC1-1DT":
+        #     sample_dict_rna[sample] = sample_dict[sample]
+    for sample in sample_dict_rna:
+        print(sample)
+        patient = sample_dict_rna[sample][0][0]
+        tumour = True
+        sample_json = {
+            "sample_name": f"{sample}",
+            "readset": []
+        }
+        # Picard
+        job_json_picard = extract_picard_rna(sample, prefix_path)
+        for (_, readset) in sample_dict_rna[sample]:
+            readset_json = {
+                "readset_name": f"{readset}",
+                "job": []
+            }
+            if job_json_picard:
+                print(job_json_picard)
+                readset_json["job"].append(job_json_picard)
+                sample_json["readset"].append(readset_json)
+        if sample_json["readset"]:
+            json_output["sample"].append(sample_json)
+    # print(json.dumps(json_output, indent=4))
+    if json_output["sample"]:
+        with open(f"jsons/genpipes_rnaseqlight.json", 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=4)
+
+
+def md5(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
+            hash_md5.update(chunk)
+    return hash_md5.hexdigest()
 
 def get_patient_dict(main_raw_reads_folder):
     patient_dict = {}
@@ -295,6 +449,967 @@ def get_patient_dict(main_raw_reads_folder):
                 patient_dict[patient] = {sample: (patient, sample, sample_type, cohort, institution)}
     return patient_dict
 
+
+def extract_conpair(patient, sample, tumour, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o file found")
+    job_json_conpair = {
+        "job_name": "conpair",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": [],
+        "metric": []
+    }
+    # Contamination
+    no_contamination = False
+    # The file is named after tumour sample only
+    contamination_file = glob.glob(os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics', patient + '-*DT.contamination.tsv'))
+    # Test if unsure about finding more than 1 contamination file for normal sample based on the glob above.
+    # It has to print nothing to be ok, otherwise it means a manual check is required.
+    if len(contamination_file) > 1:
+        print(f" WARNING: Manual check reauired for patient {patient} as more than 1 contamination file is found: {contamination_file}")
+    try:
+        with open(contamination_file[0], 'r', encoding="utf-8") as file:
+            job_json_conpair["job_status"] = "COMPLETED"
+            for line in file:
+                if line.startswith('Normal') and not tumour:
+                    value = line.split(" ")[-1][:-2]
+                    if float(value)>5:
+                        flag = "FAILED"
+                    else:
+                        flag = "PASS"
+                    job_json_conpair["metric"].append({
+                        "metric_name": "contamination",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}"
+                        })
+                    job_json_conpair["file"].append({
+                        "location_uri": f"beluga://{contamination_file[0]}",
+                        "file_name": f"{os.path.basename(contamination_file[0])}"
+                        })
+                elif line.startswith('Tumor') and tumour:
+                    value = line.split(" ")[-1][:-2]
+                    if float(value)>5:
+                        flag = "FAILED"
+                    else:
+                        flag = "PASS"
+                    job_json_conpair["metric"].append({
+                        "metric_name": "contamination",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}"
+                        })
+                    job_json_conpair["file"].append({
+                        "location_uri": f"beluga://{contamination_file[0]}",
+                        "file_name": f"{os.path.basename(contamination_file[0])}"
+                        })
+    except (FileNotFoundError, IndexError):
+        no_contamination = True
+    # Concordance
+    no_concordance = False
+    # The file is named after tumour sample only
+    filename = glob.glob(os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics', f"{patient}-*DT.concordance.tsv"))
+    # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
+    # It has to print nothing to be ok, otherwise it means a manual check is required.
+    if len(filename) > 1:
+        print(f" WARNING: Manual check reauired for patient {patient} as more than 1 concordance file is found: {filename}")
+    try:
+        with open(filename[0], 'r', encoding="utf-8") as file:
+            job_json_conpair["job_status"] = "COMPLETED"
+            for line in file:
+                if line.startswith('Concordance'):
+                    value = line.split(" ")[-1][:-2]
+                    if float(value)<99:
+                        flag = "FAILED"
+                    else:
+                        flag = "PASS"
+                    job_json_conpair["metric"].append({
+                        "metric_name": "concordance",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}"
+                        })
+                    job_json_conpair["file"].append({
+                        "location_uri": f"beluga://{filename[0]}",
+                        "file_name": f"{os.path.basename(filename[0])}"
+                        })
+    except (FileNotFoundError, IndexError):
+        no_concordance = True
+    if no_concordance and no_contamination:
+        job_json_conpair = None
+    return job_json_conpair
+
+
+def extract_purple(sample, patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/purple/purple.purity.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No purple/purple.purity.*{patient}*.o file found")
+    try:
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
+        with open(filename, 'r', encoding="utf-8") as file:
+            lines = file.readlines()
+            line = lines[1]
+            fields = line.split("\t")
+            value = float(fields[0])*100
+            if float(value)<30:
+                flag = "FAILED"
+            else:
+                flag = "PASS"
+            metric_json = {
+                "metric_name": "purity",
+                "metric_value": f"{value}",
+                "metric_flag": f"{flag}"
+                }
+            file_json = {
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename[0])}"
+                }
+            job_json = {
+                "job_name": "purple",
+                "job_start": job_start,
+                "job_stop": job_stop,
+                "job_status": "COMPLETED",
+                "file": [file_json],
+                "metric": [metric_json]
+            }
+    except FileNotFoundError:
+        job_json = None
+    return job_json
+
+def extract_picard_rna(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/picard_rna_metrics/picard_rna_metrics.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No picard_rna_metrics/picard_rna_metrics.*{sample}*.o file found")
+    job_json = {
+        "job_name": "picard",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": [],
+        "metric": []
+    }
+    # median_insert_size
+    try:
+        no_median_insert_size = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json["job_status"] = "COMPLETED"
+            lines = file.readlines()
+            line = lines[7]
+            metrics = line.split("\t")
+            value = metrics[0]
+            if float(value)<300:
+                flag = "WARNING"
+            elif float(value)<150:
+                flag = "FAILED"
+            else:
+                flag = "PASS"
+            job_json["metric"].append({
+                "metric_name": "median_insert_size",
+                "metric_value": f"{value}",
+                "metric_flag": f"{flag}"
+                })
+            job_json["file"].append({
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                })
+            print(f"\n\nmedian_insert_size {sample}\n\n")
+    except FileNotFoundError:
+        no_median_insert_size = True
+    # bases_over_q30_percent
+    try:
+        no_bases_over_q30_percent = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.quality_distribution_metrics')
+        tester = re.compile('(\d+)\W+(\d+)')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json["job_status"] = "COMPLETED"
+            above_30 = 0
+            below_30 = 0
+            for line in file:
+                if line[:1].isdigit():
+                    test = tester.match(line)
+                    qual = test.group(1)
+                    count = test.group(2)
+                    if int(qual) < 30:
+                        below_30 += int(count)
+                    else :
+                        above_30 += int(count)
+            value = round((above_30/(above_30+below_30))*100, 2)
+            if int(value)<75:
+                flag = "FAILED"
+            elif int(value)<80:
+                flag = "WARNING"
+            else:
+                flag = "PASS"
+            job_json["metric"].append({
+                "metric_name": "bases_over_q30_percent",
+                "metric_value": f"{value}",
+                "metric_flag": f"{flag}"
+                })
+            job_json["file"].append({
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                })
+    except FileNotFoundError:
+        no_bases_over_q30_percent = True
+
+    if no_median_insert_size and no_bases_over_q30_percent:
+        job_json = None
+
+    return job_json
+
+
+def kallisto_rnaseqlight(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/kallisto/kallisto.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No kallisto/kallisto.*{sample}*.o file found")
+    job_json = {
+        "job_name": "kallisto",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_transcripts.tsv')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_genes.tsv')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def run_annofuse_rnaseqlight(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_annofuse/run_annoFuse.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No run_annofuse/run_annoFuse.*{sample}*.o file found")
+    job_json = {
+        "job_name": "run_annofuse",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/fusion', sample, 'annoFuse', f'{sample}.putative_driver_fusions.tsv')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+
+def extract_qualimap_multiqc(sample, patient, prefix_path):
+    qualimap_job_status = None
+    qualimap_job_start = None
+    qualimap_job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            qualimap_job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    qualimap_job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    qualimap_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
+    job_json_qualimap = {
+        "job_name": "qualimap",
+        "job_start": qualimap_job_start,
+        "job_stop": qualimap_job_stop,
+        "job_status": qualimap_job_status,
+        "file": [],
+        "metric": []
+    }
+    multiqc_job_status = None
+    multiqc_job_start = None
+    multiqc_job_stop = None
+
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_pair_multiqc/multiqc.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            multiqc_job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    multiqc_job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    multiqc_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No run_pair_multiqc/multiqc.*{patient}*.o file found")
+    job_json_multiqc = {
+        "job_name": "multiqc",
+        "job_start": multiqc_job_start,
+        "job_stop": multiqc_job_stop,
+        "job_status": multiqc_job_status,
+        "file": []
+    }
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', f'{patient}.multiqc.html')
+    if os.path.exists(filename):
+        job_json_multiqc["job_status"] = "COMPLETED"
+        job_json_multiqc["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    # median_insert_size
+    try:
+        no_insert_size = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json_multiqc["job_status"] = "COMPLETED"
+            job_json_qualimap["job_status"] = "COMPLETED"
+            for line in file:
+                parsed_line = line.split("\t")
+                if parsed_line[0] == sample:
+                    value = round(float(parsed_line[7]), 0)
+                    if float(value)<300:
+                        flag = "WARNING"
+                    elif float(value)<150:
+                        flag = "FAILED"
+                    else:
+                        flag = "PASS"
+                    job_json_qualimap["metric"].append({
+                        "metric_name": "median_insert_size",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}"
+                        })
+                    job_json_multiqc["file"].append({
+                        "location_uri": f"beluga://{filename}",
+                        "file_name": f"{os.path.basename(filename)}"
+                        })
+    except FileNotFoundError:
+        no_insert_size = True
+    # dedup_coverage
+    try:
+        no_dedup_coverage = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json_qualimap["job_status"] = "COMPLETED"
+            lines = file.readlines()
+            line = lines[71]
+            metrics = line.split(" ")
+            value = float(metrics[-1].replace('X', ''))
+            job_json_qualimap["metric"].append({
+                "metric_name": "dedup_coverage",
+                "metric_value": f"{value}",
+                "metric_flag": "PASS"
+                })
+            job_json_qualimap["file"].append({
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                })
+    except (FileNotFoundError, ValueError):
+        no_dedup_coverage = True
+    # aligned_reads_count
+    try:
+        no_aligned_reads_count = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
+        with open(filename, 'r', encoding="utf-8") as csvfile:
+            job_json_multiqc["job_status"] = "COMPLETED"
+            job_json_qualimap["job_status"] = "COMPLETED"
+            reader = csv.DictReader(csvfile, delimiter="\t")
+            for row in reader:
+                if row["Sample"] == sample and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
+                    value = row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]
+                    if float(value)<260000000 and sample.endswith('DN'):
+                        flag = "FAILED"
+                    elif float(value)<660000000 and sample.endswith('DN'):
+                        flag = "WARNING"
+                    elif float(value)<530000000 and sample.endswith('DT'):
+                        flag = "FAILED"
+                    elif float(value)<1330000000 and sample.endswith('DT'):
+                        flag = "WARNING"
+                    else:
+                        flag = "PASS"
+                    job_json_qualimap["metric"].append({
+                        "metric_name": "aligned_reads_count",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}"
+                        })
+                    job_json_multiqc["file"].append({
+                        "location_uri": f"beluga://{filename}",
+                        "file_name": f"{os.path.basename(filename)}"
+                        })
+
+    except (FileNotFoundError, KeyError):
+        no_aligned_reads_count = True
+
+    if no_insert_size and no_dedup_coverage and no_aligned_reads_count:
+        job_json_qualimap = job_json_multiqc = None
+    elif no_insert_size and no_aligned_reads_count:
+        job_json_multiqc = None
+
+    return job_json_qualimap, job_json_multiqc
+
+def extract_picard_tumourpair(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o file found")
+    try:
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'picard_metrics', sample + '.all.metrics.quality_distribution_metrics')
+        tester = re.compile('(\d+)\W+(\d+)')
+        with open(filename, 'r', encoding="utf-8") as file:
+            above_30 = 0
+            below_30 = 0
+            for line in file:
+                if line[:1].isdigit():
+                    test = tester.match(line)
+                    qual = test.group(1)
+                    count = test.group(2)
+                    if int(qual) < 30:
+                        below_30 += int(count)
+                    else :
+                        above_30 += int(count)
+            value = round((above_30/(above_30+below_30))*100, 2)
+            if int(value)<75:
+                flag = "FAILED"
+            elif int(value)<80:
+                flag = "WARNING"
+            else:
+                flag = "PASS"
+            metric_json = {
+                "metric_name": "bases_over_q30_percent",
+                "metric_value": f"{value}",
+                "metric_flag": f"{flag}"
+                }
+            file_json = {
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                }
+            job_json = {
+                "job_name": "picard",
+                "job_start": job_start,
+                "job_stop": job_stop,
+                "job_status": "COMPLETED",
+                "file": [file_json],
+                "metric": [metric_json]
+            }
+    except FileNotFoundError:
+        job_json = None
+    return job_json
+
+
+def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o file found")
+    job_json = {
+        "job_name": "gatk_variant_annotator_germline",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.germline.vt.annot.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gatk_variant_annotator_somatic/gatk_variant_annotator_somatic.others.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No gatk_variant_annotator_germline/gatk_variant_annotator_somatic.others.*{patient}*.o file found")
+    job_json = {
+        "job_name": "gatk_variant_annotator_somatic",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.somatic.vt.annot.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def paired_mutect2_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/paired_mutect2/gatk_mutect2.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
+    job_json = {
+        "job_name": "paired_mutect2",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.somatic.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+# def strelka2_paired_somatic_tumourpair(patient, prefix_path):
+#     job_status = None
+#     job_start = None
+#     job_stop = None
+#     try:
+#         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_somatic/gatk_mutect2.*{patient}*.o")), key=os.path.getmtime)[-1]
+#         with open(latest, 'r', encoding="utf-8") as file:
+#             job_status = "COMPLETED"
+#             for line in file:
+#                 if "AccrueTime" in line:
+#                     job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+#                 elif "EndTime" in line:
+#                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+#     except IndexError:
+#         logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
+#     job_json = {
+#         "job_name": "strelka2_paired_somatic",
+#         "job_start": job_start,
+#         "job_stop": job_stop,
+#         "job_status": job_status,
+#         "file": []
+#     }
+
+#     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
+#     if os.path.exists(filename):
+#         job_json["job_status"] = "COMPLETED"
+#         job_json["file"].append({
+#             "location_uri": f"beluga://{filename}",
+#             "file_name": f"{os.path.basename(filename)}"
+#             })
+#     if not job_json["file"]:
+#         job_json = None
+
+#     return job_json
+
+def vardict_paired_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/vardict_paired/vardict_paired.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No vardict_paired/vardict_paired.*{patient}*.o file found")
+    job_json = {
+        "job_name": "vardict_paired",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.germline.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.somatic.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def paired_varscan2_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/paired_varscan2/varscan2_somatic.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No paired_varscan2/varscan2_somatic.*{patient}*.o file found")
+    job_json = {
+        "job_name": "paired_varscan2",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.germline.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.somatic.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def cnvkit_batch_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/cnvkit_batch/cnvkit_batch.call.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
+    job_json = {
+        "job_name": "cnvkit_batch",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants', patient, f'{patient}.cnvkit.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def recalibration_tumourpair(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/recalibration/gatk_print_reads.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No recalibration/gatk_print_reads.*{sample}*.o file found")
+    job_json = {
+        "job_name": "recalibration",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam.bai')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def sym_link_final_bam_tumourpair(patient, sample, tumor, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        if tumor:
+            t_name = "Tumor"
+        else:
+            t_name = "Normal"
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o file found")
+    job_json = {
+        "job_name": "sym_link_final_bam",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam.md5')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def run_pair_multiqc_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_pair_multiqc/multiqc.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No run_pair_multiqc/multiqc.*{patient}*.o file found")
+    job_json = {
+        "job_name": "run_pair_multiqc",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', f'{patient}.multiqc.html')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def report_pcgr_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/report_pcgr/report_pcgr.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No report_pcgr/report_pcgr.*{patient}*.o file found")
+    job_json = {
+        "job_name": "report_pcgr",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.flexdb.html')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.maf')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.snvs_indels.tiers.tsv')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.cna_segments.tsv.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
 
 def dna_bases_over_q30_percent_check(value):
     if int(value)<75:
