@@ -403,7 +403,6 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
         # if sample == "MoHQ-MU-17-1251-OC1-1DT":
         #     sample_dict_rna[sample] = sample_dict[sample]
     for sample in sample_dict_rna:
-        print(sample)
         patient = sample_dict_rna[sample][0][0]
         tumour = True
         sample_json = {
@@ -458,13 +457,7 @@ def extract_conpair(patient, sample, tumour, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o file found")
     job_json_conpair = {
@@ -559,13 +552,7 @@ def extract_purple(sample, patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/purple/purple.purity.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/purple/purple.purity.*{patient}*.o file found")
     job_json = {
@@ -574,22 +561,11 @@ def extract_purple(sample, patient, prefix_path):
         "job_stop": job_stop,
         "job_status": job_status,
         "file": [],
-        "metric": []
     }
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz.tbi')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     try:
         filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -601,12 +577,19 @@ def extract_purple(sample, patient, prefix_path):
                 flag = "FAILED"
             else:
                 flag = "PASS"
-            job_json["metric"].append({
-                "metric_name": "purity",
-                "metric_value": f"{value}",
-                "metric_flag": f"{flag}"
-                })
-            job_json["metric"].append({
+            try:
+                job_json["metric"].append({
+                    "metric_name": "purity",
+                    "metric_value": f"{value}",
+                    "metric_flag": f"{flag}"
+                    })
+            except KeyError:
+                job_json["metric"] = [{
+                    "metric_name": "purity",
+                    "metric_value": f"{value}",
+                    "metric_flag": f"{flag}"
+                    }]
+            job_json["file"].append({
                 "location_uri": f"beluga://{filename}",
                 "file_name": f"{os.path.basename(filename[0])}"
                 })
@@ -622,13 +605,7 @@ def extract_picard_rna(sample, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/picard_rna_metrics/picard_rna_metrics.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/picard_rna_metrics/picard_rna_metrics.*{sample}*.o file found")
     job_json = {
@@ -716,13 +693,7 @@ def kallisto_rnaseqlight(sample, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/kallisto/kallisto.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/kallisto/kallisto.*{sample}*.o file found")
     job_json = {
@@ -734,19 +705,9 @@ def kallisto_rnaseqlight(sample, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_transcripts.tsv')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_genes.tsv')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
 
     if not job_json["file"]:
         job_json = None
@@ -759,13 +720,7 @@ def run_annofuse_rnaseqlight(sample, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_annofuse/run_annoFuse.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/run_annofuse/run_annoFuse.*{sample}*.o file found")
     job_json = {
@@ -777,12 +732,7 @@ def run_annofuse_rnaseqlight(sample, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/fusion', sample, 'annoFuse', f'{sample}.putative_driver_fusions.tsv')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
 
     if not job_json["file"]:
         job_json = None
@@ -938,13 +888,7 @@ def extract_picard_tumourpair(sample, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o file found")
     try:
@@ -997,13 +941,7 @@ def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o file found")
     job_json = {
@@ -1015,12 +953,7 @@ def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.germline.vt.annot.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1032,13 +965,7 @@ def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gatk_variant_annotator_somatic/gatk_variant_annotator_somatic.others.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_somatic.others.*{patient}*.o file found")
     job_json = {
@@ -1050,12 +977,7 @@ def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.somatic.vt.annot.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1067,13 +989,7 @@ def paired_mutect2_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/paired_mutect2/gatk_mutect2.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
@@ -1085,19 +1001,9 @@ def paired_mutect2_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.somatic.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1109,13 +1015,7 @@ def strelka2_paired_germline_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_germline.filter.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/strelka2_paired_germline.filter.*{patient}*.o file found")
     job_json = {
@@ -1127,19 +1027,9 @@ def strelka2_paired_germline_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz.tbi')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1151,13 +1041,7 @@ def vardict_paired_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/vardict_paired/vardict_paired.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/vardict_paired/vardict_paired.*{patient}*.o file found")
     job_json = {
@@ -1169,19 +1053,9 @@ def vardict_paired_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.germline.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.somatic.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1193,13 +1067,7 @@ def paired_varscan2_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/paired_varscan2/varscan2_somatic.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/paired_varscan2/varscan2_somatic.*{patient}*.o file found")
     job_json = {
@@ -1211,19 +1079,9 @@ def paired_varscan2_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.germline.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.somatic.vt.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1235,13 +1093,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/cnvkit_batch/cnvkit_batch.call.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
@@ -1253,12 +1105,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants', patient, f'{patient}.cnvkit.vcf.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1270,13 +1117,7 @@ def recalibration_tumourpair(sample, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/recalibration/gatk_print_reads.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/recalibration/gatk_print_reads.*{sample}*.o file found")
     job_json = {
@@ -1288,19 +1129,9 @@ def recalibration_tumourpair(sample, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam.bai')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1316,13 +1147,7 @@ def sym_link_final_bam_tumourpair(patient, sample, tumor, prefix_path):
         else:
             t_name = "Normal"
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o file found")
     job_json = {
@@ -1334,12 +1159,7 @@ def sym_link_final_bam_tumourpair(patient, sample, tumor, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam.md5')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1351,13 +1171,7 @@ def run_pair_multiqc_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_pair_multiqc/multiqc.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
     job_json = {
@@ -1369,12 +1183,7 @@ def run_pair_multiqc_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', f'{patient}.multiqc.html')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
@@ -1386,13 +1195,7 @@ def report_pcgr_tumourpair(patient, prefix_path):
     job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/report_pcgr/report_pcgr.*{patient}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+        job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
         logger.warning(f"No job_output/report_pcgr/report_pcgr.*{patient}*.o file found")
     job_json = {
@@ -1404,36 +1207,39 @@ def report_pcgr_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.flexdb.html')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
+
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.maf')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.snvs_indels.tiers.tsv')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.cna_segments.tsv.gz')
-    if os.path.exists(filename):
-        job_json["job_status"] = "COMPLETED"
-        job_json["file"].append({
-            "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
-            })
+    job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
         job_json = None
 
+    return job_json
+
+def parse_o_file(latest):
+    job_status = None
+    job_start = None
+    job_stop = None
+    with open(latest, 'r', encoding="utf-8") as file:
+        job_status = "COMPLETED"
+        for line in file:
+            if "AccrueTime" in line:
+                job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+            elif "EndTime" in line:
+                job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    return job_status, job_start, job_stop
+
+def add_output_file(filename, job_json):
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
     return job_json
 
 def dna_bases_over_q30_percent_check(value):
