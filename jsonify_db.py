@@ -315,8 +315,12 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
             sample_dict_dna[sample] = sample_dict[sample]
         # if sample == "MoHQ-MU-17-1251-OC1-1DT":
         #     sample_dict_dna[sample] = sample_dict[sample]
+    length = len(sample_dict_dna)
+    i = 0
     for sample in sample_dict_dna:
-        # print(sample)
+        i += 1
+        eta = round(float(100*i/length), 2)
+        logger.info(f"jsonify_genpipes_tumourpair - {eta}%")
         patient = sample_dict_dna[sample][0][0]
         if sample.endswith("DT"):
             tumour = True
