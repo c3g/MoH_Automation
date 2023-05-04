@@ -573,7 +573,8 @@ def extract_purple(sample, patient, prefix_path):
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
-        "file": []
+        "file": [],
+        "metric": []
     }
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
     if os.path.exists(filename):
