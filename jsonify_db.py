@@ -10,7 +10,7 @@ import hashlib
 import logging
 from datetime import datetime
 
-logging.basicConfig(format='%(asctime)s - %(message)s')
+logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def main():
