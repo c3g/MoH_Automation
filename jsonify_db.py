@@ -10,6 +10,7 @@ import hashlib
 import logging
 from datetime import datetime
 
+logging.basicConfig(format='%(asctime)s - %(message)s')
 logger = logging.getLogger(__name__)
 
 def main():
@@ -315,7 +316,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
         # if sample == "MoHQ-MU-17-1251-OC1-1DT":
         #     sample_dict_dna[sample] = sample_dict[sample]
     for sample in sample_dict_dna:
-        print(sample)
+        # print(sample)
         patient = sample_dict_dna[sample][0][0]
         if sample.endswith("DT"):
             tumour = True
@@ -335,7 +336,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
         job_jsons.append(paired_varscan2_tumourpair(patient, prefix_path))
         job_jsons.append(cnvkit_batch_tumourpair(patient, prefix_path))
         job_jsons.append(recalibration_tumourpair(sample, prefix_path))
-        # job_jsons.append(run_pair_multiqc_tumourpair(patient))
+        job_jsons.append(strelka2_paired_germline_tumourpair(patient, prefix_path))
         job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
 
         # Conpair
@@ -465,7 +466,7 @@ def extract_conpair(patient, sample, tumour, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o file found")
+        logger.warning(f"No job_output/conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o file found")
     job_json_conpair = {
         "job_name": "conpair",
         "job_start": job_start,
@@ -566,7 +567,28 @@ def extract_purple(sample, patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No purple/purple.purity.*{patient}*.o file found")
+        logger.warning(f"No job_output/purple/purple.purity.*{patient}*.o file found")
+    job_json = {
+        "job_name": "purple",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz.tbi')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
     try:
         filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -578,24 +600,18 @@ def extract_purple(sample, patient, prefix_path):
                 flag = "FAILED"
             else:
                 flag = "PASS"
-            metric_json = {
+            job_json["metric"].append({
                 "metric_name": "purity",
                 "metric_value": f"{value}",
                 "metric_flag": f"{flag}"
-                }
-            file_json = {
+                })
+            job_json["metric"].append({
                 "location_uri": f"beluga://{filename}",
                 "file_name": f"{os.path.basename(filename[0])}"
-                }
-            job_json = {
-                "job_name": "purple",
-                "job_start": job_start,
-                "job_stop": job_stop,
-                "job_status": "COMPLETED",
-                "file": [file_json],
-                "metric": [metric_json]
-            }
+                })
     except FileNotFoundError:
+        pass
+    if not job_json["file"]:
         job_json = None
     return job_json
 
@@ -613,7 +629,7 @@ def extract_picard_rna(sample, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No picard_rna_metrics/picard_rna_metrics.*{sample}*.o file found")
+        logger.warning(f"No job_output/picard_rna_metrics/picard_rna_metrics.*{sample}*.o file found")
     job_json = {
         "job_name": "picard",
         "job_start": job_start,
@@ -707,7 +723,7 @@ def kallisto_rnaseqlight(sample, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No kallisto/kallisto.*{sample}*.o file found")
+        logger.warning(f"No job_output/kallisto/kallisto.*{sample}*.o file found")
     job_json = {
         "job_name": "kallisto",
         "job_start": job_start,
@@ -750,7 +766,7 @@ def run_annofuse_rnaseqlight(sample, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No run_annofuse/run_annoFuse.*{sample}*.o file found")
+        logger.warning(f"No job_output/run_annofuse/run_annoFuse.*{sample}*.o file found")
     job_json = {
         "job_name": "run_annofuse",
         "job_start": job_start,
@@ -787,7 +803,7 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
                 elif "EndTime" in line:
                     qualimap_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
+        logger.warning(f"No job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
     job_json_qualimap = {
         "job_name": "qualimap",
         "job_start": qualimap_job_start,
@@ -810,7 +826,7 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
                 elif "EndTime" in line:
                     multiqc_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No run_pair_multiqc/multiqc.*{patient}*.o file found")
+        logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
     job_json_multiqc = {
         "job_name": "multiqc",
         "job_start": multiqc_job_start,
@@ -929,7 +945,7 @@ def extract_picard_tumourpair(sample, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o file found")
+        logger.warning(f"No job_output/metrics_dna_picard_metrics/picard_collect_multiple_metrics.*{sample}*.o file found")
     try:
         filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'picard_metrics', sample + '.all.metrics.quality_distribution_metrics')
         tester = re.compile('(\d+)\W+(\d+)')
@@ -988,7 +1004,7 @@ def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o file found")
+        logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o file found")
     job_json = {
         "job_name": "gatk_variant_annotator_germline",
         "job_start": job_start,
@@ -1023,7 +1039,7 @@ def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No gatk_variant_annotator_germline/gatk_variant_annotator_somatic.others.*{patient}*.o file found")
+        logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_somatic.others.*{patient}*.o file found")
     job_json = {
         "job_name": "gatk_variant_annotator_somatic",
         "job_start": job_start,
@@ -1058,7 +1074,7 @@ def paired_mutect2_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
+        logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
         "job_name": "paired_mutect2",
         "job_start": job_start,
@@ -1086,40 +1102,47 @@ def paired_mutect2_tumourpair(patient, prefix_path):
 
     return job_json
 
-# def strelka2_paired_somatic_tumourpair(patient, prefix_path):
-#     job_status = None
-#     job_start = None
-#     job_stop = None
-#     try:
-#         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_somatic/gatk_mutect2.*{patient}*.o")), key=os.path.getmtime)[-1]
-#         with open(latest, 'r', encoding="utf-8") as file:
-#             job_status = "COMPLETED"
-#             for line in file:
-#                 if "AccrueTime" in line:
-#                     job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-#                 elif "EndTime" in line:
-#                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
-#     except IndexError:
-#         logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
-#     job_json = {
-#         "job_name": "strelka2_paired_somatic",
-#         "job_start": job_start,
-#         "job_stop": job_stop,
-#         "job_status": job_status,
-#         "file": []
-#     }
+def strelka2_paired_germline_tumourpair(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_germline.filter.*{patient}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No job_output/strelka2_paired_germline.filter.*{patient}*.o file found")
+    job_json = {
+        "job_name": "strelka2_paired_germline",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
 
-#     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
-#     if os.path.exists(filename):
-#         job_json["job_status"] = "COMPLETED"
-#         job_json["file"].append({
-#             "location_uri": f"beluga://{filename}",
-#             "file_name": f"{os.path.basename(filename)}"
-#             })
-#     if not job_json["file"]:
-#         job_json = None
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz.tbi')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+    if not job_json["file"]:
+        job_json = None
 
-#     return job_json
+    return job_json
 
 def vardict_paired_tumourpair(patient, prefix_path):
     job_status = None
@@ -1135,7 +1158,7 @@ def vardict_paired_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No vardict_paired/vardict_paired.*{patient}*.o file found")
+        logger.warning(f"No job_output/vardict_paired/vardict_paired.*{patient}*.o file found")
     job_json = {
         "job_name": "vardict_paired",
         "job_start": job_start,
@@ -1177,7 +1200,7 @@ def paired_varscan2_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No paired_varscan2/varscan2_somatic.*{patient}*.o file found")
+        logger.warning(f"No job_output/paired_varscan2/varscan2_somatic.*{patient}*.o file found")
     job_json = {
         "job_name": "paired_varscan2",
         "job_start": job_start,
@@ -1219,7 +1242,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No paired_mutect2/gatk_mutect2.*{patient}*.o file found")
+        logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
         "job_name": "cnvkit_batch",
         "job_start": job_start,
@@ -1254,7 +1277,7 @@ def recalibration_tumourpair(sample, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No recalibration/gatk_print_reads.*{sample}*.o file found")
+        logger.warning(f"No job_output/recalibration/gatk_print_reads.*{sample}*.o file found")
     job_json = {
         "job_name": "recalibration",
         "job_start": job_start,
@@ -1300,7 +1323,7 @@ def sym_link_final_bam_tumourpair(patient, sample, tumor, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o file found")
+        logger.warning(f"No job_output/sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o file found")
     job_json = {
         "job_name": "sym_link_final_bam",
         "job_start": job_start,
@@ -1335,7 +1358,7 @@ def run_pair_multiqc_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No run_pair_multiqc/multiqc.*{patient}*.o file found")
+        logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
     job_json = {
         "job_name": "run_pair_multiqc",
         "job_start": job_start,
@@ -1370,7 +1393,7 @@ def report_pcgr_tumourpair(patient, prefix_path):
                 elif "EndTime" in line:
                     job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
-        logger.warning(f"No report_pcgr/report_pcgr.*{patient}*.o file found")
+        logger.warning(f"No job_output/report_pcgr/report_pcgr.*{patient}*.o file found")
     job_json = {
         "job_name": "report_pcgr",
         "job_start": job_start,
