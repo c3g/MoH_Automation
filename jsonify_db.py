@@ -10,7 +10,7 @@ import hashlib
 import logging
 from datetime import datetime
 
-logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s')
+logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
@@ -1230,6 +1230,7 @@ def parse_o_file(latest):
     job_stop = None
     with open(latest, 'r', encoding="utf-8") as file:
         job_status = "COMPLETED"
+        file.seek(-40, 2)
         for line in file:
             if "AccrueTime" in line:
                 job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
