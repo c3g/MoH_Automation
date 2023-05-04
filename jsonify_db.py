@@ -1018,10 +1018,10 @@ def strelka2_paired_germline_tumourpair(patient, prefix_path):
     job_start = None
     job_stop = None
     try:
-        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_germline.filter.*{patient}*.o")), key=os.path.getmtime)[-1]
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/strelka2_paired_germline/strelka2_paired_germline.filter.*{patient}*.o")), key=os.path.getmtime)[-1]
         job_status, job_start, job_stop = parse_o_file(latest)
     except IndexError:
-        logger.warning(f"No job_output/strelka2_paired_germline.filter.*{patient}*.o file found")
+        logger.warning(f"No job_output/strelka2_paired_germline/strelka2_paired_germline.filter.*{patient}*.o file found")
     job_json = {
         "job_name": "strelka2_paired_germline",
         "job_start": job_start,
