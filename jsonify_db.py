@@ -358,6 +358,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
             # readset_json["job"].append(job_json_qualimap)
             # readset_json["job"].append(job_json_multiqc)
             # readset_json["job"].append(job_json_picard)
+            job_jsons = list(filter(lambda job_json: job_json is not None, job_jsons))
             for job_json in job_jsons:
                 readset_json["job"].append(job_json)
             if readset_json["job"]:
