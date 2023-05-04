@@ -1228,7 +1228,7 @@ def parse_o_file(latest):
     job_status = None
     job_start = None
     job_stop = None
-    with open(latest, 'rb', encoding="utf-8") as file:
+    with open(latest, 'rb') as file:
         job_status = "COMPLETED"
         file.seek(-40, 2)
         for line in file:
