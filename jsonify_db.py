@@ -1228,11 +1228,12 @@ def parse_o_file(latest):
     job_status = None
     job_start = None
     job_stop = None
-    with open(latest, 'r', encoding="utf-8") as file:
+    with open(latest, 'rb', encoding="utf-8") as file:
         job_status = "COMPLETED"
         file.seek(-40, 2)
         for line in file:
             if "AccrueTime" in line:
+                logger.debug("AccrueTime")
                 job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
             elif "EndTime" in line:
                 job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
