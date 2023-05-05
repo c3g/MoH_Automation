@@ -413,16 +413,21 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
             "sample_name": f"{sample}",
             "readset": []
         }
+        job_jsons = []
+
         # Picard
-        job_json_picard = extract_picard_rna(sample, prefix_path)
+        job_jsons.append(extract_picard_rna(sample, prefix_path))
+        # Kallisto
+        job_jsons.append(kallisto_rnaseqlight(sample, prefix_path))
         for (_, readset) in sample_dict_rna[sample]:
             readset_json = {
                 "readset_name": f"{readset}",
                 "job": []
             }
-            if job_json_picard:
-                print(job_json_picard)
-                readset_json["job"].append(job_json_picard)
+            job_jsons = list(filter(lambda job_json: job_json is not None, job_jsons))
+            for job_json in job_jsons:
+                readset_json["job"].append(job_json)
+            if readset_json["job"]:
                 sample_json["readset"].append(readset_json)
         if sample_json["readset"]:
             json_output["sample"].append(sample_json)
@@ -595,7 +600,7 @@ def extract_purple(sample, patient, prefix_path):
                     }]
             job_json["file"].append({
                 "location_uri": f"beluga://{filename}",
-                "file_name": f"{os.path.basename(filename[0])}"
+                "file_name": f"{os.path.basename(filename)}"
                 })
     except FileNotFoundError:
         pass
