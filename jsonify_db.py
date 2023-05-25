@@ -101,7 +101,8 @@ def jsonify_run_processing(patient_dict, prefix_path):
                                         file_json = [
                                             {
                                                 "location_uri": f"abacus://{fields[0]}",
-                                                "file_name": f"{os.path.basename(fields[0])}"
+                                                "file_name": f"{os.path.basename(fields[0])}",
+                                                "file_deliverable": True
                                                 }
                                             ]
                                         break
@@ -117,12 +118,14 @@ def jsonify_run_processing(patient_dict, prefix_path):
                                             {
                                                 "location_uri": f"abacus://{fastq1_location_uri}",
                                                 "file_name": f"{fastq1}",
-                                                "file_extra_metadata": {"read_type": "R1"}
+                                                "file_extra_metadata": {"read_type": "R1"},
+                                                "file_deliverable": True
                                                 },
                                             {
                                                 "location_uri": f"abacus://{fastq2_location_uri}",
                                                 "file_name": f"{fastq2}",
-                                                "file_extra_metadata": {"read_type": "R2"}
+                                                "file_extra_metadata": {"read_type": "R2"},
+                                                "file_deliverable": True
                                                 }
                                             ]
                                             break
@@ -141,7 +144,8 @@ def jsonify_run_processing(patient_dict, prefix_path):
                         {
                             "metric_name": "raw_reads_count",
                             "metric_value": f"{run_row['Clusters']}",
-                            "metric_flag": raw_reads_count_flag
+                            "metric_flag": raw_reads_count_flag,
+                            "metric_deliverable": True
                             },
                         {
                             "metric_name": "raw_duplication_rate",
@@ -498,7 +502,8 @@ def extract_conpair(patient, sample, tumour, prefix_path):
                     job_json_conpair["metric"].append({
                         "metric_name": "contamination",
                         "metric_value": f"{value}",
-                        "metric_flag": f"{flag}"
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
                         })
                     job_json_conpair["file"].append({
                         "location_uri": f"beluga://{contamination_file[0]}",
@@ -513,7 +518,8 @@ def extract_conpair(patient, sample, tumour, prefix_path):
                     job_json_conpair["metric"].append({
                         "metric_name": "contamination",
                         "metric_value": f"{value}",
-                        "metric_flag": f"{flag}"
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
                         })
                     job_json_conpair["file"].append({
                         "location_uri": f"beluga://{contamination_file[0]}",
@@ -542,7 +548,8 @@ def extract_conpair(patient, sample, tumour, prefix_path):
                     job_json_conpair["metric"].append({
                         "metric_name": "concordance",
                         "metric_value": f"{value}",
-                        "metric_flag": f"{flag}"
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
                         })
                     job_json_conpair["file"].append({
                         "location_uri": f"beluga://{filename[0]}",
@@ -572,7 +579,7 @@ def extract_purple(sample, patient, prefix_path):
         "file": [],
     }
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.somatic.purple.vcf.gz.tbi')
     job_json = add_output_file(filename, job_json)
     try:
@@ -590,13 +597,15 @@ def extract_purple(sample, patient, prefix_path):
                 job_json["metric"].append({
                     "metric_name": "purity",
                     "metric_value": f"{value}",
-                    "metric_flag": f"{flag}"
+                    "metric_flag": f"{flag}",
+                    "metric_deliverable": True
                     })
             except KeyError:
                 job_json["metric"] = [{
                     "metric_name": "purity",
                     "metric_value": f"{value}",
-                    "metric_flag": f"{flag}"
+                    "metric_flag": f"{flag}",
+                    "metric_deliverable": True
                     }]
             job_json["file"].append({
                 "location_uri": f"beluga://{filename}",
@@ -644,7 +653,8 @@ def extract_picard_rna(sample, prefix_path):
             job_json["metric"].append({
                 "metric_name": "median_insert_size",
                 "metric_value": f"{value}",
-                "metric_flag": f"{flag}"
+                "metric_flag": f"{flag}",
+                "metric_deliverable": True
                 })
             job_json["file"].append({
                 "location_uri": f"beluga://{filename}",
@@ -681,7 +691,8 @@ def extract_picard_rna(sample, prefix_path):
             job_json["metric"].append({
                 "metric_name": "bases_over_q30_percent",
                 "metric_value": f"{value}",
-                "metric_flag": f"{flag}"
+                "metric_flag": f"{flag}",
+                "metric_deliverable": True
                 })
             job_json["file"].append({
                 "location_uri": f"beluga://{filename}",
@@ -714,9 +725,9 @@ def kallisto_rnaseqlight(sample, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_transcripts.tsv')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_genes.tsv')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
 
     if not job_json["file"]:
         job_json = None
@@ -799,7 +810,8 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
         job_json_multiqc["job_status"] = "COMPLETED"
         job_json_multiqc["file"].append({
             "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
+            "file_name": f"{os.path.basename(filename)}",
+            "file_deliverable": True
             })
     # median_insert_size
     try:
@@ -821,7 +833,8 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
                     job_json_qualimap["metric"].append({
                         "metric_name": "median_insert_size",
                         "metric_value": f"{value}",
-                        "metric_flag": f"{flag}"
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
                         })
                     job_json_multiqc["file"].append({
                         "location_uri": f"beluga://{filename}",
@@ -842,7 +855,8 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
             job_json_qualimap["metric"].append({
                 "metric_name": "dedup_coverage",
                 "metric_value": f"{value}",
-                "metric_flag": "PASS"
+                "metric_flag": "PASS",
+                "metric_deliverable": True
                 })
             job_json_qualimap["file"].append({
                 "location_uri": f"beluga://{filename}",
@@ -874,7 +888,8 @@ def extract_qualimap_multiqc(sample, patient, prefix_path):
                     job_json_qualimap["metric"].append({
                         "metric_name": "aligned_reads_count",
                         "metric_value": f"{value}",
-                        "metric_flag": f"{flag}"
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
                         })
                     job_json_multiqc["file"].append({
                         "location_uri": f"beluga://{filename}",
@@ -925,7 +940,8 @@ def extract_picard_tumourpair(sample, prefix_path):
             metric_json = {
                 "metric_name": "bases_over_q30_percent",
                 "metric_value": f"{value}",
-                "metric_flag": f"{flag}"
+                "metric_flag": f"{flag}",
+                "metric_deliverable": True
                 }
             file_json = {
                 "location_uri": f"beluga://{filename}",
@@ -962,7 +978,7 @@ def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.germline.vt.annot.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -986,7 +1002,7 @@ def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, f'{patient}.ensemble.somatic.vt.annot.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1010,9 +1026,9 @@ def paired_mutect2_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.somatic.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.mutect2.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1036,7 +1052,7 @@ def strelka2_paired_germline_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.strelka2.germline.vt.vcf.gz.tbi')
     job_json = add_output_file(filename, job_json)
     if not job_json["file"]:
@@ -1062,9 +1078,9 @@ def vardict_paired_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.germline.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.vardict.somatic.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1088,9 +1104,9 @@ def paired_varscan2_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.germline.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, f'{patient}.varscan2.somatic.vt.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1114,7 +1130,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants', patient, f'{patient}.cnvkit.vcf.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1138,9 +1154,9 @@ def recalibration_tumourpair(sample, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment', sample, f'{sample}.sorted.dup.recal.bam.bai')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1192,7 +1208,7 @@ def run_pair_multiqc_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', f'{patient}.multiqc.html')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1216,14 +1232,14 @@ def report_pcgr_tumourpair(patient, prefix_path):
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.flexdb.html')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.maf')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.snvs_indels.tiers.tsv')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble', patient, 'pcgr', f'{patient}.pcgr_acmg.grch38.cna_segments.tsv.gz')
-    job_json = add_output_file(filename, job_json)
+    job_json = add_output_file(filename, job_json, True)
     if not job_json["file"]:
         job_json = None
 
@@ -1243,12 +1259,13 @@ def parse_o_file(latest):
                 job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     return job_status, job_start, job_stop
 
-def add_output_file(filename, job_json):
+def add_output_file(filename, job_json, deliverable=False):
     if os.path.exists(filename):
         job_json["job_status"] = "COMPLETED"
         job_json["file"].append({
             "location_uri": f"beluga://{filename}",
-            "file_name": f"{os.path.basename(filename)}"
+            "file_name": f"{os.path.basename(filename)}",
+            "file_deliverable": deliverable
             })
     return job_json
 
