@@ -95,7 +95,7 @@ def main():
                 institution = sample['RT'].institution
                 transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, rna_sample, "*_readset.tsv"))
                 if not transferred_readsets:
-                    sys.exit(f"Sample {rna_sample} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, rna_sample)}.\nExiting...")
+                    sys.exit(f"Sample {rna_sample} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, rna_sample)}\nExiting...")
                 for transferred_readset in transferred_readsets:
                     with open(transferred_readset, 'rt') as readset_in:
                         reader = csv.reader(readset_in, delimiter="\t")
@@ -146,6 +146,7 @@ def main():
                     readset_file.write(f"{readset_header}\n")
                     for readset_line in readset_rna_out:
                         readset_file.write(f"{readset_line}\n")
+                print (f"Generated {readset_rna_file}")
                 readset_rna_out = []
                 # else:
                 #     print(" ".join([sample.sample for _, sample in sample.items()]))
@@ -156,7 +157,7 @@ def main():
             #         readset_file.write(f"{readset_line}\n")
             # for readset_line in readset_dna_out:
             #     print(readset_line)
-            print (f"Generated {readset_rna_file}")
+            # print (f"Generated {readset_rna_file}")
 
         else:
             print("No RNA Samples to Move")
@@ -189,7 +190,7 @@ def main():
                 if sample_n and sample_t:
                     transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))
                     if not transferred_readsets:
-                        sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}.\nExiting...")
+                        sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}\nExiting...")
                     for transferred_readset in transferred_readsets:
                         with open(transferred_readset, 'rt') as readset_in:
                             reader = csv.reader(readset_in, delimiter="\t")
@@ -198,7 +199,7 @@ def main():
                                 readset_dna_out.append("\t".join(line))
                     transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv"))
                     if not transferred_readsets:
-                        sys.exit(f"Sample {sample_t} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_t)}.\nExiting...")
+                        sys.exit(f"Sample {sample_t} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_t)}\nExiting...")
                     for transferred_readset in transferred_readsets:
                         with open(transferred_readset, 'rt') as readset_in:
                             reader = csv.reader(readset_in, delimiter="\t")
@@ -279,7 +280,7 @@ def main():
                         # if not args.dry_run:
                         transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))
                         if not transferred_readsets:
-                            sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}.\nExiting...")
+                            sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}\nExiting...")
                         for transferred_readset in transferred_readsets:
                             with open(transferred_readset, 'rt') as readset_in:
                                 reader = csv.reader(readset_in, delimiter="\t")
@@ -326,7 +327,7 @@ def main():
                         # if not args.dry_run:
                         transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv"))
                         if not transferred_readsets:
-                            sys.exit(f"Sample {sample_t} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_t)}.\nExiting...")
+                            sys.exit(f"Sample {sample_t} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_t)}\nExiting...")
                         for transferred_readset in transferred_readsets:
                             with open(transferred_readset, 'rt') as readset_in:
                                 reader = csv.reader(readset_in, delimiter="\t")
@@ -372,6 +373,7 @@ def main():
                             readset_file.write(f"{readset_line}\n")
                         for pair_line in pair_out:
                             pair_file.write(f"{pair_line}\n")
+                    print(f"Generated {readset_dna_file} and {pair_dna_file}")
                     readset_dna_out = []
                     pair_out = []
 
@@ -386,7 +388,7 @@ def main():
             #     print(readset_line)
             # for pair_line in pair_out:
             #     print(pair_line)
-            print(f"Generated {readset_dna_file} and {pair_dna_file}")
+            # print(f"Generated {readset_dna_file} and {pair_dna_file}")
 
         else:
             print("No DNA pairs to Move")
