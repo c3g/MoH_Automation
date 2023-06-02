@@ -14,8 +14,9 @@ from  DB_OPS import create_connection, Update_Samples_Table
 def main():
     parser = argparse.ArgumentParser(prog='generate_genpipes_inputs.py', description="Generates readset file for GenPipes and move raw_reads in MAIN?raw_reads folder for MOH project processing.")
     parser.add_argument('--type', required=True, help="Type of analysis: either RNA or DNA", choices=['DNA', 'RNA'])
-    parser.add_argument('--dry_run', required=False, help="Will not move raw_data reads generate GenPipes readset/pair file(s)", default=False, action='store_true')
-    parser.add_argument('--force', required=False, help="/!\\ Not supported yet - If used the duplicates samples will be overwritten", default=False, action='store_true')
+    parser.add_argument('--dry_run', required=False, help="Will not move raw_data reads generate GenPipes readset/pair file(s) (Default: False)", default=False, action='store_true')
+    parser.add_argument('--force', required=False, help="If used the duplicates samples will be overwritten (Default: False)", default=False, action='store_true')
+    parser.add_argument('--output_folder', required=False, help=f"Folder in which readsets will be written (Default: {os.getcwd()})", default=os.getcwd())
     args = parser.parse_args()
 
     sequencing_type = args.type
@@ -74,11 +75,12 @@ def main():
                     patient_dict[sample_object.patient] = {sample_object.type: sample_object}
 
     if duplicates and not args.force:
-        duplicates_file = os.path.join(beluga_main_folder, f"{date_formatted}_duplicates.txt")
+        duplicates_file = os.path.join(args.output_folder, f"{date_formatted}_duplicates.txt")
+        os.makedirs(os.path.dirname(duplicates_file), exist_ok=True)
         with open(duplicates_file, "w+", encoding="utf-8") as filename:
             for line in duplicates:
                 filename.write(f"{line}\n")
-        sys.exit(f"Samples are already present in in MAIN/raw_reads folder. Either use --force option to overwritte them or manually delete them. Cf. file {duplicates_file} for a liust of duplicates.\nExiting...")
+        sys.exit(f"Samples are already present in in MAIN/raw_reads folder. Either use --force option to overwritte them or manually delete them. Cf. file {duplicates_file} for a list of duplicates.\nExiting...")
 
     # RNA
     if sequencing_type == 'RNA':
@@ -86,12 +88,7 @@ def main():
             # Check to see if any files are already present in the final directory
             # duplicate_samples(beluga_main_folder, beluga_main_raw_reads_folder, rna_samples_list, date_formatted)
             # readset generation
-            readset_rna_file = os.path.join(beluga_main_folder, date_formatted + "_RNA_readset.tsv")
-            readset_rna_out = []
-            # if args.dry_run:
-            #     print("The following sample(s) will be moved and a readset file will be created for a GenPipes analysis:")
             for patient, sample in patient_dict.items():
-                # if not args.dry_run:
                 rna_sample = sample['RT'].sample
                 cohort = sample['RT'].cohort
                 institution = sample['RT'].institution
@@ -142,13 +139,20 @@ def main():
                         rna_sample,
                         rna_sample
                         )
+                readset_rna_file = os.path.join(args.output_folder, "readset_files_RNA", f"{patient}_{date_formatted}_RNA_readset.tsv")
+                os.makedirs(os.path.dirname(readset_rna_file), exist_ok=True)
+                with open(readset_rna_file, "w", encoding="utf-8") as readset_file:
+                    readset_file.write(f"{readset_header}\n")
+                    for readset_line in readset_rna_out:
+                        readset_file.write(f"{readset_line}\n")
+                readset_rna_out = []
                 # else:
                 #     print(" ".join([sample.sample for _, sample in sample.items()]))
             # if not args.dry_run:
-            with open(readset_rna_file, "w", encoding="utf-8") as readset_file:
-                readset_file.write(f"{readset_header}\n")
-                for readset_line in readset_rna_out:
-                    readset_file.write(f"{readset_line}\n")
+            # with open(readset_rna_file, "w", encoding="utf-8") as readset_file:
+            #     readset_file.write(f"{readset_header}\n")
+            #     for readset_line in readset_rna_out:
+            #         readset_file.write(f"{readset_line}\n")
             # for readset_line in readset_dna_out:
             #     print(readset_line)
             print (f"Generated {readset_rna_file}")
@@ -159,8 +163,6 @@ def main():
     # DNA
     elif sequencing_type == 'DNA':
         if patient_dict:
-            readset_dna_file = os.path.join(beluga_main_folder, date_formatted + "_TP_readset.tsv")
-            pair_dna_file = os.path.join(beluga_main_folder, date_formatted + "_TP_pairs.csv")
             readset_dna_out = []
             pair_out = []
             # if args.dry_run:
@@ -358,15 +360,27 @@ def main():
                                 # print(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
-                        # else:
-                        #     print(" ".join([sample.sample for _, sample in sample.items()]))
+                    # Writting outputs for each patient
+                    readset_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_date_formatted_TP_readset.tsv")
+                    pair_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_date_formatted_TP_pairs.csv")
+                    os.makedirs(os.path.dirname(readset_dna_file), exist_ok=True)
+                    os.makedirs(os.path.dirname(pair_dna_file), exist_ok=True)
+                    with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
+                        readset_file.write(f"{readset_header}\n")
+                        for readset_line in readset_dna_out:
+                            readset_file.write(f"{readset_line}\n")
+                        for pair_line in pair_out:
+                            pair_file.write(f"{pair_line}\n")
+                    readset_dna_out = []
+                    pair_out = []
+
             # if not args.dry_run:
-            with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
-                readset_file.write(f"{readset_header}\n")
-                for readset_line in readset_dna_out:
-                    readset_file.write(f"{readset_line}\n")
-                for pair_line in pair_out:
-                    pair_file.write(f"{pair_line}\n")
+            # with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
+            #     readset_file.write(f"{readset_header}\n")
+            #     for readset_line in readset_dna_out:
+            #         readset_file.write(f"{readset_line}\n")
+            #     for pair_line in pair_out:
+            #         pair_file.write(f"{pair_line}\n")
             # for readset_line in readset_dna_out:
             #     print(readset_line)
             # for pair_line in pair_out:
