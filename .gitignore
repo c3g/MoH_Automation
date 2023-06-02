@@ -49,10 +49,12 @@ Thumbs.db
 *.wmv
 
 # Test file
-test.py
+test*
+log_reports/
 jsons/
 transfer/
 jsons.tar.gz
+*.ini
 
 # Specific scripts
 manually_*.sh
