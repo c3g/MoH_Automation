@@ -101,6 +101,7 @@ def main():
                         reader = csv.reader(readset_in, delimiter="\t")
                         next(reader, None)
                         for line in reader:
+                            print(line[-2])
                             readset_rna_out.append("\t".join(line))
                 # Already analyzed sample RNA T
                 to_transfer_rna_sample = rna_sample
