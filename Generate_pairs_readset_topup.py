@@ -363,19 +363,20 @@ def main():
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
                 # Writting outputs for each patient
-                readset_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_date_formatted_TP_readset.tsv")
-                pair_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_date_formatted_TP_pairs.csv")
-                os.makedirs(os.path.dirname(readset_dna_file), exist_ok=True)
-                os.makedirs(os.path.dirname(pair_dna_file), exist_ok=True)
-                with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
-                    readset_file.write(f"{readset_header}\n")
-                    for readset_line in readset_dna_out:
-                        readset_file.write(f"{readset_line}\n")
-                    for pair_line in pair_out:
-                        pair_file.write(f"{pair_line}\n")
-                print(f"Generated {readset_dna_file} and {pair_dna_file}")
-                readset_dna_out = []
-                pair_out = []
+                if readset_dna_out and pair_out:
+                    readset_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_{date_formatted}_TP_readset.tsv")
+                    pair_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_{date_formatted}_TP_pairs.csv")
+                    os.makedirs(os.path.dirname(readset_dna_file), exist_ok=True)
+                    os.makedirs(os.path.dirname(pair_dna_file), exist_ok=True)
+                    with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
+                        readset_file.write(f"{readset_header}\n")
+                        for readset_line in readset_dna_out:
+                            readset_file.write(f"{readset_line}\n")
+                        for pair_line in pair_out:
+                            pair_file.write(f"{pair_line}\n")
+                    print(f"Generated {readset_dna_file} and {pair_dna_file}")
+                    readset_dna_out = []
+                    pair_out = []
 
             # if not args.dry_run:
             # with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
