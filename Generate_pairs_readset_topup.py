@@ -85,6 +85,7 @@ def main():
     # RNA
     if sequencing_type == 'RNA':
         if patient_dict:
+            readset_rna_out = []
             # Check to see if any files are already present in the final directory
             # duplicate_samples(beluga_main_folder, beluga_main_raw_reads_folder, rna_samples_list, date_formatted)
             # readset generation
