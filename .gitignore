@@ -50,14 +50,14 @@ Thumbs.db
 
 # Test file
 test*
+log_reports/
+jsons/
+transfer/
+jsons.tar.gz
+*.ini
 
 # Specific scripts
 manually_*.sh
 
 # DB file
 *.db
-
-# Dev files
-jsons/
-transfer/
-log_reports/
