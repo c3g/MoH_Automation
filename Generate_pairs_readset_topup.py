@@ -140,6 +140,7 @@ def main():
                         rna_sample,
                         rna_sample
                         )
+                # Writting outputs for each patient
                 readset_rna_file = os.path.join(args.output_folder, "readset_files_RNA", f"{patient}_{date_formatted}_RNA_readset.tsv")
                 os.makedirs(os.path.dirname(readset_rna_file), exist_ok=True)
                 with open(readset_rna_file, "w", encoding="utf-8") as readset_file:
