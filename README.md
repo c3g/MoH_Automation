@@ -36,7 +36,7 @@ This contains all of the functions necessary for interacting with a file. Requir
 other scripts.  
 
 ### MOH_ln_output.py ###
-Takes a single sample input and hard links all of the delivarable files within a structured
+Takes a single sample input and hard links all of the deliverable files within a structured
 directory with their final names. In addition it constructs the custom readme and log files.
 All data is taken from the database.   
 Usage: `MOH_ln_output.py Sample`  
