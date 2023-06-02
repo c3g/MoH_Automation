@@ -49,7 +49,7 @@ Thumbs.db
 *.wmv
 
 # Test file
-test.py
+test*
 
 # Specific scripts
 manually_*.sh
