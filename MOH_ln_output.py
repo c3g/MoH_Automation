@@ -102,14 +102,24 @@ def main():
                 # Check that DNA_N dedup coverage is over 30
                 # Check that processing is complete
                 # Check that RNA spots is over 100000000
-                if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA" or (patient_name in black_list and "DNA" in black_list[patient_name]):
-                    dna = False
-                elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
-                    dna = True
-                if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" or (patient_name in black_list and "RNA" in black_list[patient_name]):
-                    rna = False
-                elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
-                    rna = True
+                if args.black_list:
+                    if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA" or (patient_name in black_list and "DNA" in black_list[patient_name]):
+                        dna = False
+                    elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
+                        dna = True
+                    if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA" or (patient_name in black_list and "RNA" in black_list[patient_name]):
+                        rna = False
+                    elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
+                        rna = True
+                else:
+                    if extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage") == "NA" or extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage") == "NA" or extract_patient_status(patient.conn, patient.sample, "dna_pipeline_execution") == "NA":
+                        dna = False
+                    elif float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) > 30 and float(extract_sample_metrics(patient.conn, patient.dna_t, "WGS_Dedup_Coverage")) > 80:
+                        dna = True
+                    if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA" or extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA":
+                        rna = False
+                    elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) > 80000000:
+                        rna = True
 
             # Folders used for Delivery
             # base_folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/' # Base Folder
@@ -160,7 +170,7 @@ def main():
                 with open(log, "w") as log_file:
                     log_file.write("File,Creation,Delivery,Details\n")
 
-            # Populate dna data
+            # Populates dna data
             if dna:
                 updated = deliver_dna(
                     raw_folder,
@@ -178,6 +188,7 @@ def main():
                     old_log,
                     )
 
+            # Populates rna data
             if rna:
                 updated = deliver_rna(
                     raw_folder,
