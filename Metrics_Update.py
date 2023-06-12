@@ -121,6 +121,13 @@ def extract_data(samples_list, connection, paired_samples_dict):
             #     pass
 
             dna_dedup_coverage = extract_dedup_coverage(sample)
+            try:
+                if float(dna_dedup_coverage)<30 and sample_type == 'DN':
+                    fails.append('WGS_dedup_coverage')
+                elif float(dna_dedup_coverage)<80 and sample_type == 'DT':
+                    fails.append('WGS_dedup_coverage')
+            except (TypeError, ValueError):
+                pass
 
             median_insert_size = extract_insert_size(sample, patient, sample_type)
             try:
