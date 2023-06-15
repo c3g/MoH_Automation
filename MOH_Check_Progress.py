@@ -143,12 +143,12 @@ class Progress(SampleData):
 
     def Update_status(self):
         # DNA
-        dna_n_transfered = "NA"
+        dna_n_transferred = "NA"
         if self.ts_run_proc_bam_dna_n != "NA":
-            dna_n_transfered = "Complete"
-        dna_t_transfered = "NA"
+            dna_n_transferred = "Complete"
+        dna_t_transferred = "NA"
         if self.ts_run_proc_bam_dna_t != "NA":
-            dna_t_transfered = "Complete"
+            dna_t_transferred = "Complete"
         dna_alignment= "NA"
         if self.final_dna_bam_t != "NA":
             dna_alignment = "Complete"
@@ -159,7 +159,7 @@ class Progress(SampleData):
         if self.dna_multiqc != "NA" and self.pcgr_report != "NA":
             dna_report = "Complete"
         dna_pipeline_execution = "NA"
-        if dna_n_transfered == dna_t_transfered == dna_alignment == dna_variant_call == dna_report == "Complete":
+        if dna_n_transferred == dna_t_transferred == dna_alignment == dna_variant_call == dna_report == "Complete":
             dna_pipeline_execution = "Complete"
         # RNA
         rna_transferred = "NA"
@@ -186,8 +186,8 @@ class Progress(SampleData):
         update_status_db(
             self.conn,
             self.sample,
-            dna_n_transfered,
-            dna_t_transfered,
+            dna_n_transferred,
+            dna_t_transferred,
             dna_alignment,
             dna_variant_call,
             dna_report,

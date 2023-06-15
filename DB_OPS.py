@@ -318,7 +318,7 @@ def update_status_db(
                 :rna_variant_call,
                 :rna_report,
                 :rna_pipeline_execution,
-                :rna_delivered,
+                :rna_delivered
                 )
             ;
             """,
