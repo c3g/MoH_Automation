@@ -309,7 +309,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
-        "operation_cmd_line": "module purge\nmodule load python/3.10.2 mugqic/genpipes/4.2.0\nrnaseq_light.py \n    -j slurm \n    -r readset.txt \n    -s 1-5 \n    -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini \n        $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini \n        $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini \n        RNA_light.custom.ini \n  > RNASeq_light_run.sh\nrm -r RNA_CHUNKS;\nmkdir RNA_CHUNKS;\n$MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh -n 100 RNASeq_light_run.sh RNA_CHUNKS",
+        "operation_cmd_line": "tumor_pair.py -s 1-13,15-38 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini Custom_ini/Custom_MOH_topups.ini -g TP_run.sh",
         "operation_name": "genpipes_rnaseq_light",
         "sample": []
         }
@@ -376,7 +376,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
             json_output["sample"].append(sample_json)
     # print(json.dumps(json_output, indent=4))
     if json_output["sample"]:
-        with open(f"jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
+        with open("jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
@@ -400,7 +400,7 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
-        "operation_cmd_line": "module purge\nmodule load python/3.10.2 mugqic/genpipes/4.2.0\nrnaseq_light.py \n    -j slurm \n    -r readset.txt \n    -s 1-5 \n    -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini \n        $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini \n        $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini \n        RNA_light.custom.ini \n  > RNASeq_light_run.sh\nrm -r RNA_CHUNKS;\nmkdir RNA_CHUNKS;\n$MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh -n 100 RNASeq_light_run.sh RNA_CHUNKS",
+        "operation_cmd_line": "rnaseq_light.py -s 1-4 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini RNA_light.custom.ini -g RNASeq_light_run.sh",
         "operation_name": "genpipes_rnaseq_light",
         "sample": []
         }
@@ -411,8 +411,6 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
         # if sample == "MoHQ-MU-17-1251-OC1-1DT":
         #     sample_dict_rna[sample] = sample_dict[sample]
     for sample in sample_dict_rna:
-        patient = sample_dict_rna[sample][0][0]
-        tumour = True
         sample_json = {
             "sample_name": f"{sample}",
             "readset": []
@@ -437,7 +435,7 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
             json_output["sample"].append(sample_json)
     # print(json.dumps(json_output, indent=4))
     if json_output["sample"]:
-        with open(f"jsons/genpipes_rnaseqlight.json", 'w', encoding='utf-8') as f:
+        with open("jsons/genpipes_rnaseqlight.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
