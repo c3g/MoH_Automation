@@ -278,7 +278,7 @@ def deliver_dna(
 
     beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
     # check if topup
-    for beluga_bam_dna_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT")):
+    for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT")):
         if bam_t != beluga_bam_dna_n:
             updated = get_link_log(bam_t, raw_folder, bam_t, log, updated, old_log)
     updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
