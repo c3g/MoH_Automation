@@ -528,10 +528,10 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
     dna_n_raw = ""
     for dna_n_raw_bam in os.path.join(out_folder, "raw_data", "*DN.bam"):
-        dna_n_raw += f"\n    * `{dna_n_raw_bam}` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_n_raw_bam))}"
+        dna_n_raw += f"""\n    * `{dna_n_raw_bam}` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_n_raw_bam))}"""
     dna_t_raw = ""
     for dna_t_raw_bam in os.path.join(out_folder, "raw_data", "*DT.bam"):
-        dna_t_raw += f"\n    * `{dna_t_raw_bam}` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_t_raw_bam))}"
+        dna_t_raw += f"""\n    * `{dna_t_raw_bam}` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_t_raw_bam))}"""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
