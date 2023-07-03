@@ -8,6 +8,7 @@ import progressbar
 import pandas as pd
 import markdown
 import csv
+import glob
 from pymdownx import emoji
 
 from  DB_OPS import (
@@ -49,6 +50,9 @@ extension_configs = {
         "emoji_generator": emoji.to_png_sprite,
     }
 }
+
+MOH_MAIN_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+RAW_READS_FOLDER = os.path.join(MOH_MAIN_FOLDER, "raw_reads")
 
 def main():
     parser = argparse.ArgumentParser(prog='MOH_ln_output.py', description="Hardlinks files matching criterias into /lustre03/project/6007512/C3G/projects/share/MOH for delivery.")
@@ -266,8 +270,17 @@ def deliver_dna(
     ):
     os.makedirs(raw_folder, exist_ok=True)
     beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
+    # check if topup
+    for beluga_bams_dna_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN")):
+        if bam not beluga_bam_dna_n:
+            updated = get_link_log(bam, raw_folder, bam, log, updated, old_log)
     updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
+
     beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
+    # check if topup
+    for beluga_bam_dna_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT")):
+        if bam not beluga_bam_dna_n:
+            updated = get_link_log(bam, raw_folder, bam, log, updated, old_log)
     updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
 
     os.makedirs(var_folder, exist_ok=True)
@@ -513,6 +526,12 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     # Add timestamp
     out_folder = os.path.dirname(readme_file)
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
+    dna_n_raw = ""
+    for dna_n_raw_bam in os.path.join(out_folder, "raw_data", "*DN.bam"):
+        dna_n_raw += f"\n    * `{dna_n_raw_bam}` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_n_raw_bam))}"
+    dna_t_raw = ""
+    for dna_t_raw_bam in os.path.join(out_folder, "raw_data", "*DT.bam"):
+        dna_t_raw += f"\n    * `{dna_t_raw_bam}` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_t_raw_bam))}"
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
@@ -523,9 +542,7 @@ Within this directory you will find the results of the analysis for a single pat
 * [`Warnings.html`](Warnings.html) *Contains details of any warnings and whether they caused a failure of this analysis* {file_exist_check(os.path.join(out_folder, "Warnings.html"))}
 * [`Methods.html`](Methods.html) *Contains details on pipelines and references used for the analysis* {file_exist_check(os.path.join(out_folder, "Methods.html"))}
 * `Key_metrics.csv` *File with metrics for the patient in csv format* {file_exist_check(os.path.join(out_folder, "Key_metrics.csv"))}
-* `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*
-    * `{dna_n}.bam` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{dna_n}.bam"))}
-    * `{dna_t}.bam` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{dna_t}.bam"))}
+* `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*{dna_n_raw}{dna_t_raw}
     * `{rna}_R1.fastq.gz` *Raw RNA R1 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R1.fastq.gz"))}
     * `{rna}_R2.fastq.gz` *Raw RNA R2 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R2.fastq.gz"))}
 * `variants/` *Contains the vcfs related to variant calls*
