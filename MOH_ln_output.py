@@ -271,16 +271,16 @@ def deliver_dna(
     os.makedirs(raw_folder, exist_ok=True)
     beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
     # check if topup
-    for beluga_bams_dna_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN")):
-        if bam != beluga_bam_dna_n:
-            updated = get_link_log(bam, raw_folder, bam, log, updated, old_log)
+    for bam_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN")):
+        if bam_n != beluga_bam_dna_n:
+            updated = get_link_log(bam_n, raw_folder, bam_n, log, updated, old_log)
     updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
 
     beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
     # check if topup
     for beluga_bam_dna_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT")):
-        if bam != beluga_bam_dna_n:
-            updated = get_link_log(bam, raw_folder, bam, log, updated, old_log)
+        if bam_t != beluga_bam_dna_n:
+            updated = get_link_log(bam_t, raw_folder, bam_t, log, updated, old_log)
     updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
 
     os.makedirs(var_folder, exist_ok=True)
