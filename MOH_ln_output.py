@@ -274,14 +274,16 @@ def deliver_dna(
     for bam_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam")):
         if bam_n != beluga_bam_dna_n:
             updated = get_link_log(bam_n, raw_folder, os.path.basename(bam_n), log, updated, old_log)
-    updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
+        else:
+            updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
 
     beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
     # check if topup
     for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam")):
         if bam_t != beluga_bam_dna_t:
             updated = get_link_log(bam_t, raw_folder, os.path.basename(bam_t), log, updated, old_log)
-    updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
+        else:
+            updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
 
     os.makedirs(var_folder, exist_ok=True)
     dna_vcf_g = extract_fileloc_field(connection, patient.sample, "DNA_VCF_G")
@@ -527,10 +529,10 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     out_folder = os.path.dirname(readme_file)
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
     dna_n_raw = ""
-    for dna_n_raw_bam in os.path.join(out_folder, "raw_data", "*DN.bam"):
+    for dna_n_raw_bam in glob.glob(os.path.join(out_folder, "raw_data", "*DN.bam")):
         dna_n_raw += f"""\n    * `{dna_n_raw_bam}` *Raw DNA reads for the Normal sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_n_raw_bam))}"""
     dna_t_raw = ""
-    for dna_t_raw_bam in os.path.join(out_folder, "raw_data", "*DT.bam"):
+    for dna_t_raw_bam in glob.glob(os.path.join(out_folder, "raw_data", "*DT.bam")):
         dna_t_raw += f"""\n    * `{dna_t_raw_bam}` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", dna_t_raw_bam))}"""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
