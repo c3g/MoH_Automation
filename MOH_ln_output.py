@@ -270,21 +270,25 @@ def deliver_dna(
     ):
     os.makedirs(raw_folder, exist_ok=True)
     beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1:
+        if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam"))[0]):
+            print("\n\n", patient.dna_n, "\n\n")
     # check if topup
     for bam_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam")):
         updated = get_link_log(bam_n, raw_folder, os.path.basename(bam_n), log, updated, old_log)
-        if bam_n == beluga_bam_dna_n and os.path.basename(beluga_bam_dna_n) != f"{patient.dna_n}.bam":
-            print("\n\n", patient.dna_n, "\n\n")
+        # if bam_n != beluga_bam_dna_n:
         #     updated = get_link_log(bam_n, raw_folder, os.path.basename(bam_n), log, updated, old_log)
         # else:
         #     updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
 
     beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1:
+        if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0]):
+            print("\n\n", patient.dna_t, "\n\n")
     # check if topup
     for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam")):
         updated = get_link_log(bam_t, raw_folder, os.path.basename(bam_t), log, updated, old_log)
-        if bam_n == beluga_bam_dna_t and os.path.basename(beluga_bam_dna_t) != f"{patient.dna_t}.bam":
-            print("\n\n", patient.dna_t, "\n\n")
+        # if bam_t != beluga_bam_dna_t:
         #     updated = get_link_log(bam_t, raw_folder, os.path.basename(bam_t), log, updated, old_log)
         # else:
         #     updated = get_link_log(beluga_bam_dna_t, raw_folder, f"{patient.dna_t}.bam", log, updated, old_log)
