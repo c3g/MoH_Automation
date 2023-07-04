@@ -269,7 +269,7 @@ def deliver_dna(
     old_log,
     ):
     os.makedirs(raw_folder, exist_ok=True)
-    beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
+    # beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1:
         if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam"))[0]):
             print("\n\n", patient.dna_n, "\n\n")
@@ -281,7 +281,7 @@ def deliver_dna(
         # else:
         #     updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
 
-    beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
+    # beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1:
         if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0]):
             print("\n\n", patient.dna_t, "\n\n")
@@ -376,10 +376,16 @@ def deliver_rna(
     old_log,
     ):
     os.makedirs(raw_folder, exist_ok=True)
-    beluga_fastq_1_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_1_RNA")
-    updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{patient.rna}_R1.fastq.gz", log, updated, old_log)
-    beluga_fastq_2_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_2_RNA")
-    updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{patient.rna}_R2.fastq.gz", log, updated, old_log)
+    # beluga_fastq_1_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_1_RNA")
+    # updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{patient.rna}_R1.fastq.gz", log, updated, old_log)
+    # beluga_fastq_2_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_2_RNA")
+    # updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{patient.rna}_R2.fastq.gz", log, updated, old_log)
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz"))) == 2:
+        for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
+            if os.path.basename(fastq) not in [os.path.basename(fastq) for fastq in glob.glob(os.path.join(raw_folder, f"{patient.rna}*.fastq.gz"))]:
+                print("\n\n", patient.dna_n, "\n\n")
+    for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
+        updated = get_link_log(fastq, raw_folder, os.path.basename(fastq), log, updated, old_log)
 
     os.makedirs(expression_folder, exist_ok=True)
     rna_abundance = extract_fileloc_field(connection, patient.sample, "RNA_Abundance")
@@ -542,6 +548,9 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     dna_t_raw = ""
     for dna_t_raw_bam in glob.glob(os.path.join(out_folder, "raw_data", "*DT*.bam")):
         dna_t_raw += f"""\n    * `{os.path.basename(dna_t_raw_bam)}` *Raw DNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", os.path.basename(dna_t_raw_bam)))}"""
+    rna_raw = ""
+    for rna_raw_fq in glob.glob(os.path.join(out_folder, "raw_data", "*RT*.fastq.gz")):
+        rna_raw += f"""\n    * `{os.path.basename(rna_raw_fq)}` *Raw RNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", os.path.basename(rna_raw_fq)))}"""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
@@ -553,9 +562,7 @@ Within this directory you will find the results of the analysis for a single pat
 * [`Warnings.html`](Warnings.html) *Contains details of any warnings and whether they caused a failure of this analysis* {file_exist_check(os.path.join(out_folder, "Warnings.html"))}
 * [`Methods.html`](Methods.html) *Contains details on pipelines and references used for the analysis* {file_exist_check(os.path.join(out_folder, "Methods.html"))}
 * `Key_metrics.csv` *File with metrics for the patient in csv format* {file_exist_check(os.path.join(out_folder, "Key_metrics.csv"))}
-* `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*{dna_n_raw}{dna_t_raw}
-    * `{rna}_R1.fastq.gz` *Raw RNA R1 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R1.fastq.gz"))}
-    * `{rna}_R2.fastq.gz` *Raw RNA R2 reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", f"{rna}_R2.fastq.gz"))}
+* `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*{dna_n_raw}{dna_t_raw}{rna_raw}
 * `variants/` *Contains the vcfs related to variant calls*
     * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz"))}
     * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz"))}
