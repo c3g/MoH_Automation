@@ -539,7 +539,8 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
-Within this directory you will find the results of the analysis for a single patient contained in 7 subdirectories and 6 files (when :white_check_mark: is present the file is available, when :clock2: is present the file is coming soon):
+
+Within this directory you will find the results of the analysis for a single patient; if multiple bam files are present in the `raw_data` folder it means TopTup(s) have been necessary (when :white_check_mark: is present the file is available, when :clock2: is present the file is coming soon):
 
 * `Readme.html` *This file* :white_check_mark:
 * `log.csv` *Log file containing the dates of transfers and if files have been updated* {file_exist_check(os.path.join(out_folder, "log.csv"))}
