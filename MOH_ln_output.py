@@ -175,7 +175,6 @@ def main():
             # Load the log file into a dictionary for checking if updates are necessary.
             try:
                 with open(log, "r") as log_in:
-                    #print("logging")
                     for line in log_in:
                         line.rstrip()
                         fields = line.split(",")
@@ -281,9 +280,11 @@ def deliver_dna(
     ):
     os.makedirs(raw_folder, exist_ok=True)
     # beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
-    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1:
-        if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam"))[0]):
-            print("\n\n", patient.dna_n, "\n\n")
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam")):
+        raw_dna_n_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0])
+        delivered_dna_n_bam = os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam"))[0])
+        if raw_dna_n_bam != delivered_dna_n_bam:
+            logger.warning(f"The bam file {raw_dna_n_bam} for the sample {patient.dna_n} is already delivered with a different name: {delivered_dna_n_bam}")
     # check if topup
     for bam_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam")):
         updated = get_link_log(bam_n, raw_folder, os.path.basename(bam_n), log, updated, old_log)
@@ -293,9 +294,11 @@ def deliver_dna(
         #     updated = get_link_log(beluga_bam_dna_n, raw_folder, f"{patient.dna_n}.bam", log, updated, old_log)
 
     # beluga_bam_dna_t = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_T")
-    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1:
-        if os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0]) != os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0]):
-            print("\n\n", patient.dna_t, "\n\n")
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam")):
+        raw_dna_t_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0])
+        delivered_dna_t_bam = os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0])
+        if raw_dna_n_bam != delivered_dna_n_bam:
+            logger.warning(f"The bam file {raw_dna_t_bam} for the sample {patient.dna_t} is already delivered with a different name: {delivered_dna_t_bam}")
     # check if topup
     for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam")):
         updated = get_link_log(bam_t, raw_folder, os.path.basename(bam_t), log, updated, old_log)
@@ -392,10 +395,10 @@ def deliver_rna(
     # updated = get_link_log(beluga_fastq_1_rna, raw_folder, f"{patient.rna}_R1.fastq.gz", log, updated, old_log)
     # beluga_fastq_2_rna = extract_fileloc_field(connection, patient.sample, "Beluga_fastq_2_RNA")
     # updated = get_link_log(beluga_fastq_2_rna, raw_folder, f"{patient.rna}_R2.fastq.gz", log, updated, old_log)
-    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz"))) == 2:
+    if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz"))) == 2 and glob.glob(os.path.join(raw_folder, f"{patient.rna}*.fastq.gz")):
         for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
             if os.path.basename(fastq) not in [os.path.basename(fastq) for fastq in glob.glob(os.path.join(raw_folder, f"{patient.rna}*.fastq.gz"))]:
-                print("\n\n", patient.dna_n, "\n\n")
+                logger.warning(f"The fastq file {os.path.basename(fastq)} for the sample {patient.rna} is already delivered with a different name: {delivered_dna_n_bam}")
     for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
         updated = get_link_log(fastq, raw_folder, os.path.basename(fastq), log, updated, old_log)
 
