@@ -398,7 +398,7 @@ def deliver_rna(
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz"))) == 2 and glob.glob(os.path.join(raw_folder, f"{patient.rna}*.fastq.gz")):
         for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
             if os.path.basename(fastq) not in [os.path.basename(fastq) for fastq in glob.glob(os.path.join(raw_folder, f"{patient.rna}*.fastq.gz"))]:
-                logger.warning(f"The fastq file {os.path.basename(fastq)} for the sample {patient.rna} is already delivered with a different name: {delivered_dna_n_bam}")
+                logger.warning(f"The fastq file {os.path.basename(fastq)} for the sample {patient.rna} is already delivered with a different name in {raw_folder}")
     for fastq in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*RT", "*.fastq.gz")):
         updated = get_link_log(fastq, raw_folder, os.path.basename(fastq), log, updated, old_log)
 
