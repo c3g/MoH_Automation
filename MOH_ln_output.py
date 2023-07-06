@@ -9,6 +9,7 @@ import pandas as pd
 import markdown
 import csv
 import glob
+import logging
 from pymdownx import emoji
 
 from  DB_OPS import (
@@ -54,6 +55,8 @@ extension_configs = {
 MOH_MAIN_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 RAW_READS_FOLDER = os.path.join(MOH_MAIN_FOLDER, "raw_reads")
 
+logger = logging.getLogger(__name__)
+
 def main():
     parser = argparse.ArgumentParser(prog='MOH_ln_output.py', description="Hardlinks files matching criterias into /lustre03/project/6007512/C3G/projects/share/MOH for delivery.")
     group = parser.add_mutually_exclusive_group()
@@ -62,6 +65,7 @@ def main():
     parser.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.", action='store_true')
     parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.", action='store_true')
     parser.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.", action='store_true')
+    parser.add_argument('--loglevel', help='Sets logging level', choices=logging._levelToName.values(), default='INFO')
     args = parser.parse_args()
 
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
@@ -96,10 +100,16 @@ def main():
                     dna = False
                 elif "DNA" in white_list[patient_name]:
                     dna = True
+                    if float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) <= 30:
+                        logger.warning(f"Metric WGS_Dedup_Coverage for Sample {patient.dna_n} is <= 30")
+                    if float(extract_sample_metrics(patient.conn, patient.dna_n, "WGS_Dedup_Coverage")) <= 80:
+                        logger.warning(f"Metric WGS_Dedup_Coverage for Sample {patient.dna_t} is <= 80")
                 if extract_patient_status(patient.conn, patient.sample, "rna_pipeline_light_execution") == "NA":
                     rna = False
                 elif "RNA" in white_list[patient_name]:
                     rna = True
+                    if float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) <= 80000000:
+                        logger.warning(f"Metric Raw_Reads_Count for Sample {patient.rna} is <= 80.000.000")
             else:
                 # Check if samples reach the threashold for delivery
                 # Check that DNA_T dedup coverage is over 80
@@ -200,6 +210,7 @@ def main():
                     var_folder,
                     align_folder,
                     reports_folder,
+                    pcgr_folder,
                     param_folder,
                     connection,
                     patient,
@@ -345,15 +356,15 @@ def deliver_dna(
     dna_multiqc = extract_fileloc_field(connection, patient.sample, "DNA_MultiQC")
     updated = get_link_log(dna_multiqc, reports_folder, f"{patient.sample_true}_D.multiqc.html", log, updated, old_log)
     pcgr_report = extract_fileloc_field(connection, patient.sample, "pcgr_report")
-    updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}.pcgr.html", log, updated, old_log)
+    updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}_D.pcgr.html", log, updated, old_log)
 
     os.makedirs(pcgr_folder, exist_ok=True)
     pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
-    updated = get_link_log(pcgr_maf, pcgr_folder, f"{patient.sample_true}.acmg.grch38.maf", log, updated, old_log)
+    updated = get_link_log(pcgr_maf, pcgr_folder, f"{patient.sample_true}_D.acmg.grch38.maf", log, updated, old_log)
     pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "pcgr_snvs_indels")
-    updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
+    updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}_D.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
     pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "pcgr_cna_segments")
-    updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
+    updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}_D.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
 
     os.makedirs(param_folder, exist_ok=True)
     tp_ini = extract_fileloc_field(connection, patient.sample, "TP_ini")
@@ -368,6 +379,7 @@ def deliver_rna(
     var_folder,
     align_folder,
     reports_folder,
+    pcgr_folder,
     param_folder,
     connection,
     patient,
@@ -395,7 +407,6 @@ def deliver_rna(
         if os.path.exists(rna_abundance_genes):
             updated = get_link_log(rna_abundance_genes, expression_folder, f"{patient.rna}.abundance_genes.tsv", log, updated, old_log)
 
-    # Not implemented yet
     # os.makedirs(var_folder, exist_ok=True)
     # rna_vcf = extract_fileloc_field(connection, patient.sample, "RNA_VCF")
     # updated = get_link_log(rna_vcf, var_folder, f"{patient.rna}.rna.hc.vcf.gz", log, updated, old_log)
@@ -427,6 +438,19 @@ def deliver_rna(
     # Not implemented yet
     # rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
     # updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
+
+    # PCGR RNA
+    # os.makedirs(reports_folder, exist_ok=True)
+    # pcgr_report = extract_fileloc_field(connection, patient.sample, "pcgr_report")
+    # updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}_R.pcgr.html", log, updated, old_log)
+
+    # os.makedirs(pcgr_folder, exist_ok=True)
+    # pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
+    # updated = get_link_log(pcgr_maf, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.maf", log, updated, old_log)
+    # pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "pcgr_snvs_indels")
+    # updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
+    # pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "pcgr_cna_segments")
+    # updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
 
     return updated
 
@@ -566,7 +590,7 @@ Within this directory you will find the results of the analysis for a single pat
 * `variants/` *Contains the vcfs related to variant calls*
     * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz"))}
     * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz"))}
-    * `{patient}.rna.hc.vcf.gz` *Variants found using RNA sample (:warning: Not yet available)*
+    * `{patient}.rna.hc.vcf.gz` *Variants found using RNA sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.rna.hc.vcf.gz"))}
     * `{patient}.vcf.gz` *Contains the results of all callers for both DNA and RNA (:warning: Not yet available)*
     * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
         * `{patient}.mutect2.germline.vt.vcf.gz` *Germline results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.germline.vt.vcf.gz"))}
@@ -592,14 +616,18 @@ Within this directory you will find the results of the analysis for a single pat
 * `reports/` *Contains the reports for the experiment*
     * [`{patient}_D.multiqc.html`](reports/{patient}_D.multiqc.html) *QC report for the DNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.multiqc.html"))}
     * `{patient}_R.multiqc.html` *QC report for the RNA analysis (:warning: Not yet available)*
-    * [`{patient}.pcgr.html`](reports/{patient}.pcgr.html) *Personal Cancer Genome Reporter report; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}.pcgr.html"))}
     * `{rna}.anno_fuse` *Report for fusions detected using RNA (:warning: Not yet available)*
     * `{patient}.gridss` *Annotated structural variant calls with GRIDSS (:warning: Not yet available)*
     * `{patient}.Key_metrics.csv` *Metrics used to determine whether the analysis was successful (:warning: Not yet available)*
-    * `pcgr/` *Contains raw tables used to generate PCGR report*
-        * `{patient}.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.maf"))}
-        * `{patient}.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.snvs_indels.tiers.tsv"))}
-        * `{patient}.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}.acmg.grch38.cna_segments.tsv.gz"))}
+    * [`{patient}.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
+    * [`{patient}.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
+    * `pcgr/` *Contains raw tables used to generate PCGR reports*
+        * `{patient}_D.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.maf"))}
+        * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv"))}
+        * `{patient}_D.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.cna_segments.tsv.gz"))}
+        * `{patient}_R.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.maf"))}
+        * `{patient}_R.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.snvs_indels.tiers.tsv"))}
+        * `{patient}_R.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.cna_segments.tsv.gz"))}
 * `parameters/` *Contains the records of all the Parameters used in the pipeline analysis*
     * `{patient}.TumourPair.ini` *Parameters used in the tumor pair analysis* {file_exist_check(os.path.join(out_folder, "parameters", f"{patient}.TumourPair.ini"))}
     * `{patient}.RNA.Light.ini` *Parameters used in the RNA expression analysis* {file_exist_check(os.path.join(out_folder,"parameters", f"{patient}.RNA.Light.ini"))}
