@@ -239,12 +239,12 @@ class Progress(SampleData):
                                 break
                             if self.dna_n in line:
                                 fields = line.split(",")
-                                self.run_proc_bam_dna_n = fields[0]
+                                self.run_proc_bam_dna_n = fields[0].strip()
                                 self.ts_run_proc_bam_dna_n  = getime(filename)
                                 dna_n = True
                             elif self.dna_t in line:
                                 fields = line.split(",")
-                                self.run_proc_bam_dna_t = fields[0]
+                                self.run_proc_bam_dna_t = fields[0].strip()
                                 self.ts_run_proc_bam_dna_t = getime(filename)
                                 dna_t = True
                 if not dna_n:
@@ -270,11 +270,11 @@ class Progress(SampleData):
                             if self.rna in line:
                                 fields = line.split(",")
                                 if re.search(r"R1.*.fastq", os.path.basename(fields[0])):
-                                    self.run_proc_fastq_1_rna = fields[0]
+                                    self.run_proc_fastq_1_rna = fields[0].strip()
                                     self.ts_run_proc_fastq_1_rna = getime(filename)
                                     fastq1 = True
                                 elif re.search(r"R2.*.fastq", os.path.basename(fields[0])):
-                                    self.run_proc_fastq_2_rna = fields[0]
+                                    self.run_proc_fastq_2_rna = fields[0].strip()
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2 = True
                 if not fastq1:
