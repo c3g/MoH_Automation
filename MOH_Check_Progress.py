@@ -7,10 +7,13 @@ import os.path
 import time
 import datetime
 import errno
+import logging
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_details,extract_fileloc_details,extract_timestamp_details,update_timestamp_details,update_fileloc_details,extract_sample_names,update_status_db
 
 
 WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
+
+logger = logging.getLogger(__name__)
 
 class SampleData:
     def __init__(self, connection, sample):
@@ -244,6 +247,10 @@ class Progress(SampleData):
                                 self.run_proc_bam_dna_t = fields[0]
                                 self.ts_run_proc_bam_dna_t = getime(filename)
                                 dna_t = True
+                if not dna_n:
+                    logger.warning(f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                if not dna_t:
+                    logger.warning(f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
 
         if self.rna_true == "NA":
             self.run_proc_fastq_1_rna = "NA"
@@ -270,6 +277,10 @@ class Progress(SampleData):
                                     self.run_proc_fastq_2_rna = fields[0]
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2 = True
+                if not fastq1:
+                    logger.warning(f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                if not fastq2:
+                    logger.warning(f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
 
     def Gather_BAM_loc(self):
         loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
