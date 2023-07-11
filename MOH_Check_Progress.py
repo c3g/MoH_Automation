@@ -248,9 +248,9 @@ class Progress(SampleData):
                                 self.ts_run_proc_bam_dna_t = getime(filename)
                                 dna_t = True
                 if not dna_n:
-                    logger.warning(f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
                 if not dna_t:
-                    logger.warning(f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
 
         if self.rna_true == "NA":
             self.run_proc_fastq_1_rna = "NA"
@@ -278,9 +278,9 @@ class Progress(SampleData):
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2 = True
                 if not fastq1:
-                    logger.warning(f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
                 if not fastq2:
-                    logger.warning(f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
 
     def Gather_BAM_loc(self):
         loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
