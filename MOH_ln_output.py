@@ -297,7 +297,7 @@ def deliver_dna(
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam")):
         raw_dna_t_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0])
         delivered_dna_t_bam = os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0])
-        if raw_dna_n_bam != delivered_dna_n_bam:
+        if raw_dna_t_bam != delivered_dna_t_bam:
             logger.warning(f"The bam file {raw_dna_t_bam} for the sample {patient.dna_t} is already delivered with a different name: {delivered_dna_t_bam}")
     # check if topup
     for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam")):
