@@ -129,16 +129,24 @@ def Update_Samples_Table(conn, sample, sample_True, Instituion, Cohort, DNA_N, D
 
 #Grabs all fields from Sample table and outputs an array of the data
 def extract_sample_details(conn,sample_true):
-    # Create cursor object
-    cur = conn.cursor()
+    ret = {
+        "Sample": "NA",
+        "Sample_True": "NA",
+        "Instituion": "NA",
+        "Cohort": "NA",
+        "DNA_N": "NA",
+        "DNA_N_True": "NA",
+        "DNA_T": "NA",
+        "DNA_T_True": "NA",
+        "RNA": "NA",
+        "RNA_True": "NA"
+    }
+    cur = conn.cursor(dictionary=True)
     #Test to see if it exists and if so extract the current data
     cur.execute(f"""SELECT * FROM Samples WHERE Sample='{sample_true}'""")
     result = cur.fetchone()
-    if result:
-        #return an aray that gets turned into an object for all the data from a sample.
-        return result
-    else:
-        return 'NA'
+    ret.update(result)
+    return ret
 
 def extract_sample_names(conn):
     # Create cursor object
@@ -152,26 +160,111 @@ def extract_sample_names(conn):
     else:
         return []
 
-def extract_fileloc_details(conn,sample):
-    cur = conn.cursor()
+def extract_fileloc_details(conn, sample):
+    ret = {
+        "Sample": "NA",
+        "Run_Proc_BAM_DNA_T": "NA",
+        "Run_Proc_BAM_DNA_N": "NA",
+        "Beluga_BAM_DNA_T": "NA",
+        "Beluga_BAM_DNA_N": "NA",
+        "DNA_VCF_G": "NA",
+        "DNA_VCF_S": "NA",
+        "Mutect2_Somatic_vcf": "NA",
+        "Mutect2_Germline_vcf": "NA",
+        "strelka2_Germline_vcf": "NA",
+        "strelka2_Somatic_vcf": "NA",
+        "vardict_Germline_vcf": "NA",
+        "vardict_Somatic_vcf": "NA",
+        "varscan2_Germline_vcf": "NA",
+        "varscan2_Somatic_vcf": "NA",
+        "cnvkit_vcf": "NA",
+        "Final_VCF": "NA",
+        "Final_DNA_BAM_T": "NA",
+        "Final_DNA_BAM_N": "NA",
+        "DNA_MultiQC": "NA",
+        "pcgr_report": "NA",
+        "pcgr_maf": "NA",
+        "pcgr_snvs_indels": "NA",
+        "pcgr_cna_segments": "NA",
+        "TP_ini": "NA",
+        "Run_Proc_fastq_1_RNA": "NA",
+        "Run_Proc_fastq_2_RNA": "NA",
+        "Beluga_fastq_1_RNA": "NA",
+        "Beluga_fastq_2_RNA": "NA",
+        "RNA_VCF": "NA",
+        "RNA_VCF_filt": "NA",
+        "Final_RNA_BAM": "NA",
+        "RNA_MultiQC": "NA",
+        "rna_pcgr_report": "NA",
+        "rna_pcgr_maf": "NA",
+        "rna_pcgr_snvs_indels": "NA",
+        "rna_pcgr_cna_segments": "NA",
+        "AnnoFuse": "NA",
+        "GRIDSS": "NA",
+        "RNA_Abundance": "NA",
+        "big_wig_tracks_F": "NA",
+        "big_wig_tracks_R": "NA",
+        "RNA_Abundance_ini": "NA",
+        "RNA_Variants_ini": "NA"
+    }
+    cur = conn.cursor(dictionary=True)
     cur.execute(f"""SELECT * FROM File_Locations WHERE Sample='{sample}'""")
     result = cur.fetchone()
-    if result:
-        return result
-    else:
-        result = ['NA'] * 50
-        return result
+    ret.update(result)
+    return ret
 
-def extract_timestamp_details(conn,sample):
-    cur = conn.cursor()
+def extract_timestamp_details(conn, sample):
+    ret = {
+        "Sample": "NA",
+        "Run_Proc_BAM_DNA_T": "NA",
+        "Run_Proc_BAM_DNA_N": "NA",
+        "Beluga_BAM_DNA_T": "NA",
+        "Beluga_BAM_DNA_N": "NA",
+        "DNA_VCF_G": "NA",
+        "DNA_VCF_S": "NA",
+        "Mutect2_Somatic_vcf": "NA",
+        "Mutect2_Germline_vcf": "NA",
+        "strelka2_Germline_vcf": "NA",
+        "strelka2_Somatic_vcf": "NA",
+        "vardict_Germline_vcf": "NA",
+        "vardict_Somatic_vcf": "NA",
+        "varscan2_Germline_vcf": "NA",
+        "varscan2_Somatic_vcf": "NA",
+        "cnvkit_vcf": "NA",
+        "Final_VCF": "NA",
+        "Final_DNA_BAM_T": "NA",
+        "Final_DNA_BAM_N": "NA",
+        "DNA_MultiQC": "NA",
+        "pcgr_report": "NA",
+        "pcgr_maf": "NA",
+        "pcgr_snvs_indels": "NA",
+        "pcgr_cna_segments": "NA",
+        "TP_ini": "NA",
+        "Run_Proc_fastq_1_RNA": "NA",
+        "Run_Proc_fastq_2_RNA": "NA",
+        "Beluga_fastq_1_RNA": "NA",
+        "Beluga_fastq_2_RNA": "NA",
+        "RNA_VCF": "NA",
+        "RNA_VCF_filt": "NA",
+        "Final_RNA_BAM": "NA",
+        "RNA_MultiQC": "NA",
+        "rna_pcgr_report": "NA",
+        "rna_pcgr_maf": "NA",
+        "rna_pcgr_snvs_indels": "NA",
+        "rna_pcgr_cna_segments": "NA",
+        "AnnoFuse": "NA",
+        "GRIDSS": "NA",
+        "RNA_Abundance": "NA",
+        "big_wig_tracks_F": "NA",
+        "big_wig_tracks_R": "NA",
+        "RNA_Abundance_ini": "NA",
+        "RNA_Variants_ini": "NA"
+    }
+    cur = conn.cursor(dictionary=True)
     cur.execute(f"""SELECT * FROM Timestamps WHERE Sample='{sample}'""")
     result = cur.fetchone()
-    if result:
-        #return an aray that gets turned into an object for all the data from a sample.
-        return result 
-    else:
-        result = ['NA'] * 50
-        return result
+    ret.update(result)
+    return ret
 
 def update_timestamp_details(sample):
     cur = sample.conn.cursor()
@@ -232,7 +325,7 @@ def update_status_db(
     rna_transferred,
     rna_pipeline_light_execution,
     rna_light_delivered,
-    rna_pseudoalignment,
+    rna_alignment,
     rna_variant_call,
     rna_report,
     rna_pipeline_execution,
@@ -254,7 +347,7 @@ def update_status_db(
             rna_transferred = :rna_transferred,
             rna_pipeline_light_execution = :rna_pipeline_light_execution,
             rna_light_delivered = :rna_light_delivered,
-            rna_pseudoalignment = :rna_pseudoalignment,
+            rna_alignment = :rna_alignment,
             rna_variant_call = :rna_variant_call,
             rna_report = :rna_report,
             rna_pipeline_execution = :rna_pipeline_execution,
@@ -274,7 +367,7 @@ def update_status_db(
             "rna_transferred": rna_transferred,
             "rna_pipeline_light_execution":rna_pipeline_light_execution,
             "rna_light_delivered": rna_light_delivered,
-            "rna_pseudoalignment": rna_pseudoalignment,
+            "rna_alignment": rna_alignment,
             "rna_variant_call": rna_variant_call,
             "rna_report": rna_report,
             "rna_pipeline_execution": rna_pipeline_execution,
@@ -296,7 +389,7 @@ def update_status_db(
                 rna_transferred,
                 rna_pipeline_light_execution,
                 rna_light_delivered,
-                rna_pseudoalignment,
+                rna_alignment,
                 rna_variant_call,
                 rna_report,
                 rna_pipeline_execution,
@@ -314,7 +407,7 @@ def update_status_db(
                 :rna_transferred,
                 :rna_pipeline_light_execution,
                 :rna_light_delivered,
-                :rna_pseudoalignment,
+                :rna_alignment,
                 :rna_variant_call,
                 :rna_report,
                 :rna_pipeline_execution,
@@ -333,7 +426,7 @@ def update_status_db(
             "rna_transferred": rna_transferred,
             "rna_pipeline_light_execution":rna_pipeline_light_execution,
             "rna_light_delivered":rna_light_delivered,
-            "rna_pseudoalignment": rna_pseudoalignment,
+            "rna_alignment": rna_alignment,
             "rna_variant_call": rna_variant_call,
             "rna_report": rna_report,
             "rna_pipeline_execution": rna_pipeline_execution,

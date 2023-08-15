@@ -310,8 +310,22 @@ def deliver_dna(
     os.makedirs(var_folder, exist_ok=True)
     dna_vcf_g = extract_fileloc_field(connection, patient.sample, "DNA_VCF_G")
     updated = get_link_log(dna_vcf_g, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz", log, updated, old_log)
+    if dna_vcf_g != "NA":
+        dna_vcf_g_index = dna_vcf_g + ".tbi"
+        if os.path.exists(dna_vcf_g_index):
+            updated = get_link_log(dna_vcf_g_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+        dna_vcf_g_md5 = dna_vcf_g + ".md5"
+        if os.path.exists(dna_vcf_g_md5):
+            updated = get_link_log(dna_vcf_g_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
     dna_vcf_s = extract_fileloc_field(connection, patient.sample, "DNA_VCF_S")
     updated = get_link_log(dna_vcf_s, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
+    if dna_vcf_s != "NA":
+        dna_vcf_s_index = dna_vcf_s + ".tbi"
+        if os.path.exists(dna_vcf_s_index):
+            updated = get_link_log(dna_vcf_s_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+        dna_vcf_s_md5 = dna_vcf_s + ".md5"
+        if os.path.exists(dna_vcf_s_md5):
+            updated = get_link_log(dna_vcf_s_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(cal_folder, exist_ok=True)
     mutect2_germline_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Germline_vcf")
@@ -360,6 +374,8 @@ def deliver_dna(
     updated = get_link_log(dna_multiqc, reports_folder, f"{patient.sample_true}_D.multiqc.html", log, updated, old_log)
     pcgr_report = extract_fileloc_field(connection, patient.sample, "pcgr_report")
     updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}_D.pcgr.html", log, updated, old_log)
+    # gridss = extract_fileloc_field(connection, patient.sample, "GRIDSS")
+    # updated = get_link_log(gridss, reports_folder, f"{patient.rna}.gridss", log, updated, old_log)
 
     os.makedirs(pcgr_folder, exist_ok=True)
     pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
@@ -410,50 +426,62 @@ def deliver_rna(
         if os.path.exists(rna_abundance_genes):
             updated = get_link_log(rna_abundance_genes, expression_folder, f"{patient.rna}.abundance_genes.tsv", log, updated, old_log)
 
-    # os.makedirs(var_folder, exist_ok=True)
-    # rna_vcf = extract_fileloc_field(connection, patient.sample, "RNA_VCF")
-    # updated = get_link_log(rna_vcf, var_folder, f"{patient.rna}.rna.hc.vcf.gz", log, updated, old_log)
+    os.makedirs(var_folder, exist_ok=True)
+    rna_vcf = extract_fileloc_field(connection, patient.sample, "RNA_VCF")
+    updated = get_link_log(rna_vcf, var_folder, f"{patient.rna}.hc.vt.annot.vcf.gz", log, updated, old_log)
+    if rna_vcf != "NA":
+        rna_vcf_index = rna_vcf + ".tbi"
+        if os.path.exists(rna_vcf_index):
+            updated = get_link_log(rna_vcf_index, align_folder, f"{patient.dna_n}.bam.tbi", log, updated, old_log)
+        rna_vcf_md5 = rna_vcf + ".md5"
+        if os.path.exists(rna_vcf_md5):
+            updated = get_link_log(rna_vcf_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
+    # TODO: add this in db
+    # rna_vcf_filt = extract_fileloc_field(connection, patient.sample, "RNA_VCF_filt")
+    # updated = get_link_log(rna_vcf_filt, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz", log, updated, old_log)
+    # if rna_vcf_filt != "NA":
+    #     rna_vcf_filt_index = rna_vcf_filt + ".tbi"
+    #     if os.path.exists(rna_vcf_filt_index):
+    #         updated = get_link_log(rna_vcf_filt_index, align_folder, f"{patient.dna_n}.bam.tbi", log, updated, old_log)
+    #     rna_vcf_filt_md5 = rna_vcf_filt + ".md5"
+    #     if os.path.exists(rna_vcf_filt_md5):
+    #         updated = get_link_log(rna_vcf_filt_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
 
-    # Not implemented yet
-    # os.makedirs(align_folder, exist_ok=True)
-    # final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM_variants")
-    # updated = get_link_log(final_rna_bam_variants, align_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
-    # if final_rna_bam_variants != "NA":
-    #     final_rna_bam_index = final_rna_bam_variants + ".bai"
-    #     if os.path.exists(final_rna_bam_index):
-    #         updated = get_link_log(final_rna_bam_index, align_folder, f"{patient.rna}.bam.bai", log, updated, old_log)
-    #     final_rna_bam_md5 = final_rna_bam_variants + ".md5"
-    #     if os.path.exists(final_rna_bam_md5):
-    #         updated = get_link_log(final_rna_bam_md5, align_folder, f"{patient.rna}.bam.md5", log, updated, old_log)
+    os.makedirs(align_folder, exist_ok=True)
+    final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM_variants")
+    updated = get_link_log(final_rna_bam_variants, align_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
+    if final_rna_bam_variants != "NA":
+        final_rna_bam_index = final_rna_bam_variants + ".bai"
+        if os.path.exists(final_rna_bam_index):
+            updated = get_link_log(final_rna_bam_index, align_folder, f"{patient.rna}.variants.bam.bai", log, updated, old_log)
+        final_rna_bam_md5 = final_rna_bam_variants + ".md5"
+        if os.path.exists(final_rna_bam_md5):
+            updated = get_link_log(final_rna_bam_md5, align_folder, f"{patient.rna}.variants.bam.md5", log, updated, old_log)
 
-    # Not implemented yet
-    # os.makedirs(reports_folder, exist_ok=True)
-    # rna_multiqc = extract_fileloc_field(connection, patient.sample, "RNA_MultiQC")
-    # updated = get_link_log(rna_multiqc, reports_folder, f"{patient.sample_true}_R.multiqc.html", log, updated, old_log)
+    os.makedirs(reports_folder, exist_ok=True)
+    rna_multiqc = extract_fileloc_field(connection, patient.sample, "RNA_MultiQC")
+    updated = get_link_log(rna_multiqc, reports_folder, f"{patient.sample_true}_R.multiqc.html", log, updated, old_log)
     # annofuse = extract_fileloc_field(connection, patient.sample, "AnnoFuse")
     # updated = get_link_log(annofuse, reports_folder, f"{patient.rna}.anno_fuse", log, updated, old_log)
-    # gridss = extract_fileloc_field(connection, patient.sample, "GRIDSS")
-    # updated = get_link_log(gridss, reports_folder, f"{patient.rna}.gridss", log, updated, old_log)
 
     os.makedirs(param_folder, exist_ok=True)
     rna_expression_ini = extract_fileloc_field(connection, patient.sample, "RNA_Abundance_ini")
     updated = get_link_log(rna_expression_ini, param_folder, f"{patient.sample_true}.RNA.Light.ini", log, updated, old_log)
-    # Not implemented yet
-    # rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
-    # updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
+    rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
+    updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
 
+    # TODO: add this in db
     # PCGR RNA
     # os.makedirs(reports_folder, exist_ok=True)
-    # pcgr_report = extract_fileloc_field(connection, patient.sample, "pcgr_report")
-    # updated = get_link_log(pcgr_report, reports_folder, f"{patient.sample_true}_R.pcgr.html", log, updated, old_log)
-
+    # rna_pcgr_report = extract_fileloc_field(connection, patient.sample, "rna_pcgr_report")
+    # updated = get_link_log(rna_pcgr_report, reports_folder, f"{patient.sample_true}_R.pcgr.html", log, updated, old_log)
     # os.makedirs(pcgr_folder, exist_ok=True)
-    # pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
-    # updated = get_link_log(pcgr_maf, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.maf", log, updated, old_log)
-    # pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "pcgr_snvs_indels")
-    # updated = get_link_log(pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
-    # pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "pcgr_cna_segments")
-    # updated = get_link_log(pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
+    # rna_pcgr_maf = extract_fileloc_field(connection, patient.sample, "rna_pcgr_maf")
+    # updated = get_link_log(rna_pcgr_maf, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.maf", log, updated, old_log)
+    # rna_pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "rna_pcgr_snvs_indels")
+    # updated = get_link_log(rna_pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
+    # rna_pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "rna_pcgr_cna_segments")
+    # updated = get_link_log(rna_pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
 
     return updated
 
@@ -513,21 +541,20 @@ def getime(path):
 
 class PatientData:
     def __init__(self, connection, patient):
-        data = []
         self.conn = connection
-        data = extract_sample_details(connection, patient)
-        if len(data) <10:
+        sample_details = extract_sample_details(connection, patient)
+        if sample_details["Sample"] == "NA":
             raise Exception(f'No database entry for {patient}')
-        self.sample = data[1]
-        self.sample_true = data[1]
-        self.institution = data[2]
-        self.cohort = data[3]
-        self.dna_n = data[4]
-        self.dna_n_true = data[5]
-        self.dna_t = data[6]
-        self.dna_t_true = data[7]
-        self.rna = data[8]
-        self.rna_true = data[9]
+        self.sample = sample_details["Sample"]
+        self.sample_true = sample_details["Sample_True"]
+        self.institution = sample_details["Instituion"]
+        self.cohort = sample_details["Cohort"]
+        self.dna_n = sample_details["DNA_N"]
+        self.dna_n_true = sample_details["DNA_N_True"]
+        self.dna_t = sample_details["DNA_T"]
+        self.dna_t_true = sample_details["DNA_T_True"]
+        self.rna = sample_details["RNA"]
+        self.rna_true = sample_details["RNA_True"]
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
@@ -591,9 +618,14 @@ Within this directory you will find the results of the analysis for a single pat
 * `Key_metrics.csv` *File with metrics for the patient in csv format* {file_exist_check(os.path.join(out_folder, "Key_metrics.csv"))}
 * `raw_data/` *Contains all of the bam's/fastqs from the sequencer. BAM files here include both mapped and unmapped reads and can be converted to the FASTQ format with tools such as SamToFastq.*{dna_n_raw}{dna_t_raw}{rna_raw}
 * `variants/` *Contains the vcfs related to variant calls*
-    * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz"))}
-    * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz"))}
-    * `{patient}.rna.hc.vcf.gz` *Variants found using RNA sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.rna.hc.vcf.gz"))}
+    * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers for DNA Sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz"))}
+    * `{patient}.ensemble.germline.vt.annot.vcf.gz.tbi` *Index of Germline Variants found in any of the callers for DNA Sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.germline.vt.annot.vcf.gz.tbi"))}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers for DNA Sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz"))}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi` *Index of Somatic Variants found in any of the callers for DNA Sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi"))}
+    * `{patient}.hc.vt.annot.vcf.gz` *Variants found using RNA sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.vcf.gz"))}
+    * `{patient}.hc.vt.annot.vcf.gz.tbi` *Index of Variants found using RNA sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.vcf.gz.tbi"))}
+    * `{patient}.hc.vt.annot.filt.vcf.gz` *Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.filt.vcf.gz"))}
+    * `{patient}.hc.vt.annot.filt.vcf.gz.tbi` *Index of Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.filt.vcf.gz.tbi"))}
     * `{patient}.vcf.gz` *Contains the results of all callers for both DNA and RNA (:warning: Not yet available)*
     * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
         * `{patient}.mutect2.germline.vt.vcf.gz` *Germline results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.germline.vt.vcf.gz"))}
@@ -621,7 +653,6 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}_R.multiqc.html` *QC report for the RNA analysis (:warning: Not yet available)*
     * `{rna}.anno_fuse` *Report for fusions detected using RNA (:warning: Not yet available)*
     * `{patient}.gridss` *Annotated structural variant calls with GRIDSS (:warning: Not yet available)*
-    * `{patient}.Key_metrics.csv` *Metrics used to determine whether the analysis was successful (:warning: Not yet available)*
     * [`{patient}.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
     * [`{patient}.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*

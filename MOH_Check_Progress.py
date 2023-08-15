@@ -17,107 +17,112 @@ logger = logging.getLogger(__name__)
 
 class SampleData:
     def __init__(self, connection, sample):
-        data = []
         self.conn = connection
-        data = extract_sample_details(connection, sample)
-        self.sample = data[0]
-        self.sample_true = data[1]
-        self.institution = data[2]
-        self.cohort  = data[3]
-        self.dna_n  = data[4]
-        self.dna_n_true = data[5]
-        self.dna_t = data[6]
-        self.dna_t_true = data[7]
-        self.rna = data[8]
-        self.rna_true = data[9]
+        sample_details = extract_sample_details(connection, sample)
+        self.sample = sample_details["Sample"]
+        self.sample_true = sample_details["Sample_True"]
+        self.institution = sample_details["Instituion"]
+        self.cohort = sample_details["Cohort"]
+        self.dna_n = sample_details["DNA_N"]
+        self.dna_n_true = sample_details["DNA_N_True"]
+        self.dna_t = sample_details["DNA_T"]
+        self.dna_t_true = sample_details["DNA_T_True"]
+        self.rna = sample_details["RNA"]
+        self.rna_true = sample_details["RNA_True"]
     def __str__(self):
         return str(self.__class__) + ": " + str(self.__dict__)
 
 class Progress(SampleData):
     def grab_db_values(self):
-        data = []
         data = extract_fileloc_details(self.conn, self.sample)
-        self.run_proc_bam_dna_t = data[1]
-        self.run_proc_bam_dna_n = data[2]
-        self.beluga_bam_dna_t = data[3]
-        self.beluga_bam_dna_n = data[4]
-        self.dna_vcf_g = data[5]
-        self.dna_vcf_s = data[6]
-        self.mutect2_somatic_vcf = data[7]
-        self.mutect2_germline_vcf = data[8]
-        self.strelka2_germline_vcf = data[9]
-        self.strelka2_somatic_vcf = data[10]
-        self.vardict_germline_vcf = data[11]
-        self.vardict_somatic_vcf = data[12]
-        self.varscan2_germline_vcf = data[13]
-        self.varscan2_somatic_vcf = data[14]
-        self.cnvkit_vcf = data[15]
-        self.final_vcf = data[16]
-        self.final_dna_bam_t = data[17]
-        self.final_dna_bam_n = data[18]
-        self.dna_multiqc = data[19]
-        self.pcgr_report = data[20]
-        self.pcgr_maf = data[21]
-        self.pcgr_snvs_indels = data[22]
-        self.pcgr_cna_segments = data[23]
-        self.tp_ini = data[24]
-        self.run_proc_fastq_1_rna = data[25]
-        self.run_proc_fastq_2_rna = data[26]
-        self.beluga_fastq_1_rna = data[27]
-        self.beluga_fastq_2_rna = data[28]
-        self.rna_vcf = data[29]
-        # self.final_rna_bam_expression = data[26]
-        self.final_rna_bam_variants = data[30]
-        self.rna_multiqc = data[31]
-        self.annofuse = data[32]
-        self.gridss = data[33]
-        self.rna_abundance = data[34]
-        self.big_wig_tracks_f = data[35]
-        self.big_wig_tracks_r = data[36]
-        self.rna_abundance_ini = data[37]
-        self.rna_variants_ini = data[38]
+        self.run_proc_bam_dna_t = data["Run_Proc_BAM_DNA_T"]
+        self.run_proc_bam_dna_n = data["Run_Proc_BAM_DNA_N"]
+        self.beluga_bam_dna_t = data["Beluga_BAM_DNA_T"]
+        self.beluga_bam_dna_n = data["Beluga_BAM_DNA_N"]
+        self.dna_vcf_g = data["DNA_VCF_G"]
+        self.dna_vcf_s = data["DNA_VCF_S"]
+        self.mutect2_somatic_vcf = data["Mutect2_Somatic_vcf"]
+        self.mutect2_germline_vcf = data["Mutect2_Germline_vcf"]
+        self.strelka2_germline_vcf = data["strelka2_Germline_vcf"]
+        self.strelka2_somatic_vcf = data["strelka2_Somatic_vcf"]
+        self.vardict_germline_vcf = data["vardict_Germline_vcf"]
+        self.vardict_somatic_vcf = data["vardict_Somatic_vcf"]
+        self.varscan2_germline_vcf = data["varscan2_Germline_vcf"]
+        self.varscan2_somatic_vcf = data["varscan2_Somatic_vcf"]
+        self.cnvkit_vcf = data["cnvkit_vcf"]
+        self.final_vcf = data["Final_VCF"]
+        self.final_dna_bam_t = data["Final_DNA_BAM_T"]
+        self.final_dna_bam_n = data["Final_DNA_BAM_N"]
+        self.dna_multiqc = data["DNA_MultiQC"]
+        self.pcgr_report = data["pcgr_report"]
+        self.pcgr_maf = data["pcgr_maf"]
+        self.pcgr_snvs_indels = data["pcgr_snvs_indels"]
+        self.pcgr_cna_segments = data["pcgr_cna_segments"]
+        self.tp_ini = data["TP_ini"]
+        self.run_proc_fastq_1_rna = data["Run_Proc_fastq_1_RNA"]
+        self.run_proc_fastq_2_rna = data["Run_Proc_fastq_2_RNA"]
+        self.beluga_fastq_1_rna = data["Beluga_fastq_1_RNA"]
+        self.beluga_fastq_2_rna = data["Beluga_fastq_2_RNA"]
+        self.rna_vcf = data["RNA_VCF"]
+        self.rna_vcf_filt = data["RNA_VCF_filt"]
+        self.final_rna_bam = data["Final_RNA_BAM"]
+        self.rna_multiqc = data["RNA_MultiQC"]
+        self.rna_pcgr_report = data["rna_pcgr_report"]
+        self.rna_pcgr_maf = data["rna_pcgr_maf"]
+        self.rna_pcgr_snvs_indels = data["rna_pcgr_snvs_indels"]
+        self.rna_pcgr_cna_segments = data["rna_pcgr_cna_segments"]
+        self.annofuse = data["AnnoFuse"]
+        self.gridss = data["GRIDSS"]
+        self.rna_abundance = data["RNA_Abundance"]
+        self.big_wig_tracks_f = data["big_wig_tracks_F"]
+        self.big_wig_tracks_r = data["big_wig_tracks_R"]
+        self.rna_abundance_ini = data["RNA_Abundance_ini"]
+        self.rna_variants_ini = data["RNA_Variants_ini"]
         #get the old timestamps
-        data = []
         data = extract_timestamp_details(self.conn, self.sample)
-        self.ts_run_proc_bam_dna_t = data[1]
-        self.ts_run_proc_bam_dna_n = data[2]
-        self.ts_beluga_bam_dna_t = data[3]
-        self.ts_beluga_bam_dna_n = data[4]
-        self.ts_dna_vcf_g = data[5]
-        self.ts_dna_vcf_s = data[6]
-        self.ts_mutect2_somatic_vcf = data[7]
-        self.ts_mutect2_germline_vcf = data[8]
-        self.ts_strelka2_germline_vcf = data[9]
-        self.ts_strelka2_somatic_vcf = data[10]
-        self.ts_vardict_germline_vcf = data[11]
-        self.ts_vardict_somatic_vcf = data[12]
-        self.ts_varscan2_germline_vcf = data[13]
-        self.ts_varscan2_somatic_vcf = data[14]
-        self.ts_cnvkit_vcf = data[15]
-        self.ts_final_vcf = data[16]
-        self.ts_final_dna_bam_t = data[17]
-        self.ts_final_dna_bam_n = data[18]
-        self.ts_dna_multiqc = data[19]
-        self.ts_pcgr_report = data[20]
-        self.ts_pcgr_maf = data[21]
-        self.ts_pcgr_snvs_indels = data[22]
-        self.ts_pcgr_cna_segments = data[23]
-        self.ts_tp_ini = data[24]
-        self.ts_run_proc_fastq_1_rna = data[25]
-        self.ts_run_proc_fastq_2_rna = data[26]
-        self.ts_beluga_fastq_1_rna = data[27]
-        self.ts_beluga_fastq_2_rna = data[28]
-        self.ts_rna_vcf = data[29]
-        # self.ts_final_rna_bam_expression = data[26]
-        self.ts_final_rna_bam_variants = data[30]
-        self.ts_rna_multiqc = data[31]
-        self.ts_annofuse = data[32]
-        self.ts_gridss = data[33]
-        self.ts_rna_abundance = data[34]
-        self.ts_big_wig_tracks_f = data[35]
-        self.ts_big_wig_tracks_r = data[36]
-        self.ts_rna_abundance_ini = data[37]
-        self.ts_rna_variants_ini = data[38]
+        self.ts_run_proc_bam_dna_t = data["Run_Proc_BAM_DNA_T"]
+        self.ts_run_proc_bam_dna_n = data["Run_Proc_BAM_DNA_N"]
+        self.ts_beluga_bam_dna_t = data["Beluga_BAM_DNA_T"]
+        self.ts_beluga_bam_dna_n = data["Beluga_BAM_DNA_N"]
+        self.ts_dna_vcf_g = data["DNA_VCF_G"]
+        self.ts_dna_vcf_s = data["DNA_VCF_S"]
+        self.ts_mutect2_somatic_vcf = data["Mutect2_Somatic_vcf"]
+        self.ts_mutect2_germline_vcf = data["Mutect2_Germline_vcf"]
+        self.ts_strelka2_germline_vcf = data["strelka2_Germline_vcf"]
+        self.ts_strelka2_somatic_vcf = data["strelka2_Somatic_vcf"]
+        self.ts_vardict_germline_vcf = data["vardict_Germline_vcf"]
+        self.ts_vardict_somatic_vcf = data["vardict_Somatic_vcf"]
+        self.ts_varscan2_germline_vcf = data["varscan2_Germline_vcf"]
+        self.ts_varscan2_somatic_vcf = data["varscan2_Somatic_vcf"]
+        self.ts_cnvkit_vcf = data["cnvkit_vcf"]
+        self.ts_final_vcf = data["Final_VCF"]
+        self.ts_final_dna_bam_t = data["Final_DNA_BAM_T"]
+        self.ts_final_dna_bam_n = data["Final_DNA_BAM_N"]
+        self.ts_dna_multiqc = data["DNA_MultiQC"]
+        self.ts_pcgr_report = data["pcgr_report"]
+        self.ts_pcgr_maf = data["pcgr_maf"]
+        self.ts_pcgr_snvs_indels = data["pcgr_snvs_indels"]
+        self.ts_pcgr_cna_segments = data["pcgr_cna_segments"]
+        self.ts_tp_ini = data["TP_ini"]
+        self.ts_run_proc_fastq_1_rna = data["Run_Proc_fastq_1_RNA"]
+        self.ts_run_proc_fastq_2_rna = data["Run_Proc_fastq_2_RNA"]
+        self.ts_beluga_fastq_1_rna = data["Beluga_fastq_1_RNA"]
+        self.ts_beluga_fastq_2_rna = data["Beluga_fastq_2_RNA"]
+        self.ts_rna_vcf = data["RNA_VCF"]
+        self.ts_rna_vcf_filt = data["RNA_VCF_filt"]
+        self.ts_final_rna_bam = data["Final_RNA_BAM"]
+        self.ts_rna_multiqc = data["RNA_MultiQC"]
+        self.ts_rna_pcgr_report = data["rna_pcgr_report"]
+        self.ts_rna_pcgr_maf = data["rna_pcgr_maf"]
+        self.ts_rna_pcgr_snvs_indels = data["rna_pcgr_snvs_indels"]
+        self.ts_rna_pcgr_cna_segments = data["rna_pcgr_cna_segments"]
+        self.ts_annofuse = data["AnnoFuse"]
+        self.ts_gridss = data["GRIDSS"]
+        self.ts_rna_abundance = data["RNA_Abundance"]
+        self.ts_big_wig_tracks_f = data["big_wig_tracks_F"]
+        self.ts_big_wig_tracks_r = data["big_wig_tracks_R"]
+        self.ts_rna_abundance_ini = data["RNA_Abundance_ini"]
+        self.ts_rna_variants_ini = data["RNA_Variants_ini"]
 
     def __init__(self, connection, sample):
         super().__init__(connection, sample)
@@ -172,17 +177,18 @@ class Progress(SampleData):
         rna_pipeline_light_execution = "NA"
         if self.rna_abundance != "NA":
             rna_pipeline_light_execution = "Complete"
-        rna_pseudoalignment = "NA"
-        # if self.final_rna_bam_expression != "NA":
-        #     rna_pseudoalignment = "Complete"
+        rna_alignment = "NA"
+        if self.final_rna_bam != "NA":
+            rna_alignment = "Complete"
         rna_variant_call = "NA"
-        if self.final_rna_bam_variants != "NA":
+        # if self.rna_vcf != "NA" and self.rna_vcf_filt != "NA":
+        if self.rna_vcf != "NA":
             rna_variant_call = "Complete"
         rna_report = "NA"
-        if self.annofuse != "NA":
+        if self.annofuse != "NA" and self.rna_multiqc != "NA" and self.rna_pcgr_report != "NA":
             rna_report = "Complete"
         rna_pipeline_execution = "NA"
-        if rna_transferred == rna_pipeline_light_execution == rna_pseudoalignment == rna_variant_call == rna_report == "Complete":
+        if rna_transferred == rna_alignment == rna_variant_call == rna_report == "Complete":
             rna_pipeline_execution = "Complete"
         # DELIVERY
         dna_delivered, rna_light_delivered, rna_delivered = self.check_delivery()
@@ -199,7 +205,7 @@ class Progress(SampleData):
             rna_transferred,
             rna_pipeline_light_execution,
             rna_light_delivered,
-            rna_pseudoalignment,
+            rna_alignment,
             rna_variant_call,
             rna_report,
             rna_pipeline_execution,
@@ -300,8 +306,6 @@ class Progress(SampleData):
             elif os.path.exists(dna_n_file_old_rr):
                 self.beluga_bam_dna_n = dna_n_file_old_rr
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_old_rr)
-            # else:
-            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in raw_reads
             dna_t_file_rr = os.path.join(loc1, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
             dna_t_file_old_rr = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
@@ -311,8 +315,6 @@ class Progress(SampleData):
             elif os.path.exists(dna_t_file_old_rr):
                 self.beluga_bam_dna_t = dna_t_file_old_rr
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_old_rr)
-            # else:
-            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file} nor {dna_t_file_old}")
             # bam dna_n in MAIN/raw_reads
             dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
             dna_n_file_old = os.path.join(loc2, self.dna_n, self.dna_n + ".bam")
@@ -350,8 +352,6 @@ class Progress(SampleData):
             elif os.path.exists(rna_fq1_old_rr):
                 self.beluga_fastq_1_rna = rna_fq1_old_rr
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_old_rr)
-            # else:
-            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1} nor {rna_fq1_old}")
             # fastq2 in raw_reads
             rna_fq2_rr = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
             rna_fq2_old_rr = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
@@ -361,8 +361,6 @@ class Progress(SampleData):
             elif os.path.exists(rna_fq2_old_rr):
                 self.beluga_fastq_2_rna = rna_fq2_old_rr
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_old_rr)
-            # else:
-            #     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2} nor {rna_fq2_old}")
             # fastq1 in MAIN/raw_reads
             rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
             rna_fq1_old = os.path.join(loc2, self.rna, self.rna + "_R1.fastq.gz")
@@ -401,11 +399,6 @@ class Progress(SampleData):
                     self.Gather_DNA_ini()
             except FileNotFoundError:
                 pass
-            # for filename in glob.glob(path):
-            #     if self.ts_final_dna_bam_n != getime(filename):
-            #         self.final_dna_bam_n = filename
-            #         self.ts_final_dna_bam_n = getime(filename)
-            #         self.Gather_DNA_ini()
             final_dna_bam_t_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.dna_t, self.dna_t + ".sorted.dup.recal.bam")
             try:
                 if self.ts_final_dna_bam_t != getime(final_dna_bam_t_file):
@@ -414,44 +407,17 @@ class Progress(SampleData):
                     self.Gather_DNA_ini()
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment/" + self.dna_t + "/*T.sorted.dup.recal.bam"
-            # for filename in glob.glob(path):
-            #     if self.ts_final_dna_bam_t != getime(filename):
-            #         self.final_dna_bam_t = filename
-            #         self.ts_final_dna_bam_t = getime(filename)
-            #         self.Gather_DNA_ini()
         if self.rna_true == "NA":
-            # self.final_rna_bam_expression = "NA"
-            self.final_rna_bam_variants = "NA"
-            # self.ts_final_rna_bam_expression = "NA"
-            self.ts_final_rna_bam_variants = "NA"
+            self.final_rna_bam = "NA"
+            self.ts_final_rna_bam = "NA"
         else:
-            final_rna_bam_variants_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".sorted.mdup.cram")
+            final_rna_bam_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".sorted.mdup.split.recal.bam")
             try:
-                if self.ts_final_rna_bam_variants != getime(final_rna_bam_variants_file):
-                    self.ts_final_rna_bam_variants = getime(final_rna_bam_variants_file)
-                    self.final_rna_bam_expression = final_rna_bam_variants_file
+                if self.ts_final_rna_bam != getime(final_rna_bam_file):
+                    self.ts_final_rna_bam = getime(final_rna_bam_file)
+                    self.final_rna_bam_variants = final_rna_bam_file
             except FileNotFoundError:
                 pass
-            # final_rna_bam_expression_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".sorted.mdup.split.realigned.recal.bam")
-            # try:
-            #     if self.ts_final_rna_bam_expression != getime(final_rna_bam_expression_file):
-            #         self.ts_final_rna_bam_expression = getime(final_rna_bam_expression_file)
-            #         self.final_rna_bam_variants = final_rna_bam_expression_file
-            # except FileNotFoundError:
-            #     pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment/" + self.rna + "*/*"
-            # for filename in glob.glob(path):
-            #     if ".sorted.mdup.cram" in filename:
-            #         if self.ts_final_rna_bam_variants != getime(filename):
-            #             self.ts_final_rna_bam_variants = getime(filename)
-            #             self.final_rna_bam_expression = filename
-            #     elif ".sorted.mdup.split.realigned.recal.bam" in filename:
-            #         if ".bai" in filename or ".sbi" in filename:
-            #             continue
-            #         if self.ts_final_rna_bam_expression != getime(filename):
-            #             self.ts_final_rna_bam_expression = getime(filename)
-            #             self.final_rna_bam_variants = filename
 
     def Gather_VCFs(self):
         if self.dna_n_true == "NA":
@@ -498,16 +464,6 @@ class Progress(SampleData):
                     self.dna_vcf_s = dna_vcf_s_file
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedvariants/ensemble/" + self.sample + "*/*.vt.annot.vcf.gz"
-            # for filename in glob.glob(path):
-            #     if "ensemble.germline.vt.annot.vcf.gz" in filename:
-            #         if self.ts_dna_vcf_g != getime(filename):
-            #             self.ts_dna_vcf_g = getime(filename)
-            #             self.dna_vcf_g = filename
-            #     elif "ensemble.somatic.vt.annot.vcf.gz" in filename:
-            #         if self.ts_dna_vcf_s != getime(filename):
-            #             self.ts_dna_vcf_s = getime(filename)
-            #             self.dna_vcf_s = filename
             mutect2_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".mutect2.somatic.vt.vcf.gz")
             try:
                 if self.ts_mutect2_somatic_vcf != getime(mutect2_somatic_vcf_file):
@@ -571,45 +527,13 @@ class Progress(SampleData):
                     self.cnvkit_vcf = cnvkit_vcf
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedvariants/" + self.sample + "*/*.vcf.gz"
-            # for filename in glob.glob(path):
-            #     if ".mutect2.somatic.vt.vcf.gz" in filename:
-            #         if self.ts_mutect2_somatic_vcf != getime(filename):
-            #             self.ts_mutect2_somatic_vcf = getime(filename)
-            #             self.mutect2_somatic_vcf = filename
-            #     if ".mutect2.vcf.gz" in filename:
-            #         if self.ts_mutect2_germline_vcf != getime(filename):
-            #             self.ts_mutect2_germline_vcf = getime(filename)
-            #             self.mutect2_germline_vcf = filename
-            #     if ".strelka2.somatic.purple.vcf.gz" in filename:
-            #         if self.ts_strelka2_somatic_vcf != getime(filename):
-            #             self.ts_strelka2_somatic_vcf = getime(filename)
-            #             self.strelka2_somatic_vcf = filename
-            #     if ".strelka2.germline.vt.vcf.gz" in filename:
-            #         if self.ts_strelka2_germline_vcf != getime(filename):
-            #             self.ts_strelka2_germline_vcf = getime(filename)
-            #             self.strelka2_germline_vcf = filename
-            #     if ".vardict.germline.vt.vcf.gz" in filename:
-            #         if self.ts_vardict_germline_vcf != getime(filename):
-            #             self.ts_vardict_germline_vcf = getime(filename)
-            #             self.vardict_germline_vcf= filename
-            #     if ".vardict.somatic.vt.vcf.gz" in filename:
-            #         if self.ts_vardict_somatic_vcf != getime(filename):
-            #             self.ts_vardict_somatic_vcf = getime(filename)
-            #             self.vardict_somatic_vcf = filename
-            #     if ".varscan2.germline.vt.vcf.gz" in filename:
-            #         if self.ts_varscan2_germline_vcf != getime(filename):
-            #             self.ts_varscan2_germline_vcf = getime(filename)
-            #             self.varscan2_germline_vcf = filename
-            #     if ".varscan2.somatic.vt.vcf.gz" in filename:
-            #         if self.ts_varscan2_somatic_vcf != getime(filename):
-            #             self.ts_varscan2_somatic_vcf = getime(filename)
-            #             self.varscan2_somatic_vcf = filename
         if self.rna_true == "NA":
             self.rna_vcf = "NA"
-            self.ts_rna_vcf= "NA"
+            self.ts_rna_vcf = "NA"
+            self.rna_vcf_filt = "NA"
+            self.ts_rna_vcf_filt = "NA"
         else:
-            rna_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".hc.vcf.gz")
+            rna_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".hc.vt.annot.vcf.gz")
             try:
                 if self.ts_rna_vcf != getime(rna_vcf_file):
                     self.rna_vcf = rna_vcf_file
@@ -617,18 +541,19 @@ class Progress(SampleData):
                     self.Gather_RNA_Variants_ini()
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment/" + self.rna + "/*.hc.vcf.gz"
-            # for filename in glob.glob(path):
-            #     if self.ts_rna_vcf != getime(filename):
-            #         self.rna_vcf = filename
-            #         self.ts_rna_vcf = getime(filename)
-            #         self.Gather_RNA_ini()
+            rna_vcf_filt_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".hc.vt.annot.flt.vcf.gz")
+            try:
+                if self.ts_rna_vcf_filt != getime(rna_vcf_filt_file):
+                    self.rna_vcf_filt = rna_vcf_filt_file
+                    self.ts_rna_vcf_filt = getime(rna_vcf_filt_file)
+                    self.Gather_RNA_Variants_ini()
+            except FileNotFoundError:
+                pass
 
 
     def Gather_reports(self):
         if self.dna_n_true == "NA":
             self.dna_multiqc = "NA"
-            # self.pcgr = "NA"
             self.ts_dna_multiqc = "NA"
             self.ts_pcgr = "NA"
         else:
@@ -639,38 +564,20 @@ class Progress(SampleData):
                     self.dna_multiqc = dna_multiqc_file
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna/" + self.sample + "*multiqc.html"
-            # for filename in glob.glob(path):
-            #     if self.ts_dna_multiqc != getime(filename):
-            #         self.ts_dna_multiqc = getime(filename)
-            #         self.dna_multiqc = filename
-
-            # "[sample].pcgr_acmg.grch38.flexdb.html"
-            # "[sample].pcgr_acmg.grch38.maf"
-            # "[sample].pcgr_acmg.grch38.snvs_indels.tiers.tsv"
-            # "[sample].pcgr_acmg.grch38.cna_segments.tsv.gz"
-            # "raw cnv ici : /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants/[sample]/[sample].cnvkit.vcf.gz"
-            # pcgr_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, "pcgr", self.sample + ".pcgr_acmg.grch38.flexdb.html")
-            # try:
-            #     if self.ts_pcgr != getime(pcgr_file):
-            #         self.ts_pcgr = getime(pcgr_file)
-            #         self.pcgr = pcgr_file
-            # except FileNotFoundError:
-            #     pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedvariants/ensemble/" + self.sample + "*/pcgr*/*.flexdb.html"
-            # for filename in glob.glob(path):
-            #     if self.ts_pcgr != getime(filename):
-            #         self.ts_pcgr = getime(filename)
-            #         self.pcgr = filename
 
         if self.rna_true == "NA":
             self.rna_multiqc = "NA"
             self.ts_rna_multiqc = "NA"
         else:
-            #####################Not Implemented########################################
+            rna_multiqc_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna", self.sample + ".multiqc.html")
+            try:
+                if self.ts_rna_multiqc != getime(rna_multiqc_file):
+                    self.ts_rna_multiqc = getime(rna_multiqc_file)
+                    self.rna_multiqc = rna_multiqc_file
+            except FileNotFoundError:
+                pass
             self.rna_multiqc = "NA"
             self.ts_rna_multiqc = "NA"
-            ############################################################################
 
     def Gather_PCGR(self):
         if self.dna_n_true == "NA":
@@ -712,6 +619,45 @@ class Progress(SampleData):
             except FileNotFoundError:
                 pass
 
+        if self.rna_true == "NA":
+            self.rna_pcgr_report = "NA"
+            self.rna_pcgr_maf = "NA"
+            self.rna_pcgr_snvs_indels = "NA"
+            self.rna_pcgr_cna_segments = "NA"
+            self.ts_rna_pcgr_report = "NA"
+            self.ts_rna_pcgr_maf = "NA"
+            self.ts_rna_pcgr_snvs_indels = "NA"
+            self.ts_rna_pcgr_cna_segments = "NA"
+        else:
+            rna_pcgr_report = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.flexdb.html")
+            try:
+                if self.ts_rna_pcgr_report != getime(rna_pcgr_report):
+                    self.ts_rna_pcgr_report = getime(rna_pcgr_report)
+                    self.rna_pcgr_report = rna_pcgr_report
+            except FileNotFoundError:
+                pass
+            rna_pcgr_maf = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.maf")
+            try:
+                if self.ts_rna_pcgr_maf != getime(rna_pcgr_maf):
+                    self.ts_rna_pcgr_maf = getime(rna_pcgr_maf)
+                    self.rna_pcgr_maf = rna_pcgr_maf
+            except FileNotFoundError:
+                pass
+            rna_pcgr_snvs_indels = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.snvs_indels.tiers.tsv")
+            try:
+                if self.ts_rna_pcgr_snvs_indels != getime(rna_pcgr_snvs_indels):
+                    self.ts_rna_pcgr_snvs_indels = getime(rna_pcgr_snvs_indels)
+                    self.rna_pcgr_snvs_indels = rna_pcgr_snvs_indels
+            except FileNotFoundError:
+                pass
+            rna_pcgr_cna_segments = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.cna_segments.tsv.gz")
+            try:
+                if self.ts_rna_pcgr_cna_segments != getime(rna_pcgr_cna_segments):
+                    self.ts_rna_pcgr_cna_segments = getime(rna_pcgr_cna_segments)
+                    self.rna_pcgr_cna_segments = rna_pcgr_cna_segments
+            except FileNotFoundError:
+                pass
+
     def Gather_RNA_other(self):
         if self.rna_true == "NA":
             self.annofuse = "NA"
@@ -736,11 +682,6 @@ class Progress(SampleData):
                     self.annofuse = annofuse_file
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/fusion/" + self.rna + "/annoFuse/*.putative_driver_fusions.tsv"
-            # for filename in glob.glob(path):
-            #     if self.ts_annofuse != getime(filename):
-            #         self.ts_annofuse = getime(filename)
-            #         self.annofuse = filename
 
             # Change from stringtie to kallisto: DONE
             rna_abundance_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/kallisto", self.rna, "abundance_transcripts.tsv")
@@ -751,10 +692,6 @@ class Progress(SampleData):
                     self.Gather_RNA_Light_ini()
             except FileNotFoundError:
                 pass
-            # for filename in glob.glob(path):
-            #     if self.ts_rna_abundance != getime(filename):
-            #         self.ts_rna_abundance = getime(filename)
-            #         self.rna_abundance = filename
 
             big_wig_tracks_f_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/tracks/bigWig", self.rna + ".forward.bw")
             try:
@@ -770,16 +707,6 @@ class Progress(SampleData):
                     self.big_wig_tracks_r = big_wig_tracks_r_file
             except FileNotFoundError:
                 pass
-            # path = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/tracks/bigWig/" + self.rna + "*"
-            # for filename in glob.glob(path):
-            #     if "forward" in filename:
-            #         if self.big_wig_tracks_f != getime(filename):
-            #             self.ts_big_wig_tracks_f = getime(filename)
-            #             self.big_wig_tracks_f = filename
-            #     if "reverse" in filename:
-            #         if self.big_wig_tracks_r != getime(filename):
-            #             self.ts_big_wig_tracks_r = getime(filename)
-            #             self.big_wig_tracks_r = filename
 
 
 def getime(path):
@@ -788,7 +715,6 @@ def getime(path):
 
 def main():
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
-    # ALL_Samples = extract_sample_names(connection)
     patients = extract_sample_names(connection)
     print("Updating Database...")
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
