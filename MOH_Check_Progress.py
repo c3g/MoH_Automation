@@ -315,6 +315,11 @@ class Progress(SampleData):
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
                 if not dna_t:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+            else:
+                if self.run_proc_bam_dna_n != "NA":
+                    dna_n_transferred_bam = os.path.basename(self.run_proc_bam_dna_n)
+                if self.run_proc_bam_dna_t != "NA":
+                    dna_t_transferred_bam = os.path.basename(self.run_proc_bam_dna_t)
 
         if self.rna_true == "NA":
             self.run_proc_fastq_1_rna = "NA"
@@ -343,10 +348,17 @@ class Progress(SampleData):
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2_transferred = os.path.basename(fields[-1].strip())
                                     fastq2 = True
+
                 if not fastq1:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
                 if not fastq2:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+            else:
+                if self.run_proc_fastq_1_rna != "NA":
+                    fastq1_transferred = os.path.basename(self.run_proc_fastq_1_rna)
+                if self.run_proc_fastq_2_rna != "NA":
+                    fastq2_transferred = os.path.basename(self.run_proc_fastq_2_rna)
+
         # Beluga bams
         loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
         loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
