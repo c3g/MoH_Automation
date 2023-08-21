@@ -328,8 +328,6 @@ def deliver_dna(
             updated = get_link_log(dna_vcf_s_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(cal_folder, exist_ok=True)
-    mutect2_germline_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Germline_vcf")
-    updated = get_link_log(mutect2_germline_vcf, cal_folder, f"{patient.sample_true}.mutect2.germline.vt.vcf.gz", log, updated, old_log)
     mutect2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Somatic_vcf")
     updated = get_link_log(mutect2_somatic_vcf, cal_folder, f"{patient.sample_true}.mutect2.somatic.vt.vcf.gz", log, updated, old_log)
     strelka2_germline_vcf = extract_fileloc_field(connection, patient.sample, "strelka2_Germline_vcf")
@@ -628,7 +626,6 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}.hc.vt.annot.filt.vcf.gz.tbi` *Index of Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.filt.vcf.gz.tbi"))}
     * `{patient}.vcf.gz` *Contains the results of all callers for both DNA and RNA (:warning: Not yet available)*
     * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
-        * `{patient}.mutect2.germline.vt.vcf.gz` *Germline results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.germline.vt.vcf.gz"))}
         * `{patient}.mutect2.somatic.vt.vcf.gz` *Somatic results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.somatic.vt.vcf.gz"))}
         * `{patient}.strelka2.germline.vt.vcf.gz` *Germline results for strelka2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.strelka2.germline.vt.vcf.gz"))}
         * `{patient}.strelka2.somatic.vt.vcf.gz` *Somatic results for strelka2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.strelka2.somatic.vt.vcf.gz"))}

@@ -42,7 +42,6 @@ class Progress(SampleData):
         self.dna_vcf_g = data["DNA_VCF_G"]
         self.dna_vcf_s = data["DNA_VCF_S"]
         self.mutect2_somatic_vcf = data["Mutect2_Somatic_vcf"]
-        self.mutect2_germline_vcf = data["Mutect2_Germline_vcf"]
         self.strelka2_germline_vcf = data["strelka2_Germline_vcf"]
         self.strelka2_somatic_vcf = data["strelka2_Somatic_vcf"]
         self.vardict_germline_vcf = data["vardict_Germline_vcf"]
@@ -87,7 +86,6 @@ class Progress(SampleData):
         self.ts_dna_vcf_g = data["DNA_VCF_G"]
         self.ts_dna_vcf_s = data["DNA_VCF_S"]
         self.ts_mutect2_somatic_vcf = data["Mutect2_Somatic_vcf"]
-        self.ts_mutect2_germline_vcf = data["Mutect2_Germline_vcf"]
         self.ts_strelka2_germline_vcf = data["strelka2_Germline_vcf"]
         self.ts_strelka2_somatic_vcf = data["strelka2_Somatic_vcf"]
         self.ts_vardict_germline_vcf = data["vardict_Germline_vcf"]
@@ -424,7 +422,6 @@ class Progress(SampleData):
             self.dna_vcf_g = "NA"
             self.dna_vcf_s = "NA"
             self.mutect2_somatic_vcf = "NA"
-            self.mutect2_germline_vcf = "NA"
             self.strelka2_germline_vcf = "NA"
             self.strelka2_somatic_vcf = "NA"
             self.vardict_germline_vcf = "NA"
@@ -436,7 +433,6 @@ class Progress(SampleData):
             self.ts_dna_vcf_g = "NA"
             self.ts_dna_vcf_s = "NA"
             self.ts_mutect2_somatic_vcf = "NA"
-            self.ts_mutect2_germline_vcf = "NA"
             self.ts_strelka2_germline_vcf = "NA"
             self.ts_strelka2_somatic_vcf = "NA"
             self.ts_vardict_germline_vcf = "NA"
@@ -469,13 +465,6 @@ class Progress(SampleData):
                 if self.ts_mutect2_somatic_vcf != getime(mutect2_somatic_vcf_file):
                     self.ts_mutect2_somatic_vcf = getime(mutect2_somatic_vcf_file)
                     self.mutect2_somatic_vcf = mutect2_somatic_vcf_file
-            except FileNotFoundError:
-                pass
-            mutect2_germline_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".mutect2.vcf.gz")
-            try:
-                if self.ts_mutect2_germline_vcf != getime(mutect2_germline_vcf_file):
-                    self.ts_mutect2_germline_vcf = getime(mutect2_germline_vcf_file)
-                    self.mutect2_germline_vcf = mutect2_germline_vcf_file
             except FileNotFoundError:
                 pass
             strelka2_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".strelka2.somatic.purple.vcf.gz")
