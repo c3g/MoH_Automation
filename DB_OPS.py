@@ -82,6 +82,7 @@ def update_metrics_db(
     Raw_Mean_Coverage,
     WGS_Dedup_Coverage,
     Median_Insert_Size,
+    Mean_Insert_Size,
     Raw_Duplication_Rate,
     WGS_Contamination,
     Raw_Reads_Count,
@@ -102,9 +103,9 @@ def update_metrics_db(
     result = cur.fetchone()
     if result:
         cur.execute(f"DELETE FROM KEY_METRICS WHERE Sample='{sample}'")
-        cur.execute(f"INSERT INTO KEY_METRICS (Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,Raw_Mean_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,Raw_Duplication_Rate,WGS_Contamination,Raw_Reads_Count,WTS_Exonic_Rate,WTS_Aligned_Reads,WTS_rRNA_contamination,Concordance,Purity,Flags,Fails,Raw_Median_Insert_Size,Raw_Mean_Insert_Size) VALUES ('{sample}','{WGS_Bases_Over_Q30}','{WGS_Min_Aligned_Reads_Delivered}','{Raw_Mean_Coverage}','{WGS_Dedup_Coverage}','{Median_Insert_Size}','{Raw_Duplication_Rate}','{WGS_Contamination}','{Raw_Reads_Count}','{WTS_Exonic_Rate}','{WTS_Aligned_Reads}','{WTS_rRNA_contamination}','{Concordance}','{Purity}','{Flags}','{Fails}','{Raw_Median_Insert_Size}','{Raw_Mean_Insert_Size}')")
+        cur.execute(f"INSERT INTO KEY_METRICS (Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,Raw_Mean_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,Mean_Insert_Size,Raw_Duplication_Rate,WGS_Contamination,Raw_Reads_Count,WTS_Exonic_Rate,WTS_Aligned_Reads,WTS_rRNA_contamination,Concordance,Purity,Flags,Fails,Raw_Median_Insert_Size,Raw_Mean_Insert_Size) VALUES ('{sample}','{WGS_Bases_Over_Q30}','{WGS_Min_Aligned_Reads_Delivered}','{Raw_Mean_Coverage}','{WGS_Dedup_Coverage}','{Median_Insert_Size}','{Mean_Insert_Size}','{Raw_Duplication_Rate}','{WGS_Contamination}','{Raw_Reads_Count}','{WTS_Exonic_Rate}','{WTS_Aligned_Reads}','{WTS_rRNA_contamination}','{Concordance}','{Purity}','{Flags}','{Fails}','{Raw_Median_Insert_Size}','{Raw_Mean_Insert_Size}')")
     else:
-        cur.execute(f"INSERT INTO KEY_METRICS (Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,Raw_Mean_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,Raw_Duplication_Rate,WGS_Contamination,Raw_Reads_Count,WTS_Exonic_Rate,WTS_Aligned_Reads,WTS_rRNA_contamination,Concordance,Purity,Flags,Fails,Raw_Median_Insert_Size,Raw_Mean_Insert_Size) VALUES ('{sample}','{WGS_Bases_Over_Q30}','{WGS_Min_Aligned_Reads_Delivered}','{Raw_Mean_Coverage}','{WGS_Dedup_Coverage}','{Median_Insert_Size}','{Raw_Duplication_Rate}','{WGS_Contamination}','{Raw_Reads_Count}','{WTS_Exonic_Rate}','{WTS_Aligned_Reads}','{WTS_rRNA_contamination}','{Concordance}','{Purity}','{Flags}','{Fails}','{Raw_Median_Insert_Size}','{Raw_Mean_Insert_Size}')")
+        cur.execute(f"INSERT INTO KEY_METRICS (Sample,WGS_Bases_Over_Q30,WGS_Min_Aligned_Reads_Delivered,Raw_Mean_Coverage,WGS_Dedup_Coverage,Median_Insert_Size,Mean_Insert_Size,Raw_Duplication_Rate,WGS_Contamination,Raw_Reads_Count,WTS_Exonic_Rate,WTS_Aligned_Reads,WTS_rRNA_contamination,Concordance,Purity,Flags,Fails,Raw_Median_Insert_Size,Raw_Mean_Insert_Size) VALUES ('{sample}','{WGS_Bases_Over_Q30}','{WGS_Min_Aligned_Reads_Delivered}','{Raw_Mean_Coverage}','{WGS_Dedup_Coverage}','{Median_Insert_Size}','{Mean_Insert_Size}','{Raw_Duplication_Rate}','{WGS_Contamination}','{Raw_Reads_Count}','{WTS_Exonic_Rate}','{WTS_Aligned_Reads}','{WTS_rRNA_contamination}','{Concordance}','{Purity}','{Flags}','{Fails}','{Raw_Median_Insert_Size}','{Raw_Mean_Insert_Size}')")
 
 def Update_Samples_Table(conn, sample, sample_True, Instituion, Cohort, DNA_N, DNA_N_True, DNA_T, DNA_T_True, RNA, RNA_True):
     # Create cursor object
