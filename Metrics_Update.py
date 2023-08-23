@@ -171,15 +171,9 @@ def extract_data(samples_list, connection, paired_samples_dict):
                     fails.append('Purity')
             except (TypeError, ValueError):
                 pass
-            # WTS_Exonic_Rate
-            _, rna_exonic_rate = parse_rnaseqc_metrics(sample)
-            try:
-                if float(rna_exonic_rate)<0.6:
-                    fails.append('WTS_Exonic_Rate')
-                elif float(rna_exonic_rate)<0.8:
-                    flags.append('WTS_Exonic_Rate')
-            except (TypeError, ValueError):
-                pass
+
+            # WTS_Expression_Profiling_Efficiency
+            rna_expression_profiling_efficiency = extract_rna_expression_profiling_efficiency(sample)
 
             # WTS_Aligned_Reads
             rna_aligned_reads_count = extract_rna_aligned_reads_count(sample)
@@ -235,7 +229,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 dna_contamination,
                 raw_reads_count,
                 rna_aligned_reads_count,
-                rna_exonic_rate,
+                rna_expression_profiling_efficiency,
                 rna_ribosomal_contamination_count,
                 dna_concordance,
                 dna_tumour_purity,
@@ -292,17 +286,17 @@ def extract_rna_ribosomal(sample):
     return ret
 
 
-def parse_rnaseqc_metrics(sample):
+def extract_rna_expression_profiling_efficiency(sample):
+    """WTS_Expression_Profiling_Efficiency"""
     try:
-        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.metrics.tmp.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc2', sample + '.sorted.mdup.bam.metrics.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
-            lines = file.readlines()
-            rna_aligned_reads_count = lines[3].split("\t")[0]
-            rna_exonic_rate = round(float(lines[7].split("\t")[1])*100, 2)
+            for line in file:
+                if line.startswith("Expression Profiling Efficiency"):
+                    rna_expression_profiling_efficiency = line.split("\t")[1]
     except FileNotFoundError:
-        rna_aligned_reads_count = "NA"
-        rna_exonic_rate = "NA"
-    return rna_aligned_reads_count, rna_exonic_rate
+        rna_expression_profiling_efficiency = "NA"
+    return rna_expression_profiling_efficiency
 
 
 def extract_rna_aligned_reads_count(sample):
