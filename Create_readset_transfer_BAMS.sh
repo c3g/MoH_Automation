@@ -40,7 +40,7 @@ echo "Bams Transfered">>"$TEMP/"$LOGFILE;
 for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         sample_name=`echo "$i" | cut -d'/' -f11`
         readset_name="`echo "$i" | cut -d'/' -f11`_`echo "$i" | cut -d'/' -f12`"
-        file_name=`echo "$i" | cut -d'/' -f13|sed 's/.sorted.bam//g'`
+        file_name=`echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g'`
         # Make the oneliner readset file
         touch "$TEMP/"$readset_name"_readset.tsv";
         echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/"$readset_name"_readset.tsv";
@@ -60,9 +60,9 @@ for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         # Adding readset to be transferred in a list file
         echo $TEMP"/"$readset_name"_readset.tsv" $BEL_LOC$sample_name"/"$readset_name"_readset.tsv">>$TEMP"/"$LISTFILE;
         # Adding bam to be transferred in a list file
-        echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam" >>$TEMP"/"$LISTFILE;
+        echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam">>$TEMP"/"$LISTFILE;
 
-        echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bam >>"$TEMP/"$LOGFILE;
+        echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bam>>"$TEMP/"$LOGFILE;
 
 done;
 else
