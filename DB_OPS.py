@@ -515,7 +515,7 @@ def update_timestamp_details(sample):
         cur.execute("""
             INSERT INTO Timestamps (
                 Sample,
-                Run_Proc_BAM_DNA_,
+                Run_Proc_BAM_DNA_T,
                 Run_Proc_BAM_DNA_N,
                 Beluga_BAM_DNA_T,
                 Beluga_BAM_DNA_N,
@@ -785,7 +785,7 @@ def update_fileloc_details(sample):
         cur.execute("""
             INSERT INTO File_Locations (
                 Sample,
-                Run_Proc_BAM_DNA_,
+                Run_Proc_BAM_DNA_T,
                 Run_Proc_BAM_DNA_N,
                 Beluga_BAM_DNA_T,
                 Beluga_BAM_DNA_N,
