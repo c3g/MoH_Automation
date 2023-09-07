@@ -129,7 +129,7 @@ def Update_Samples_Table(conn, sample, sample_True, Instituion, Cohort, DNA_N, D
         cur.execute(f"INSERT INTO Samples (Sample,Sample_True,Instituion,Cohort,DNA_N,DNA_N_True,DNA_T,DNA_T_True,RNA,RNA_True) VALUES ('{sample}','{sample}','{Instituion}','{Cohort}','{DNA_N}','{DNA_N_True}','{DNA_T}','{DNA_T_True}','{RNA}','{RNA_True}')")
 
 #Grabs all fields from Sample table and outputs an array of the data
-def extract_sample_details(conn,sample_true):
+def extract_sample_details(conn, sample_true):
     ret = {
         "Sample": "NA",
         "Sample_True": "NA",
@@ -142,7 +142,8 @@ def extract_sample_details(conn,sample_true):
         "RNA": "NA",
         "RNA_True": "NA"
     }
-    cur = conn.cursor(dictionary=True)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
     #Test to see if it exists and if so extract the current data
     cur.execute(f"""SELECT * FROM Samples WHERE Sample='{sample_true}'""")
     result = cur.fetchone()
@@ -208,7 +209,8 @@ def extract_fileloc_details(conn, sample):
         "RNA_Abundance_ini": "NA",
         "RNA_Variants_ini": "NA"
     }
-    cur = conn.cursor(dictionary=True)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
     cur.execute(f"""SELECT * FROM File_Locations WHERE Sample='{sample}'""")
     result = cur.fetchone()
     ret.update(result)
@@ -261,7 +263,8 @@ def extract_timestamp_details(conn, sample):
         "RNA_Abundance_ini": "NA",
         "RNA_Variants_ini": "NA"
     }
-    cur = conn.cursor(dictionary=True)
+    conn.row_factory = sqlite3.Row
+    cur = conn.cursor()
     cur.execute(f"""SELECT * FROM Timestamps WHERE Sample='{sample}'""")
     result = cur.fetchone()
     ret.update(result)
