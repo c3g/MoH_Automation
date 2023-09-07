@@ -14,7 +14,8 @@ WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), '
 
 
 def main():
-    connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    # connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    connection = create_connection("/scratch/stretenp/moh_test/MOH_analysis.db")
 
     patients = extract_sample_names(connection)
     #TEST CASE

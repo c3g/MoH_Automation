@@ -766,7 +766,8 @@ def getime(path):
     return date.strftime("%Y/%m/%d")
 
 def main():
-    connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    # connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    connection = create_connection("/scratch/stretenp/moh_test/MOH_analysis.db")
     patients = extract_sample_names(connection)
     print("Updating Database...")
     with progressbar.ProgressBar(max_value=len(patients), widgets=WIDGETS) as progress:
