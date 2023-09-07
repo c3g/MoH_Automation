@@ -48,6 +48,11 @@ class Progress(SampleData):
         self.vardict_somatic_vcf = data["vardict_Somatic_vcf"]
         self.varscan2_germline_vcf = data["varscan2_Germline_vcf"]
         self.varscan2_somatic_vcf = data["varscan2_Somatic_vcf"]
+        self.gripss_somatic = data["gripss_somatic"]
+        self.gripss_germline = data["gripss_germline"]
+        self.purple_somatic = data["purple_somatic"]
+        self.purple_germline = data["purple_germline"]
+        self.purple_circos = data["purple_circos"]
         self.cnvkit_vcf = data["cnvkit_vcf"]
         self.final_vcf = data["Final_VCF"]
         self.final_dna_bam_t = data["Final_DNA_BAM_T"]
@@ -92,6 +97,11 @@ class Progress(SampleData):
         self.ts_vardict_somatic_vcf = data["vardict_Somatic_vcf"]
         self.ts_varscan2_germline_vcf = data["varscan2_Germline_vcf"]
         self.ts_varscan2_somatic_vcf = data["varscan2_Somatic_vcf"]
+        self.ts_gripss_somatic = data["gripss_somatic"]
+        self.ts_gripss_germline = data["gripss_germline"]
+        self.ts_purple_somatic = data["purple_somatic"]
+        self.ts_purple_germline = data["purple_germline"]
+        self.ts_purple_circos = data["purple_circos"]
         self.ts_cnvkit_vcf = data["cnvkit_vcf"]
         self.ts_final_vcf = data["Final_VCF"]
         self.ts_final_dna_bam_t = data["Final_DNA_BAM_T"]
@@ -647,23 +657,76 @@ class Progress(SampleData):
             except FileNotFoundError:
                 pass
 
+    def Gather_svariants(self):
+        if self.dna_t_true == "NA":
+            self.gridss = "NA"
+            self.gripss_somatic = "NA"
+            self.gripss_germline = "NA"
+            self.purple_somatic = "NA"
+            self.purple_germline = "NA"
+            self.purple_circos = "NA"
+            self.ts_gridss = "NA"
+            self.ts_gripss_somatic = "NA"
+            self.ts_gripss_germline = "NA"
+            self.ts_purple_somatic = "NA"
+            self.ts_purple_germline = "NA"
+            self.ts_purple_circos = "NA"
+        else:
+            gridss = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_t + ".gridss.vcf.gz")
+            try:
+                if self.ts_gridss != getime(gridss):
+                    self.ts_gridss = getime(gridss)
+                    self.gridss = gridss
+            except FileNotFoundError:
+                pass
+            gripss_somatic = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_t + ".gripss.filtered.somatic.vcf.gz")
+            try:
+                if self.ts_gripss_somatic != getime(gripss_somatic):
+                    self.ts_gripss_somatic = getime(gripss_somatic)
+                    self.gripss_somatic = gripss_somatic
+            except FileNotFoundError:
+                pass
+            gripss_germline = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_n + ".gripss.filtered.germline.vcf.gz")
+            try:
+                if self.ts_gripss_germline != getime(gripss_germline):
+                    self.ts_gripss_germline = getime(gripss_germline)
+                    self.gripss_germline = gripss_germline
+            except FileNotFoundError:
+                pass
+            purple_somatic = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", self.dna_t + ".driver.catalog.somatic.tsv")
+            try:
+                if self.ts_purple_somatic != getime(purple_somatic):
+                    self.ts_purple_somatic = getime(purple_somatic)
+                    self.purple_somatic = purple_somatic
+            except FileNotFoundError:
+                pass
+            purple_germline = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", self.dna_t + ".driver.catalog.germline.tsv")
+            try:
+                if self.ts_purple_germline != getime(purple_germline):
+                    self.ts_purple_germline = getime(purple_germline)
+                    self.purple_germline = purple_germline
+            except FileNotFoundError:
+                pass
+            purple_circos = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", "plot", self.dna_t + "circos.png")
+            try:
+                if self.ts_purple_circos != getime(purple_circos):
+                    self.ts_purple_circos = getime(purple_circos)
+                    self.purple_circos = purple_circos
+            except FileNotFoundError:
+                pass
+
+
     def Gather_RNA_other(self):
         if self.rna_true == "NA":
             self.annofuse = "NA"
-            self.gridss= "NA"
             self.rna_abundance= "NA"
             self.big_wig_tracks_f = "NA"
             self.big_wig_tracks_r = "NA"
             self.ts_annofuse = "NA"
-            self.ts_gridss= "NA"
             self.ts_rna_abundance= "NA"
             self.ts_big_wig_tracks_f = "NA"
             self.ts_big_wig_tracks_r = "NA"
         else:
-            #####################Not Implemented########################################
-            self.gridss= "NA"
-            self.ts_gridss= "NA"
-            ############################################################################
             annofuse_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/fusion", self.rna, "annoFuse", self.rna + ".putative_driver_fusions.tsv")
             try:
                 if self.ts_annofuse != getime(annofuse_file):
@@ -716,6 +779,7 @@ def main():
             sample.Gather_Final_BAMs()
             sample.Gather_VCFs()
             sample.Gather_PCGR()
+            sample.Gather_svariants()
             sample.Gather_reports()
             sample.Gather_RNA_other()
             update_timestamp_details(sample)
