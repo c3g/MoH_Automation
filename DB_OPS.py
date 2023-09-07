@@ -507,7 +507,7 @@ def update_timestamp_details(sample):
             "big_wig_tracks_f": sample.ts_big_wig_tracks_f,
             "big_wig_tracks_r": sample.ts_big_wig_tracks_r,
             "rna_abundance_ini": sample.ts_rna_abundance_ini,
-            "rna_variants_in": sample.ts_rna_variants_ini,
+            "rna_variants_ini": sample.ts_rna_variants_ini,
             "sample": sample.sample
             }
             )
