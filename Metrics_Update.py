@@ -173,22 +173,32 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
-            # WTS_Expression_Profiling_Efficiency
-            rna_expression_profiling_efficiency = extract_rna_expression_profiling_efficiency(sample)
-
             # WTS_Aligned_Reads
             rna_aligned_reads_count = extract_rna_aligned_reads_count(sample)
 
-            # WTS_rRNA_contamination
-            rrna_count = extract_rna_ribosomal(sample)
+
+            # WTS_Expression_Profiling_Efficiency, WTS_rRNA_contamination
+            rna_expression_profiling_efficiency, rna_ribosomal_contamination_count = parse_rnaseqc2(sample)
             try:
-                rna_ribosomal_contamination_count = int(rrna_count)/int(rna_aligned_reads_count)
                 if float(rna_ribosomal_contamination_count)>0.35:
                     fails.append('WTS_rRNA_contamination')
                 elif float(rna_ribosomal_contamination_count)>0.1:
                     flags.append('WTS_rRNA_contamination')
             except (TypeError, ValueError):
-                rna_ribosomal_contamination_count = "NA"
+                pass
+            # # WTS_Expression_Profiling_Efficiency
+            # rna_expression_profiling_efficiency = extract_rna_expression_profiling_efficiency(sample)
+
+            # # WTS_rRNA_contamination
+            # rrna_count = extract_rna_ribosomal(sample)
+            # try:
+            #     rna_ribosomal_contamination_count = int(rrna_count)/int(rna_aligned_reads_count)
+            #     if float(rna_ribosomal_contamination_count)>0.35:
+            #         fails.append('WTS_rRNA_contamination')
+            #     elif float(rna_ribosomal_contamination_count)>0.1:
+            #         flags.append('WTS_rRNA_contamination')
+            # except (TypeError, ValueError):
+            #     rna_ribosomal_contamination_count = "NA"
 
             # Flags
             tmp_flags = extract_value(connection, "KEY_METRICS", sample, "Flags").split(";")
@@ -272,6 +282,21 @@ def parse_run_metrics(sample, run):
         raw_mean_insert_size = "NA"
         raw_duplication_rate = "NA"
     return raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate
+
+
+def parse_rnaseqc2(sample):
+    """WTS_Expression_Profiling_Efficiency, WTS_rRNA_contamination"""
+    try:
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc2', sample + '.sorted.mdup.bam.metrics.tsv')
+        with open(filename, 'r', encoding="utf-8") as file:
+            for line in file:
+                if line.startswith("Expression Profiling Efficiency"):
+                    rna_expression_profiling_efficiency = line.split("\t")[1]
+                elif line.startswith("rRNA Rate"):
+                    rna_ribosomal_contamination_count = line.split("\t")[1]
+    except FileNotFoundError:
+        rna_expression_profiling_efficiency = rna_ribosomal_contamination_count = "NA"
+    return rna_expression_profiling_efficiency, rna_ribosomal_contamination_count
 
 def extract_rna_ribosomal(sample):
     """WTS_rRNA_contamination"""
