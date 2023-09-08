@@ -15,6 +15,11 @@ WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), '
 
 logger = logging.getLogger(__name__)
 
+
+TRANSFER_LOGS = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*"
+MAIN_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+MOH_PROCESSING_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
+
 class SampleData:
     def __init__(self, connection, sample):
         self.conn = connection
@@ -139,18 +144,18 @@ class Progress(SampleData):
 
 #################ONCE DONE JUST STORE THE WHOLE FLIPPEN INI HERE ########################################
     def Gather_DNA_ini(self):
-        filename = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/TumorPair.config.trace.ini'
+        filename = os.path.join(MAIN_FOLDER, 'TumorPair.config.trace.ini')
         self.tp_ini = filename
         self.ts_tp_ini = getime(filename)
 #########################################################################################################
 #################ONCE DONE JUST STORE THE WHOLE FLIPPEN INI HERE########################################
     def Gather_RNA_Light_ini(self):
-        rna_abundance_ini = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/RnaSeqLight.config.trace.ini'
+        rna_abundance_ini = os.path.join(MAIN_FOLDER, 'RnaSeqLight.config.trace.ini')
         self.rna_abundance_ini = rna_abundance_ini
         self.ts_rna_abundance_ini = getime(rna_abundance_ini)
 
     def Gather_RNA_Variants_ini(self):
-        rna_variants_ini = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/RnaSeq.config.trace.ini'
+        rna_variants_ini = os.path.join(MAIN_FOLDER, 'RnaSeq.config.trace.ini')
         self.rna_variants_ini = rna_variants_ini
         self.ts_rna_variants_ini = getime(rna_variants_ini)
 #########################################################################################################
@@ -233,6 +238,7 @@ class Progress(SampleData):
             rna_delivered = "Complete"
         return dna_delivered, rna_light_delivered, rna_delivered
 
+
     def Gather_Run_Proc_BAM(self):
         if self.dna_n_true == "NA":
             self.run_proc_bam_dna_t = "NA"
@@ -240,7 +246,7 @@ class Progress(SampleData):
             self.ts_run_proc_bam_dna_t = "NA"
             self.ts_run_proc_bam_dna_n = "NA"
         else:
-            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            path = TRANSFER_LOGS
             dna_n = False
             dna_t = False
             if self.run_proc_bam_dna_t == "NA" or self.run_proc_bam_dna_n == "NA":
@@ -260,9 +266,9 @@ class Progress(SampleData):
                                 self.ts_run_proc_bam_dna_t = getime(filename)
                                 dna_t = True
                 if not dna_n:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in {TRANSFER_LOGS}")
                 if not dna_t:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in {TRANSFER_LOGS}")
 
         if self.rna_true == "NA":
             self.run_proc_fastq_1_rna = "NA"
@@ -270,7 +276,7 @@ class Progress(SampleData):
             self.ts_run_proc_fastq_1_rna = "NA"
             self.ts_run_proc_fastq_2_rna = "NA"
         else:
-            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            path = TRANSFER_LOGS
             fastq1 = False
             fastq2 = False
             if self.run_proc_fastq_1_rna == "NA" or self.run_proc_fastq_2_rna == "NA":
@@ -290,9 +296,9 @@ class Progress(SampleData):
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2 = True
                 if not fastq1:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in {TRANSFER_LOGS}")
                 if not fastq2:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in {TRANSFER_LOGS}")
 
     def Gather_BAM_loc(self):
         # Run Processing bams
@@ -302,7 +308,7 @@ class Progress(SampleData):
             self.ts_run_proc_bam_dna_t = "NA"
             self.ts_run_proc_bam_dna_n = "NA"
         else:
-            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            path = TRANSFER_LOGS
             dna_n = False
             dna_t = False
             if self.run_proc_bam_dna_t == "NA" or self.run_proc_bam_dna_n == "NA":
@@ -324,9 +330,9 @@ class Progress(SampleData):
                                 dna_t_transferred_bam = os.path.basename(fields[-1].strip())
                                 dna_t = True
                 if not dna_n:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in {TRANSFER_LOGS}")
                 if not dna_t:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in {TRANSFER_LOGS}")
             else:
                 if self.run_proc_bam_dna_n != "NA":
                     dna_n_transferred_bam = os.path.basename(self.beluga_bam_dna_n)
@@ -339,7 +345,7 @@ class Progress(SampleData):
             self.ts_run_proc_fastq_1_rna = "NA"
             self.ts_run_proc_fastq_2_rna = "NA"
         else:
-            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            path = TRANSFER_LOGS
             fastq1 = False
             fastq2 = False
             if self.run_proc_fastq_1_rna == "NA" or self.run_proc_fastq_2_rna == "NA":
@@ -362,9 +368,9 @@ class Progress(SampleData):
                                     fastq2 = True
 
                 if not fastq1:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in {TRANSFER_LOGS}")
                 if not fastq2:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in {TRANSFER_LOGS}")
             else:
                 if self.run_proc_fastq_1_rna != "NA":
                     fastq1_transferred = os.path.basename(self.beluga_fastq_1_rna)
@@ -372,8 +378,8 @@ class Progress(SampleData):
                     fastq2_transferred = os.path.basename(self.beluga_fastq_2_rna)
 
         # Beluga bams
-        loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
-        loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
+        loc1 = os.path.join(MOH_PROCESSING_FOLDER, "raw_reads")
+        loc2 = os.path.join(MAIN_FOLDER, "raw_reads")
         if self.dna_n_true == "NA" or self.dna_t_true == "NA":
             self.beluga_bam_dna_t = "NA"
             self.beluga_bam_dna_n= "NA"
@@ -382,7 +388,7 @@ class Progress(SampleData):
         else:
             # bam dna_n in raw_reads
             dna_n_file_rr = os.path.join(loc1, self.dna_n, os.path.basename(dna_n_transferred_bam))
-            dna_n_file_old_rr = os.path.join(loc1, self.dna_n, self.dna_n + ".bam")
+            dna_n_file_old_rr = os.path.join(loc1, self.dna_n, f"{self.dna_n}.bam")
             if os.path.exists(dna_n_file_rr):
                 self.beluga_bam_dna_n = dna_n_file_rr
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_rr)
@@ -391,7 +397,7 @@ class Progress(SampleData):
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_old_rr)
             # bam dna_t in raw_reads
             dna_t_file_rr = os.path.join(loc1, self.dna_t, os.path.basename(dna_t_transferred_bam))
-            dna_t_file_old_rr = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
+            dna_t_file_old_rr = os.path.join(loc1, self.dna_t, f"{self.dna_t}.bam")
             if os.path.exists(dna_t_file_rr):
                 self.beluga_bam_dna_t = dna_t_file_rr
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_rr)
@@ -400,7 +406,7 @@ class Progress(SampleData):
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_old_rr)
             # bam dna_n in MAIN/raw_reads
             dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(dna_n_transferred_bam))
-            dna_n_file_old = os.path.join(loc2, self.dna_n, self.dna_n + ".bam")
+            dna_n_file_old = os.path.join(loc2, self.dna_n, f"{self.dna_n}.bam")
             if os.path.exists(dna_n_file):
                 self.beluga_bam_dna_n = dna_n_file
                 self.ts_beluga_bam_dna_n = getime(dna_n_file)
@@ -411,7 +417,7 @@ class Progress(SampleData):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file_rr} nor {dna_n_file_old_rr} nor {dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in MAIN/raw_reads
             dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(dna_t_transferred_bam))
-            dna_t_file_old = os.path.join(loc2, self.dna_t, self.dna_t + ".bam")
+            dna_t_file_old = os.path.join(loc2, self.dna_t, f"{self.dna_t}.bam")
             if os.path.exists(dna_t_file):
                 self.beluga_bam_dna_t = dna_t_file
                 self.ts_beluga_bam_dna_t = getime(dna_t_file)
@@ -428,7 +434,7 @@ class Progress(SampleData):
         else:
             # fastq1 in raw_reads
             rna_fq1_rr = os.path.join(loc1, self.rna, os.path.basename(fastq1_transferred))
-            rna_fq1_old_rr = os.path.join(loc1, self.rna, self.rna + "_R1.fastq.gz")
+            rna_fq1_old_rr = os.path.join(loc1, self.rna, f"{self.rna}_R1.fastq.gz")
             if os.path.exists(rna_fq1_rr):
                 self.beluga_fastq_1_rna = rna_fq1_rr
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_rr)
@@ -437,7 +443,7 @@ class Progress(SampleData):
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_old_rr)
             # fastq2 in raw_reads
             rna_fq2_rr = os.path.join(loc1, self.rna, os.path.basename(fastq2_transferred))
-            rna_fq2_old_rr = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
+            rna_fq2_old_rr = os.path.join(loc1, self.rna, f"{self.rna}_R2.fastq.gz")
             if os.path.exists(rna_fq2_rr):
                 self.beluga_fastq_2_rna = rna_fq2_rr
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_rr)
@@ -446,7 +452,7 @@ class Progress(SampleData):
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_old_rr)
             # fastq1 in MAIN/raw_reads
             rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(fastq1_transferred))
-            rna_fq1_old = os.path.join(loc2, self.rna, self.rna + "_R1.fastq.gz")
+            rna_fq1_old = os.path.join(loc2, self.rna, f"{self.rna}_R1.fastq.gz")
             if os.path.exists(rna_fq1):
                 self.beluga_fastq_1_rna = rna_fq1
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1)
@@ -457,7 +463,7 @@ class Progress(SampleData):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1_rr} nor {rna_fq1_old_rr} nor {rna_fq1_old} nor {rna_fq1_old}")
             # fastq2 in MAIN/raw_reads
             rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(fastq2_transferred))
-            rna_fq2_old = os.path.join(loc2, self.rna, self.rna + "_R2.fastq.gz")
+            rna_fq2_old = os.path.join(loc2, self.rna, f"{self.rna}_R2.fastq.gz")
             if os.path.exists(rna_fq2):
                 self.beluga_fastq_2_rna = rna_fq2
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2)
@@ -474,7 +480,7 @@ class Progress(SampleData):
             self.ts_final_dna_bam_t= "NA"
             self.ts_final_dna_bam_n= "NA"
         else:
-            final_dna_bam_n_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.dna_n, self.dna_n + ".sorted.dup.recal.bam")
+            final_dna_bam_n_file = os.path.join(MAIN_FOLDER, "alignment", self.dna_n, f"{self.dna_n}.sorted.dup.recal.bam")
             try:
                 if self.ts_final_dna_bam_n != getime(final_dna_bam_n_file):
                     self.final_dna_bam_n = final_dna_bam_n_file
@@ -482,7 +488,7 @@ class Progress(SampleData):
                     self.Gather_DNA_ini()
             except FileNotFoundError:
                 pass
-            final_dna_bam_t_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.dna_t, self.dna_t + ".sorted.dup.recal.bam")
+            final_dna_bam_t_file = os.path.join(MAIN_FOLDER, "alignment", self.dna_t, f"{self.dna_t}.sorted.dup.recal.bam")
             try:
                 if self.ts_final_dna_bam_t != getime(final_dna_bam_t_file):
                     self.final_dna_bam_t = final_dna_bam_t_file
@@ -494,7 +500,7 @@ class Progress(SampleData):
             self.final_rna_bam = "NA"
             self.ts_final_rna_bam = "NA"
         else:
-            final_rna_bam_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".sorted.mdup.split.recal.bam")
+            final_rna_bam_file = os.path.join(MAIN_FOLDER, "alignment", self.rna, f"{self.rna}.sorted.mdup.split.recal.bam")
             try:
                 if self.ts_final_rna_bam != getime(final_rna_bam_file):
                     self.final_rna_bam = final_rna_bam_file
@@ -531,70 +537,70 @@ class Progress(SampleData):
             self.ts_final_vcf = "NA"
             self.final_vcf = "NA"
             ############################################################################
-            dna_vcf_g_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, self.sample + ".ensemble.germline.vt.annot.vcf.gz")
+            dna_vcf_g_file = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, f"{self.sample}.ensemble.germline.vt.annot.vcf.gz")
             try:
                 if self.ts_dna_vcf_g != getime(dna_vcf_g_file):
                     self.ts_dna_vcf_g = getime(dna_vcf_g_file)
                     self.dna_vcf_g = dna_vcf_g_file
             except FileNotFoundError:
                 pass
-            dna_vcf_s_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, self.sample + ".ensemble.somatic.vt.annot.vcf.gz")
+            dna_vcf_s_file = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, f"{self.sample}.ensemble.somatic.vt.annot.vcf.gz")
             try:
                 if self.ts_dna_vcf_s != getime(dna_vcf_s_file):
                     self.ts_dna_vcf_s = getime(dna_vcf_s_file)
                     self.dna_vcf_s = dna_vcf_s_file
             except FileNotFoundError:
                 pass
-            mutect2_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".mutect2.somatic.vt.vcf.gz")
+            mutect2_somatic_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.mutect2.somatic.vt.vcf.gz")
             try:
                 if self.ts_mutect2_somatic_vcf != getime(mutect2_somatic_vcf_file):
                     self.ts_mutect2_somatic_vcf = getime(mutect2_somatic_vcf_file)
                     self.mutect2_somatic_vcf = mutect2_somatic_vcf_file
             except FileNotFoundError:
                 pass
-            strelka2_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".strelka2.somatic.purple.vcf.gz")
+            strelka2_somatic_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.strelka2.somatic.purple.vcf.gz")
             try:
                 if self.ts_strelka2_somatic_vcf != getime(strelka2_somatic_vcf_file):
                     self.ts_strelka2_somatic_vcf = getime(strelka2_somatic_vcf_file)
                     self.strelka2_somatic_vcf = strelka2_somatic_vcf_file
             except FileNotFoundError:
                 pass
-            strelka2_germline_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".strelka2.germline.vt.vcf.gz")
+            strelka2_germline_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.strelka2.germline.vt.vcf.gz")
             try:
                 if self.ts_strelka2_germline_vcf != getime(strelka2_germline_vcf_file):
                     self.ts_strelka2_germline_vcf = getime(strelka2_germline_vcf_file)
                     self.strelka2_germline_vcf = strelka2_germline_vcf_file
             except FileNotFoundError:
                 pass
-            vardict_germline_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".vardict.germline.vt.vcf.gz")
+            vardict_germline_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.vardict.germline.vt.vcf.gz")
             try:
                 if self.ts_vardict_germline_vcf != getime(vardict_germline_vcf_file):
                     self.ts_vardict_germline_vcf = getime(vardict_germline_vcf_file)
                     self.vardict_germline_vcf= vardict_germline_vcf_file
             except FileNotFoundError:
                 pass
-            vardict_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".vardict.somatic.vt.vcf.gz")
+            vardict_somatic_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.vardict.somatic.vt.vcf.gz")
             try:
                 if self.ts_vardict_somatic_vcf != getime(vardict_somatic_vcf_file):
                     self.ts_vardict_somatic_vcf = getime(vardict_somatic_vcf_file)
                     self.vardict_somatic_vcf = vardict_somatic_vcf_file
             except FileNotFoundError:
                 pass
-            varscan2_germline_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".varscan2.germline.vt.vcf.gz")
+            varscan2_germline_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.varscan2.germline.vt.vcf.gz")
             try:
                 if self.ts_varscan2_germline_vcf != getime(varscan2_germline_vcf_file):
                     self.ts_varscan2_germline_vcf = getime(varscan2_germline_vcf_file)
                     self.varscan2_germline_vcf = varscan2_germline_vcf_file
             except FileNotFoundError:
                 pass
-            varscan2_somatic_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants", self.sample, self.sample + ".varscan2.somatic.vt.vcf.gz")
+            varscan2_somatic_vcf_file = os.path.join(MAIN_FOLDER, "pairedVariants", self.sample, f"{self.sample}.varscan2.somatic.vt.vcf.gz")
             try:
                 if self.ts_varscan2_somatic_vcf != getime(varscan2_somatic_vcf_file):
                     self.ts_varscan2_somatic_vcf = getime(varscan2_somatic_vcf_file)
                     self.varscan2_somatic_vcf = varscan2_somatic_vcf_file
             except FileNotFoundError:
                 pass
-            cnvkit_vcf = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, self.sample + ".cnvkit.vcf.gz")
+            cnvkit_vcf = os.path.join(MAIN_FOLDER, "SVariants", self.sample, f"{self.sample}.cnvkit.vcf.gz")
             try:
                 if self.ts_cnvkit_vcf != getime(cnvkit_vcf):
                     self.ts_cnvkit_vcf = getime(cnvkit_vcf)
@@ -607,7 +613,7 @@ class Progress(SampleData):
             self.rna_vcf_filt = "NA"
             self.ts_rna_vcf_filt = "NA"
         else:
-            rna_vcf_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".hc.vt.annot.vcf.gz")
+            rna_vcf_file = os.path.join(MAIN_FOLDER, "alignment", self.rna, f"{self.rna}.hc.vt.annot.vcf.gz")
             try:
                 if self.ts_rna_vcf != getime(rna_vcf_file):
                     self.rna_vcf = rna_vcf_file
@@ -615,7 +621,7 @@ class Progress(SampleData):
                     self.Gather_RNA_Variants_ini()
             except FileNotFoundError:
                 pass
-            rna_vcf_filt_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, self.rna + ".hc.vt.annot.flt.vcf.gz")
+            rna_vcf_filt_file = os.path.join(MAIN_FOLDER, "alignment", self.rna, f"{self.rna}.hc.vt.annot.flt.vcf.gz")
             try:
                 if self.ts_rna_vcf_filt != getime(rna_vcf_filt_file):
                     self.rna_vcf_filt = rna_vcf_filt_file
@@ -631,7 +637,7 @@ class Progress(SampleData):
             self.ts_dna_multiqc = "NA"
             self.ts_pcgr = "NA"
         else:
-            dna_multiqc_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna", self.sample + ".multiqc.html")
+            dna_multiqc_file = os.path.join(MAIN_FOLDER, "metrics/dna", f"{self.sample}.multiqc.html")
             try:
                 if self.ts_dna_multiqc != getime(dna_multiqc_file):
                     self.ts_dna_multiqc = getime(dna_multiqc_file)
@@ -643,7 +649,7 @@ class Progress(SampleData):
             self.rna_multiqc = "NA"
             self.ts_rna_multiqc = "NA"
         else:
-            rna_multiqc_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/multiqc_by_sample", self.rna, self.rna + ".multiqc.html")
+            rna_multiqc_file = os.path.join(MAIN_FOLDER, "metrics/multiqc_by_sample", self.rna, f"multiqc_{self.rna}.html")
             try:
                 if self.ts_rna_multiqc != getime(rna_multiqc_file):
                     self.ts_rna_multiqc = getime(rna_multiqc_file)
@@ -662,28 +668,28 @@ class Progress(SampleData):
             self.ts_pcgr_snvs_indels = "NA"
             self.ts_pcgr_cna_segments = "NA"
         else:
-            pcgr_report = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, "pcgr", self.sample + ".pcgr_acmg.grch38.flexdb.html")
+            pcgr_report = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, "pcgr", f"{self.sample}.pcgr_acmg.grch38.flexdb.html")
             try:
                 if self.ts_pcgr_report != getime(pcgr_report):
                     self.ts_pcgr_report = getime(pcgr_report)
                     self.pcgr_report = pcgr_report
             except FileNotFoundError:
                 pass
-            pcgr_maf = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, "pcgr", self.sample + ".pcgr_acmg.grch38.maf")
+            pcgr_maf = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, "pcgr", f"{self.sample}.pcgr_acmg.grch38.maf")
             try:
                 if self.ts_pcgr_maf != getime(pcgr_maf):
                     self.ts_pcgr_maf = getime(pcgr_maf)
                     self.pcgr_maf = pcgr_maf
             except FileNotFoundError:
                 pass
-            pcgr_snvs_indels = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, "pcgr", self.sample + ".pcgr_acmg.grch38.snvs_indels.tiers.tsv")
+            pcgr_snvs_indels = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, "pcgr", f"{self.sample}.pcgr_acmg.grch38.snvs_indels.tiers.tsv")
             try:
                 if self.ts_pcgr_snvs_indels != getime(pcgr_snvs_indels):
                     self.ts_pcgr_snvs_indels = getime(pcgr_snvs_indels)
                     self.pcgr_snvs_indels = pcgr_snvs_indels
             except FileNotFoundError:
                 pass
-            pcgr_cna_segments = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants/ensemble", self.sample, "pcgr", self.sample + ".pcgr_acmg.grch38.cna_segments.tsv.gz")
+            pcgr_cna_segments = os.path.join(MAIN_FOLDER, "pairedVariants/ensemble", self.sample, "pcgr", f"{self.sample}.pcgr_acmg.grch38.cna_segments.tsv.gz")
             try:
                 if self.ts_pcgr_cna_segments != getime(pcgr_cna_segments):
                     self.ts_pcgr_cna_segments = getime(pcgr_cna_segments)
@@ -699,21 +705,21 @@ class Progress(SampleData):
             self.ts_rna_pcgr_maf = "NA"
             self.ts_rna_pcgr_snvs_indels = "NA"
         else:
-            rna_pcgr_report = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.flexdb.html")
+            rna_pcgr_report = os.path.join(MAIN_FOLDER, "alignment", self.rna, "pcgr", f"{self.rna}.pcgr_acmg.grch38.flexdb.html")
             try:
                 if self.ts_rna_pcgr_report != getime(rna_pcgr_report):
                     self.ts_rna_pcgr_report = getime(rna_pcgr_report)
                     self.rna_pcgr_report = rna_pcgr_report
             except FileNotFoundError:
                 pass
-            rna_pcgr_maf = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.maf")
+            rna_pcgr_maf = os.path.join(MAIN_FOLDER, "alignment", self.rna, "pcgr", f"{self.rna}.pcgr_acmg.grch38.maf")
             try:
                 if self.ts_rna_pcgr_maf != getime(rna_pcgr_maf):
                     self.ts_rna_pcgr_maf = getime(rna_pcgr_maf)
                     self.rna_pcgr_maf = rna_pcgr_maf
             except FileNotFoundError:
                 pass
-            rna_pcgr_snvs_indels = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.snvs_indels.tiers.tsv")
+            rna_pcgr_snvs_indels = os.path.join(MAIN_FOLDER, "alignment", self.rna, "pcgr", f"{self.rna}.pcgr_acmg.grch38.snvs_indels.tiers.tsv")
             try:
                 if self.ts_rna_pcgr_snvs_indels != getime(rna_pcgr_snvs_indels):
                     self.ts_rna_pcgr_snvs_indels = getime(rna_pcgr_snvs_indels)
@@ -737,42 +743,42 @@ class Progress(SampleData):
             self.ts_purple_germline = "NA"
             self.ts_purple_circos = "NA"
         else:
-            gridss = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_t + ".gridss.vcf.gz")
+            gridss = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "gridss", f"{self.dna_t}.gridss.vcf.gz")
             try:
                 if self.ts_gridss != getime(gridss):
                     self.ts_gridss = getime(gridss)
                     self.gridss = gridss
             except FileNotFoundError:
                 pass
-            gripss_somatic = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_t + ".gripss.filtered.somatic.vcf.gz")
+            gripss_somatic = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "gridss", f"{self.dna_t}.gripss.filtered.somatic.vcf.gz")
             try:
                 if self.ts_gripss_somatic != getime(gripss_somatic):
                     self.ts_gripss_somatic = getime(gripss_somatic)
                     self.gripss_somatic = gripss_somatic
             except FileNotFoundError:
                 pass
-            gripss_germline = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "gridss", self.dna_n + ".gripss.filtered.germline.vcf.gz")
+            gripss_germline = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "gridss", f"{self.dna_n}.gripss.filtered.germline.vcf.gz")
             try:
                 if self.ts_gripss_germline != getime(gripss_germline):
                     self.ts_gripss_germline = getime(gripss_germline)
                     self.gripss_germline = gripss_germline
             except FileNotFoundError:
                 pass
-            purple_somatic = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", self.dna_t + ".driver.catalog.somatic.tsv")
+            purple_somatic = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "purple", f"{self.dna_t}.driver.catalog.somatic.tsv")
             try:
                 if self.ts_purple_somatic != getime(purple_somatic):
                     self.ts_purple_somatic = getime(purple_somatic)
                     self.purple_somatic = purple_somatic
             except FileNotFoundError:
                 pass
-            purple_germline = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", self.dna_t + ".driver.catalog.germline.tsv")
+            purple_germline = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "purple", f"{self.dna_t}.driver.catalog.germline.tsv")
             try:
                 if self.ts_purple_germline != getime(purple_germline):
                     self.ts_purple_germline = getime(purple_germline)
                     self.purple_germline = purple_germline
             except FileNotFoundError:
                 pass
-            purple_circos = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", "plot", self.dna_t + ".circos.png")
+            purple_circos = os.path.join(MAIN_FOLDER, "SVariants", self.sample, "purple", "plot", f"{self.dna_t}.circos.png")
             try:
                 if self.ts_purple_circos != getime(purple_circos):
                     self.ts_purple_circos = getime(purple_circos)
@@ -792,7 +798,7 @@ class Progress(SampleData):
             self.ts_big_wig_tracks_f = "NA"
             self.ts_big_wig_tracks_r = "NA"
         else:
-            annofuse_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/fusion", self.rna, "annoFuse", self.rna + ".putative_driver_fusions.tsv")
+            annofuse_file = os.path.join(MAIN_FOLDER, "fusion", self.rna, "annoFuse", f"{self.rna}.putative_driver_fusions.tsv")
             try:
                 if self.ts_annofuse != getime(annofuse_file):
                     self.ts_annofuse = getime(annofuse_file)
@@ -801,7 +807,7 @@ class Progress(SampleData):
                 pass
 
             # Change from stringtie to kallisto: DONE
-            rna_abundance_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/kallisto", self.rna, "abundance_transcripts.tsv")
+            rna_abundance_file = os.path.join(MAIN_FOLDER, "kallisto", self.rna, "abundance_transcripts.tsv")
             try:
                 if self.ts_rna_abundance != getime(rna_abundance_file):
                     self.ts_rna_abundance = getime(rna_abundance_file)
@@ -810,14 +816,14 @@ class Progress(SampleData):
             except FileNotFoundError:
                 pass
 
-            big_wig_tracks_f_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/tracks/bigWig", self.rna + ".forward.bw")
+            big_wig_tracks_f_file = os.path.join(MAIN_FOLDER, "tracks/bigWig", f"{self.rna}.forward.bw")
             try:
                 if self.big_wig_tracks_f != getime(big_wig_tracks_f_file):
                     self.ts_big_wig_tracks_f = getime(big_wig_tracks_f_file)
                     self.big_wig_tracks_f = big_wig_tracks_f_file
             except FileNotFoundError:
                 pass
-            big_wig_tracks_r_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/tracks/bigWig", self.rna + ".reverse.bw")
+            big_wig_tracks_r_file = os.path.join(MAIN_FOLDER, "tracks/bigWig", f"{self.rna}.reverse.bw")
             try:
                 if self.big_wig_tracks_r != getime(big_wig_tracks_r_file):
                     self.ts_big_wig_tracks_r = getime(big_wig_tracks_r_file)
