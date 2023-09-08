@@ -784,7 +784,7 @@ class Progress(SampleData):
                     self.purple_germline = purple_germline
             except FileNotFoundError:
                 pass
-            purple_circos = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", "plot", self.dna_t + "circos.png")
+            purple_circos = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/SVariants", self.sample, "purple", "plot", self.dna_t + ".circos.png")
             try:
                 if self.ts_purple_circos != getime(purple_circos):
                     self.ts_purple_circos = getime(purple_circos)

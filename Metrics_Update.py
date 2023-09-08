@@ -218,26 +218,26 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 fails = "NA"
 
             update_metrics_db(
-                connection,
-                sample,
-                dna_bases_over_q30_percent,
-                dna_aligned_reads_count,
-                raw_mean_coverage,
-                dna_dedup_coverage,
-                median_insert_size,
-                mean_insert_size,
-                raw_duplication_rate,
-                dna_contamination,
-                raw_reads_count,
-                rna_aligned_reads_count,
-                rna_expression_profiling_efficiency,
-                rna_ribosomal_contamination_count,
-                dna_concordance,
-                dna_tumour_purity,
-                flags,
-                fails,
-                raw_mean_insert_size,
-                raw_median_insert_size
+                conn=connection,
+                sample=sample,
+                WGS_Bases_Over_Q30=dna_bases_over_q30_percent,
+                WGS_Min_Aligned_Reads_Delivered=dna_aligned_reads_count,
+                Raw_Mean_Coverage=raw_mean_coverage,
+                WGS_Dedup_Coverage=dna_dedup_coverage,
+                Median_Insert_Size=median_insert_size,
+                Mean_Insert_Size=mean_insert_size,
+                Raw_Duplication_Rate=raw_duplication_rate,
+                WGS_Contamination=dna_contamination,
+                Raw_Reads_Count=raw_reads_count,
+                WTS_Aligned_Reads=rna_aligned_reads_count,
+                WTS_rRNA_contamination=rna_ribosomal_contamination_count,
+                WTS_Expression_Profiling_Efficiency=rna_expression_profiling_efficiency,
+                Concordance=dna_concordance,
+                Purity=dna_tumour_purity,
+                Flags=flags,
+                Fails=fails,
+                Raw_Median_Insert_Size=raw_median_insert_size,
+                Raw_Mean_Insert_Size=raw_mean_insert_size
                 )
             progress.update(index)
 
