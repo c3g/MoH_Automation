@@ -74,7 +74,6 @@ class Progress(SampleData):
         self.rna_pcgr_report = data["rna_pcgr_report"]
         self.rna_pcgr_maf = data["rna_pcgr_maf"]
         self.rna_pcgr_snvs_indels = data["rna_pcgr_snvs_indels"]
-        self.rna_pcgr_cna_segments = data["rna_pcgr_cna_segments"]
         self.annofuse = data["AnnoFuse"]
         self.gridss = data["GRIDSS"]
         self.rna_abundance = data["RNA_Abundance"]
@@ -123,7 +122,6 @@ class Progress(SampleData):
         self.ts_rna_pcgr_report = data["rna_pcgr_report"]
         self.ts_rna_pcgr_maf = data["rna_pcgr_maf"]
         self.ts_rna_pcgr_snvs_indels = data["rna_pcgr_snvs_indels"]
-        self.ts_rna_pcgr_cna_segments = data["rna_pcgr_cna_segments"]
         self.ts_annofuse = data["AnnoFuse"]
         self.ts_gridss = data["GRIDSS"]
         self.ts_rna_abundance = data["RNA_Abundance"]
@@ -500,7 +498,7 @@ class Progress(SampleData):
             try:
                 if self.ts_final_rna_bam != getime(final_rna_bam_file):
                     self.ts_final_rna_bam = getime(final_rna_bam_file)
-                    self.final_rna_bam_variants = final_rna_bam_file
+                    self.final_rna_bam = final_rna_bam_file
             except FileNotFoundError:
                 pass
 
@@ -652,8 +650,6 @@ class Progress(SampleData):
                     self.rna_multiqc = rna_multiqc_file
             except FileNotFoundError:
                 pass
-            self.rna_multiqc = "NA"
-            self.ts_rna_multiqc = "NA"
 
     def Gather_PCGR(self):
         if self.dna_n_true == "NA":
@@ -699,11 +695,9 @@ class Progress(SampleData):
             self.rna_pcgr_report = "NA"
             self.rna_pcgr_maf = "NA"
             self.rna_pcgr_snvs_indels = "NA"
-            self.rna_pcgr_cna_segments = "NA"
             self.ts_rna_pcgr_report = "NA"
             self.ts_rna_pcgr_maf = "NA"
             self.ts_rna_pcgr_snvs_indels = "NA"
-            self.ts_rna_pcgr_cna_segments = "NA"
         else:
             rna_pcgr_report = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.flexdb.html")
             try:
@@ -726,13 +720,7 @@ class Progress(SampleData):
                     self.rna_pcgr_snvs_indels = rna_pcgr_snvs_indels
             except FileNotFoundError:
                 pass
-            rna_pcgr_cna_segments = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/alignment", self.rna, "pcgr", self.rna + ".pcgr_acmg.grch38.cna_segments.tsv.gz")
-            try:
-                if self.ts_rna_pcgr_cna_segments != getime(rna_pcgr_cna_segments):
-                    self.ts_rna_pcgr_cna_segments = getime(rna_pcgr_cna_segments)
-                    self.rna_pcgr_cna_segments = rna_pcgr_cna_segments
-            except FileNotFoundError:
-                pass
+
 
     def Gather_svariants(self):
         if self.dna_t_true == "NA":
