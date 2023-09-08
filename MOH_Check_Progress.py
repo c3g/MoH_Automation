@@ -643,7 +643,7 @@ class Progress(SampleData):
             self.rna_multiqc = "NA"
             self.ts_rna_multiqc = "NA"
         else:
-            rna_multiqc_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna", self.sample + ".multiqc.html")
+            rna_multiqc_file = os.path.join("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/multiqc_by_sample", self.rna + ".multiqc.html")
             try:
                 if self.ts_rna_multiqc != getime(rna_multiqc_file):
                     self.ts_rna_multiqc = getime(rna_multiqc_file)
