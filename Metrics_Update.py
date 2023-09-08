@@ -4,6 +4,9 @@ import glob
 import os
 import re
 import csv
+import h5py
+import numpy as np
+import sys
 import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names, extract_fileloc_field, extract_value
 
@@ -11,7 +14,8 @@ WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), '
 
 
 def main():
-    connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    # connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    connection = create_connection("/scratch/stretenp/moh_test/MOH_analysis.db")
 
     patients = extract_sample_names(connection)
     #TEST CASE
@@ -72,6 +76,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             flags = []
             fails = []
 
+            # WGS_Bases_Over_Q30
             dna_bases_over_q30_percent = extract_bs_over_q30(sample, sample_type)
             try:
                 if int(dna_bases_over_q30_percent)<75 and sample_type in ('DN', 'DT'):
@@ -81,6 +86,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
+            # WGS_Min_Aligned_Reads_Delivered
             dna_aligned_reads_count = extract_min_aln_rds(sample, patient)
             # QC Gates
             # try:
@@ -95,6 +101,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             # except (TypeError, ValueError):
             #     pass
 
+            # Raw_Reads_Count, Raw_Mean_Coverage, Raw_Median_Insert_Size, Raw_Mean_Insert_Size, Raw_Duplication_Rate
             raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate = parse_run_metrics(sample, run)
             # QC Gates
             # try:
@@ -120,6 +127,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             # except (TypeError, ValueError):
             #     pass
 
+            # WGS_Dedup_Coverage
             dna_dedup_coverage = extract_dedup_coverage(sample)
             try:
                 if float(dna_dedup_coverage)<30 and sample_type == 'DN':
@@ -129,7 +137,8 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
-            median_insert_size = extract_insert_size(sample, patient, sample_type)
+            # Median_Insert_Size, Mean_Insert_Size
+            median_insert_size, mean_insert_size = extract_insert_size(sample, patient, sample_type)
             try:
                 if float(median_insert_size)<300:
                     flags.append('Median_Insert_Size')
@@ -138,7 +147,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
-            #WGS_Contamination
+            # WGS_Contamination
             dna_contamination = extract_contamination(patient, sample_type)
             try:
                 if float(dna_contamination)>0.5:
@@ -148,7 +157,7 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
-            #Concordance
+            # Concordance
             dna_concordance = extract_concordance(patient, sample, sample_type)
             try:
                 if float(dna_concordance)<99:
@@ -156,33 +165,40 @@ def extract_data(samples_list, connection, paired_samples_dict):
             except (TypeError, ValueError):
                 pass
 
-            # Tumor_Purity
+            # Purity
             dna_tumour_purity = extract_purity(sample, patient)
             try:
                 if float(dna_tumour_purity)<30:
                     fails.append('Purity')
             except (TypeError, ValueError):
                 pass
-            #WTS_Exonic_Rate
-            rna_aligned_reads_count, rna_exonic_rate = parse_rnaseqc_metrics_tmp(sample)
-            try:
-                if float(rna_exonic_rate)<0.6:
-                    fails.append('WTS_Exonic_Rate')
-                elif float(rna_exonic_rate)<0.8:
-                    flags.append('WTS_Exonic_Rate')
-            except (TypeError, ValueError):
-                pass
 
-            # WTS_rRA_contamination
-            rrna_count = extract_rna_ribosomal(sample)
+            # WTS_Aligned_Reads
+            rna_aligned_reads_count = extract_rna_aligned_reads_count(sample)
+
+
+            # WTS_Expression_Profiling_Efficiency, WTS_rRNA_contamination
+            rna_expression_profiling_efficiency, rna_ribosomal_contamination_count = parse_rnaseqc2(sample)
             try:
-                rna_ribosomal_contamination_count = int(rrna_count)/int(rna_aligned_reads_count)
                 if float(rna_ribosomal_contamination_count)>0.35:
                     fails.append('WTS_rRNA_contamination')
                 elif float(rna_ribosomal_contamination_count)>0.1:
                     flags.append('WTS_rRNA_contamination')
             except (TypeError, ValueError):
-                rna_ribosomal_contamination_count = "NA"
+                pass
+            # # WTS_Expression_Profiling_Efficiency
+            # rna_expression_profiling_efficiency = extract_rna_expression_profiling_efficiency(sample)
+
+            # # WTS_rRNA_contamination
+            # rrna_count = extract_rna_ribosomal(sample)
+            # try:
+            #     rna_ribosomal_contamination_count = int(rrna_count)/int(rna_aligned_reads_count)
+            #     if float(rna_ribosomal_contamination_count)>0.35:
+            #         fails.append('WTS_rRNA_contamination')
+            #     elif float(rna_ribosomal_contamination_count)>0.1:
+            #         flags.append('WTS_rRNA_contamination')
+            # except (TypeError, ValueError):
+            #     rna_ribosomal_contamination_count = "NA"
 
             # Flags
             tmp_flags = extract_value(connection, "KEY_METRICS", sample, "Flags").split(";")
@@ -212,30 +228,32 @@ def extract_data(samples_list, connection, paired_samples_dict):
                 fails = "NA"
 
             update_metrics_db(
-                connection,
-                sample,
-                dna_bases_over_q30_percent,
-                dna_aligned_reads_count,
-                raw_mean_coverage,
-                dna_dedup_coverage,
-                median_insert_size,
-                raw_duplication_rate,
-                dna_contamination,
-                raw_reads_count,
-                rna_aligned_reads_count,
-                rna_exonic_rate,
-                rna_ribosomal_contamination_count,
-                dna_concordance,
-                dna_tumour_purity,
-                flags,
-                fails,
-                raw_mean_insert_size,
-                raw_median_insert_size
+                conn=connection,
+                sample=sample,
+                WGS_Bases_Over_Q30=dna_bases_over_q30_percent,
+                WGS_Min_Aligned_Reads_Delivered=dna_aligned_reads_count,
+                Raw_Mean_Coverage=raw_mean_coverage,
+                WGS_Dedup_Coverage=dna_dedup_coverage,
+                Median_Insert_Size=median_insert_size,
+                Mean_Insert_Size=mean_insert_size,
+                Raw_Duplication_Rate=raw_duplication_rate,
+                WGS_Contamination=dna_contamination,
+                Raw_Reads_Count=raw_reads_count,
+                WTS_Aligned_Reads=rna_aligned_reads_count,
+                WTS_rRNA_contamination=rna_ribosomal_contamination_count,
+                WTS_Expression_Profiling_Efficiency=rna_expression_profiling_efficiency,
+                Concordance=dna_concordance,
+                Purity=dna_tumour_purity,
+                Flags=flags,
+                Fails=fails,
+                Raw_Median_Insert_Size=raw_median_insert_size,
+                Raw_Mean_Insert_Size=raw_mean_insert_size
                 )
             progress.update(index)
 
 
 def parse_run_metrics(sample, run):
+    """Raw_Reads_Count, Raw_Mean_Coverage, Raw_Median_Insert_Size, Raw_Mean_Insert_Size, Raw_Duplication_Rate"""
     raw_reads_count = "NA"
     raw_mean_coverage = "NA"
     raw_median_insert_size = "NA"
@@ -265,7 +283,23 @@ def parse_run_metrics(sample, run):
         raw_duplication_rate = "NA"
     return raw_reads_count, raw_mean_coverage, raw_median_insert_size, raw_mean_insert_size, raw_duplication_rate
 
+
+def parse_rnaseqc2(sample):
+    """WTS_Expression_Profiling_Efficiency, WTS_rRNA_contamination"""
+    try:
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc2', sample + '.sorted.mdup.bam.metrics.tsv')
+        with open(filename, 'r', encoding="utf-8") as file:
+            for line in file:
+                if line.startswith("Expression Profiling Efficiency"):
+                    rna_expression_profiling_efficiency = line.split("\t")[1]
+                elif line.startswith("rRNA Rate"):
+                    rna_ribosomal_contamination_count = line.split("\t")[1]
+    except FileNotFoundError:
+        rna_expression_profiling_efficiency = rna_ribosomal_contamination_count = "NA"
+    return rna_expression_profiling_efficiency, rna_ribosomal_contamination_count
+
 def extract_rna_ribosomal(sample):
+    """WTS_rRNA_contamination"""
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.rRNA_counts.txt')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -278,20 +312,34 @@ def extract_rna_ribosomal(sample):
     return ret
 
 
-def parse_rnaseqc_metrics_tmp(sample):
+def extract_rna_expression_profiling_efficiency(sample):
+    """WTS_Expression_Profiling_Efficiency"""
     try:
-        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc', sample, sample + '.metrics.tmp.txt')
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, 'rnaseqc2', sample + '.sorted.mdup.bam.metrics.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
-            lines = file.readlines()
-            rna_aligned_reads_count = lines[3].split("\t")[0]
-            rna_exonic_rate = round(float(lines[7].split("\t")[1])*100, 2)
+            for line in file:
+                if line.startswith("Expression Profiling Efficiency"):
+                    rna_expression_profiling_efficiency = line.split("\t")[1]
+    except FileNotFoundError:
+        rna_expression_profiling_efficiency = "NA"
+    return rna_expression_profiling_efficiency
+
+
+def extract_rna_aligned_reads_count(sample):
+    """WTS_Aligned_Reads"""
+    try:
+        filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics', sample, sample + '.alignment_summary_metrics')
+        with open(filename, 'r', encoding="utf-8") as file:
+            for line in file:
+                if line.startswith("PAIR"):
+                    rna_aligned_reads_count = line.split("\t")[6]
     except FileNotFoundError:
         rna_aligned_reads_count = "NA"
-        rna_exonic_rate = "NA"
-    return rna_aligned_reads_count, rna_exonic_rate
+    return rna_aligned_reads_count
 
 
 def extract_purity(sample, patient):
+    """Purity"""
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/pairedVariants', patient, 'purple', sample + '.purple.purity.tsv')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -305,6 +353,7 @@ def extract_purity(sample, patient):
 
 
 def extract_contamination(patient, sample_type):
+    """WGS_Contamination"""
     ret = "NA"
     if sample_type in ('DN', 'DT'):
         # The file is named after tumour sample only
@@ -326,6 +375,7 @@ def extract_contamination(patient, sample_type):
 
 
 def extract_concordance(patient, sample, sample_type):
+    """Concordance"""
     ret = "NA"
     if sample_type in ('DN', 'DT'):
         # The file is named after tumour sample only
@@ -345,28 +395,32 @@ def extract_concordance(patient, sample, sample_type):
 
 
 def extract_insert_size(sample, patient, sample_type):
-    ret = "NA"
+    """Median_Insert_Size, Mean_Insert_Size"""
+    median_insert_size = mean_insert_size = "NA"
     try:
         if sample_type == 'RT':
-            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
-            with open(filename, 'r', encoding="utf-8") as file:
-                lines = file.readlines()
-                line = lines[7]
-                metrics = line.split("\t")
-                ret = metrics[0]
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance.h5')
+            with h5py.File(filename, 'r') as h5file:
+                frequencies = np.asarray(h5file['aux']['fld'])
+                values = np.arange(0, len(frequencies), 1)
+                dataset = np.repeat(values, frequencies)
+                median_insert_size = np.median(dataset)
+                mean_insert_size = np.mean(dataset)
         elif sample_type in ('DN', 'DT'):
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
-            with open(filename, 'r', encoding="utf-8") as file:
-                for line in file:
-                    parsed_line = line.split("\t")
-                    if parsed_line[0] == sample:
-                        ret = round(float(parsed_line[7]), 0)
+            with open(filename, 'r', encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile, delimiter="\t")
+                for row in reader:
+                    if row["Sample"] == sample:
+                        median_insert_size = row["median_insert_size"]
+                        mean_insert_size = row["mean_insert_size"]
     except FileNotFoundError:
-        ret = "NA"
-    return ret
+        pass
+    return median_insert_size, mean_insert_size
 
 
 def extract_dedup_coverage(sample):
+    """WGS_Dedup_Coverage"""
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
         with open(filename, 'r', encoding="utf-8") as file:
@@ -381,6 +435,7 @@ def extract_dedup_coverage(sample):
 
 
 def extract_min_aln_rds(sample, patient):
+    """WGS_Min_Aligned_Reads_Delivered"""
     ret = "NA"
     try:
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
@@ -395,6 +450,7 @@ def extract_min_aln_rds(sample, patient):
 
 
 def extract_bs_over_q30(sample, sample_type):
+    """WGS_Bases_Over_Q30"""
     try:
         if sample_type in ('DT', 'DN'):
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'picard_metrics', sample + '.all.metrics.quality_distribution_metrics')
