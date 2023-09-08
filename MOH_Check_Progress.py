@@ -297,6 +297,83 @@ class Progress(SampleData):
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
 
     def Gather_BAM_loc(self):
+        # Run Processing bams
+        if self.dna_n_true == "NA":
+            self.run_proc_bam_dna_t = "NA"
+            self.run_proc_bam_dna_n = "NA"
+            self.ts_run_proc_bam_dna_t = "NA"
+            self.ts_run_proc_bam_dna_n = "NA"
+        else:
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            dna_n = False
+            dna_t = False
+            if self.run_proc_bam_dna_t == "NA" or self.run_proc_bam_dna_n == "NA":
+                for filename in glob.glob(path):
+                    with open(filename, 'r') as file:
+                        for line in file:
+                            if dna_n and dna_t:
+                                break
+                            if self.dna_n in line:
+                                fields = line.split(",")
+                                self.run_proc_bam_dna_n = fields[0].strip()
+                                self.ts_run_proc_bam_dna_n  = getime(filename)
+                                dna_n_transferred_bam = os.path.basename(fields[-1].strip())
+                                dna_n = True
+                            elif self.dna_t in line:
+                                fields = line.split(",")
+                                self.run_proc_bam_dna_t = fields[0].strip()
+                                self.ts_run_proc_bam_dna_t = getime(filename)
+                                dna_t_transferred_bam = os.path.basename(fields[-1].strip())
+                                dna_t = True
+                if not dna_n:
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                if not dna_t:
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+            else:
+                if self.run_proc_bam_dna_n != "NA":
+                    dna_n_transferred_bam = os.path.basename(self.beluga_bam_dna_n)
+                if self.run_proc_bam_dna_t != "NA":
+                    dna_t_transferred_bam = os.path.basename(self.beluga_bam_dna_t)
+
+        if self.rna_true == "NA":
+            self.run_proc_fastq_1_rna = "NA"
+            self.run_proc_fastq_2_rna = "NA"
+            self.ts_run_proc_fastq_1_rna = "NA"
+            self.ts_run_proc_fastq_2_rna = "NA"
+        else:
+            path = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*'
+            fastq1 = False
+            fastq2 = False
+            if self.run_proc_fastq_1_rna == "NA" or self.run_proc_fastq_2_rna == "NA":
+                for filename in glob.glob(path):
+                    with open(filename, 'r') as file:
+                        for line in file:
+                            if fastq1 and fastq2:
+                                break
+                            if self.rna in line:
+                                fields = line.split(",")
+                                if re.search(r"R1.*.fastq", os.path.basename(fields[0])):
+                                    self.run_proc_fastq_1_rna = fields[0].strip()
+                                    self.ts_run_proc_fastq_1_rna = getime(filename)
+                                    fastq1_transferred = os.path.basename(fields[-1].strip())
+                                    fastq1 = True
+                                elif re.search(r"R2.*.fastq", os.path.basename(fields[0])):
+                                    self.run_proc_fastq_2_rna = fields[0].strip()
+                                    self.ts_run_proc_fastq_2_rna = getime(filename)
+                                    fastq2_transferred = os.path.basename(fields[-1].strip())
+                                    fastq2 = True
+
+                if not fastq1:
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+                if not fastq2:
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/*")
+            else:
+                if self.run_proc_fastq_1_rna != "NA":
+                    fastq1_transferred = os.path.basename(self.beluga_fastq_1_rna)
+                if self.run_proc_fastq_2_rna != "NA":
+                    fastq2_transferred = os.path.basename(self.beluga_fastq_2_rna)
+
+        # Beluga bams
         loc1 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
         loc2 = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
         if self.dna_n_true == "NA" or self.dna_t_true == "NA":
@@ -306,7 +383,7 @@ class Progress(SampleData):
             self.ts_beluga_bam_dna_n = "NA"
         else:
             # bam dna_n in raw_reads
-            dna_n_file_rr = os.path.join(loc1, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
+            dna_n_file_rr = os.path.join(loc1, self.dna_n, os.path.basename(dna_n_transferred_bam))
             dna_n_file_old_rr = os.path.join(loc1, self.dna_n, self.dna_n + ".bam")
             if os.path.exists(dna_n_file_rr):
                 self.beluga_bam_dna_n = dna_n_file_rr
@@ -315,7 +392,7 @@ class Progress(SampleData):
                 self.beluga_bam_dna_n = dna_n_file_old_rr
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_old_rr)
             # bam dna_t in raw_reads
-            dna_t_file_rr = os.path.join(loc1, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
+            dna_t_file_rr = os.path.join(loc1, self.dna_t, os.path.basename(dna_t_transferred_bam))
             dna_t_file_old_rr = os.path.join(loc1, self.dna_t, self.dna_t + ".bam")
             if os.path.exists(dna_t_file_rr):
                 self.beluga_bam_dna_t = dna_t_file_rr
@@ -324,7 +401,7 @@ class Progress(SampleData):
                 self.beluga_bam_dna_t = dna_t_file_old_rr
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_old_rr)
             # bam dna_n in MAIN/raw_reads
-            dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(self.run_proc_bam_dna_n))
+            dna_n_file = os.path.join(loc2, self.dna_n, os.path.basename(dna_n_transferred_bam))
             dna_n_file_old = os.path.join(loc2, self.dna_n, self.dna_n + ".bam")
             if os.path.exists(dna_n_file):
                 self.beluga_bam_dna_n = dna_n_file
@@ -335,7 +412,7 @@ class Progress(SampleData):
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file_rr} nor {dna_n_file_old_rr} nor {dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in MAIN/raw_reads
-            dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(self.run_proc_bam_dna_t))
+            dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(dna_t_transferred_bam))
             dna_t_file_old = os.path.join(loc2, self.dna_t, self.dna_t + ".bam")
             if os.path.exists(dna_t_file):
                 self.beluga_bam_dna_t = dna_t_file
@@ -352,7 +429,7 @@ class Progress(SampleData):
             self.ts_beluga_fastq_2_rna = "NA"
         else:
             # fastq1 in raw_reads
-            rna_fq1_rr = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
+            rna_fq1_rr = os.path.join(loc1, self.rna, os.path.basename(fastq1_transferred))
             rna_fq1_old_rr = os.path.join(loc1, self.rna, self.rna + "_R1.fastq.gz")
             if os.path.exists(rna_fq1_rr):
                 self.beluga_fastq_1_rna = rna_fq1_rr
@@ -361,7 +438,7 @@ class Progress(SampleData):
                 self.beluga_fastq_1_rna = rna_fq1_old_rr
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_old_rr)
             # fastq2 in raw_reads
-            rna_fq2_rr = os.path.join(loc1, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
+            rna_fq2_rr = os.path.join(loc1, self.rna, os.path.basename(fastq2_transferred))
             rna_fq2_old_rr = os.path.join(loc1, self.rna, self.rna + "_R2.fastq.gz")
             if os.path.exists(rna_fq2_rr):
                 self.beluga_fastq_2_rna = rna_fq2_rr
@@ -370,7 +447,7 @@ class Progress(SampleData):
                 self.beluga_fastq_2_rna = rna_fq2_old_rr
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_old_rr)
             # fastq1 in MAIN/raw_reads
-            rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_1_rna))
+            rna_fq1 = os.path.join(loc2, self.rna, os.path.basename(fastq1_transferred))
             rna_fq1_old = os.path.join(loc2, self.rna, self.rna + "_R1.fastq.gz")
             if os.path.exists(rna_fq1):
                 self.beluga_fastq_1_rna = rna_fq1
@@ -381,7 +458,7 @@ class Progress(SampleData):
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1_rr} nor {rna_fq1_old_rr} nor {rna_fq1_old} nor {rna_fq1_old}")
             # fastq2 in MAIN/raw_reads
-            rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(self.run_proc_fastq_2_rna))
+            rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(fastq2_transferred))
             rna_fq2_old = os.path.join(loc2, self.rna, self.rna + "_R2.fastq.gz")
             if os.path.exists(rna_fq2):
                 self.beluga_fastq_2_rna = rna_fq2
@@ -775,7 +852,7 @@ def main():
             sample = Progress(connection, patient)
             update_timestamp_details(sample)
             update_fileloc_details(sample)
-            sample.Gather_Run_Proc_BAM()
+            # sample.Gather_Run_Proc_BAM()
             sample.Gather_BAM_loc()
             sample.Gather_Final_BAMs()
             sample.Gather_VCFs()
