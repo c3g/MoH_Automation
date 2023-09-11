@@ -436,7 +436,7 @@ def deliver_rna(
             updated = get_link_log(rna_vcf_filt_md5, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(align_folder, exist_ok=True)
-    final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM_variants")
+    final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM")
     updated = get_link_log(final_rna_bam_variants, align_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
     if final_rna_bam_variants != "NA":
         final_rna_bam_index = final_rna_bam_variants + ".bai"
