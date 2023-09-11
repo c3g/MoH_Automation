@@ -467,8 +467,6 @@ def deliver_rna(
     updated = get_link_log(rna_pcgr_maf, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.maf", log, updated, old_log)
     rna_pcgr_snvs_indels = extract_fileloc_field(connection, patient.sample, "rna_pcgr_snvs_indels")
     updated = get_link_log(rna_pcgr_snvs_indels, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.snvs_indels.tiers.tsv", log, updated, old_log)
-    rna_pcgr_cna_segments = extract_fileloc_field(connection, patient.sample, "rna_pcgr_cna_segments")
-    updated = get_link_log(rna_pcgr_cna_segments, pcgr_folder, f"{patient.sample_true}_R.acmg.grch38.cna_segments.tsv.gz", log, updated, old_log)
 
     return updated
 
@@ -655,7 +653,6 @@ Within this directory you will find the results of the analysis for a single pat
         * `{patient}_D.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.cna_segments.tsv.gz"))}
         * `{patient}_R.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.maf"))}
         * `{patient}_R.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.snvs_indels.tiers.tsv"))}
-        * `{patient}_R.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_R.acmg.grch38.cna_segments.tsv.gz"))}
 * `parameters/` *Contains the records of all the Parameters used in the pipeline analysis*
     * `{patient}.TumourPair.ini` *Parameters used in the tumor pair analysis* {file_exist_check(os.path.join(out_folder, "parameters", f"{patient}.TumourPair.ini"))}
     * `{patient}.RNA.Light.ini` *Parameters used in the RNA expression analysis* {file_exist_check(os.path.join(out_folder,"parameters", f"{patient}.RNA.Light.ini"))}
