@@ -295,19 +295,19 @@ def deliver_dna(
     if dna_vcf_g != "NA":
         dna_vcf_g_index = dna_vcf_g + ".tbi"
         if os.path.exists(dna_vcf_g_index):
-            updated = get_link_log(dna_vcf_g_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+            updated = get_link_log(dna_vcf_g_index, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz.tbi", log, updated, old_log)
         dna_vcf_g_md5 = dna_vcf_g + ".md5"
         if os.path.exists(dna_vcf_g_md5):
-            updated = get_link_log(dna_vcf_g_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
+            updated = get_link_log(dna_vcf_g_md5, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz.md5", log, updated, old_log)
     dna_vcf_s = extract_fileloc_field(connection, patient.sample, "DNA_VCF_S")
     updated = get_link_log(dna_vcf_s, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
     if dna_vcf_s != "NA":
         dna_vcf_s_index = dna_vcf_s + ".tbi"
         if os.path.exists(dna_vcf_s_index):
-            updated = get_link_log(dna_vcf_s_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+            updated = get_link_log(dna_vcf_s_index, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz.tbi", log, updated, old_log)
         dna_vcf_s_md5 = dna_vcf_s + ".md5"
         if os.path.exists(dna_vcf_s_md5):
-            updated = get_link_log(dna_vcf_s_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
+            updated = get_link_log(dna_vcf_s_md5, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(cal_folder, exist_ok=True)
     mutect2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Somatic_vcf")
