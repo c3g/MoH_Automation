@@ -645,7 +645,7 @@ Within this directory you will find the results of the analysis for a single pat
     * `{rna}.abundance_genes.tsv` *Table with gene abundance from Kallisto* {file_exist_check(os.path.join(out_folder, "expression", f"{rna}.abundance_genes.tsv"))}
 * `reports/` *Contains the reports for the experiment*
     * [`{patient}_D.multiqc.html`](reports/{patient}_D.multiqc.html) *QC report for the DNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.multiqc.html"))}
-    * `{patient}_R.multiqc.html` *QC report for the RNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.multiqc.html"))}
+    * [`{patient}_R.multiqc.html`](reports/{patient}_R.multiqc.html) *QC report for the RNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.multiqc.html"))}
     * `{rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(os.path.join(out_folder, "reports", f"{rna}.anno_fuse.tsv"))}
     * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
     * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
