@@ -420,20 +420,20 @@ def deliver_rna(
     if rna_vcf != "NA":
         rna_vcf_index = rna_vcf + ".tbi"
         if os.path.exists(rna_vcf_index):
-            updated = get_link_log(rna_vcf_index, align_folder, f"{patient.dna_n}.bam.tbi", log, updated, old_log)
+            updated = get_link_log(rna_vcf_index, var_folder, f"{patient.rna}.hc.vt.annot.vcf.gz.tbi", log, updated, old_log)
         rna_vcf_md5 = rna_vcf + ".md5"
         if os.path.exists(rna_vcf_md5):
-            updated = get_link_log(rna_vcf_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
+            updated = get_link_log(rna_vcf_md5, var_folder, f"{patient.rna}.hc.vt.annot.vcf.gz.md5", log, updated, old_log)
 
     rna_vcf_filt = extract_fileloc_field(connection, patient.sample, "RNA_VCF_filt")
     updated = get_link_log(rna_vcf_filt, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz", log, updated, old_log)
     if rna_vcf_filt != "NA":
         rna_vcf_filt_index = rna_vcf_filt + ".tbi"
         if os.path.exists(rna_vcf_filt_index):
-            updated = get_link_log(rna_vcf_filt_index, align_folder, f"{patient.dna_n}.bam.tbi", log, updated, old_log)
+            updated = get_link_log(rna_vcf_filt_index, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz.tbi", log, updated, old_log)
         rna_vcf_filt_md5 = rna_vcf_filt + ".md5"
         if os.path.exists(rna_vcf_filt_md5):
-            updated = get_link_log(rna_vcf_filt_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
+            updated = get_link_log(rna_vcf_filt_md5, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(align_folder, exist_ok=True)
     final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM_variants")
