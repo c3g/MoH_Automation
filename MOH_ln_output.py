@@ -424,7 +424,7 @@ def deliver_rna(
         rna_vcf_md5 = rna_vcf + ".md5"
         if os.path.exists(rna_vcf_md5):
             updated = get_link_log(rna_vcf_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
-    # TODO: add this in db
+
     rna_vcf_filt = extract_fileloc_field(connection, patient.sample, "RNA_VCF_filt")
     updated = get_link_log(rna_vcf_filt, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz", log, updated, old_log)
     if rna_vcf_filt != "NA":
@@ -458,7 +458,6 @@ def deliver_rna(
     rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
     updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
 
-    # TODO: add this in db
     # PCGR RNA
     os.makedirs(reports_folder, exist_ok=True)
     rna_pcgr_report = extract_fileloc_field(connection, patient.sample, "rna_pcgr_report")
@@ -648,8 +647,8 @@ Within this directory you will find the results of the analysis for a single pat
     * [`{patient}_D.multiqc.html`](reports/{patient}_D.multiqc.html) *QC report for the DNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.multiqc.html"))}
     * `{patient}_R.multiqc.html` *QC report for the RNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.multiqc.html"))}
     * `{rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(os.path.join(out_folder, "reports", f"{rna}.anno_fuse.tsv"))}
-    * [`{patient}.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
-    * [`{patient}.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
+    * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
+    * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
         * `{patient}_D.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.maf"))}
         * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv"))}
