@@ -55,6 +55,7 @@ extension_configs = {
 MOH_MAIN_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 RAW_READS_FOLDER = os.path.join(MOH_MAIN_FOLDER, "raw_reads")
 
+progressbar.streams.wrap_stderr()
 logger = logging.getLogger(__name__)
 
 def main():
