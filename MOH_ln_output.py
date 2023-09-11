@@ -55,6 +55,7 @@ extension_configs = {
 MOH_MAIN_FOLDER = "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 RAW_READS_FOLDER = os.path.join(MOH_MAIN_FOLDER, "raw_reads")
 
+progressbar.streams.wrap_stderr()
 logger = logging.getLogger(__name__)
 
 def main():
@@ -294,19 +295,19 @@ def deliver_dna(
     if dna_vcf_g != "NA":
         dna_vcf_g_index = dna_vcf_g + ".tbi"
         if os.path.exists(dna_vcf_g_index):
-            updated = get_link_log(dna_vcf_g_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+            updated = get_link_log(dna_vcf_g_index, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz.tbi", log, updated, old_log)
         dna_vcf_g_md5 = dna_vcf_g + ".md5"
         if os.path.exists(dna_vcf_g_md5):
-            updated = get_link_log(dna_vcf_g_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
+            updated = get_link_log(dna_vcf_g_md5, var_folder, f"{patient.sample_true}.ensemble.germline.vt.annot.vcf.gz.md5", log, updated, old_log)
     dna_vcf_s = extract_fileloc_field(connection, patient.sample, "DNA_VCF_S")
     updated = get_link_log(dna_vcf_s, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz", log, updated, old_log)
     if dna_vcf_s != "NA":
         dna_vcf_s_index = dna_vcf_s + ".tbi"
         if os.path.exists(dna_vcf_s_index):
-            updated = get_link_log(dna_vcf_s_index, align_folder, f"{patient.dna_n}.vcf.gz.tbi", log, updated, old_log)
+            updated = get_link_log(dna_vcf_s_index, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz.tbi", log, updated, old_log)
         dna_vcf_s_md5 = dna_vcf_s + ".md5"
         if os.path.exists(dna_vcf_s_md5):
-            updated = get_link_log(dna_vcf_s_md5, align_folder, f"{patient.dna_n}.vcf.gz.md5", log, updated, old_log)
+            updated = get_link_log(dna_vcf_s_md5, var_folder, f"{patient.sample_true}.ensemble.somatic.vt.annot.vcf.gz.md5", log, updated, old_log)
 
     os.makedirs(cal_folder, exist_ok=True)
     mutect2_somatic_vcf = extract_fileloc_field(connection, patient.sample, "Mutect2_Somatic_vcf")
@@ -423,7 +424,7 @@ def deliver_rna(
         rna_vcf_md5 = rna_vcf + ".md5"
         if os.path.exists(rna_vcf_md5):
             updated = get_link_log(rna_vcf_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
-    # TODO: add this in db
+
     rna_vcf_filt = extract_fileloc_field(connection, patient.sample, "RNA_VCF_filt")
     updated = get_link_log(rna_vcf_filt, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz", log, updated, old_log)
     if rna_vcf_filt != "NA":
@@ -457,7 +458,6 @@ def deliver_rna(
     rna_variants_ini = extract_fileloc_field(connection, patient.sample, "RNA_Variants_ini")
     updated = get_link_log(rna_variants_ini, param_folder, f"{patient.sample_true}.RNA.Variants.ini", log, updated, old_log)
 
-    # TODO: add this in db
     # PCGR RNA
     os.makedirs(reports_folder, exist_ok=True)
     rna_pcgr_report = extract_fileloc_field(connection, patient.sample, "rna_pcgr_report")
@@ -487,11 +487,13 @@ def get_link_log(input_file, output_folder, output_file, log, updated, old_log):
                 log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             if old_time != new_time:
                 os.remove(os.path.join(output_folder, output_file))
-                os.link(input_file, os.path.join(output_folder, output_file))
+                # os.link(input_file, os.path.join(output_folder, output_file))
+                os.symlink(input_file, os.path.join(output_folder, output_file))
                 log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "Updated")
                 updated = True
         else:
-            os.link(input_file, os.path.join(output_folder, output_file))
+            # os.link(input_file, os.path.join(output_folder, output_file))
+            os.symlink(input_file, os.path.join(output_folder, output_file))
             log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             updated = True
     return updated
@@ -643,10 +645,10 @@ Within this directory you will find the results of the analysis for a single pat
     * `{rna}.abundance_genes.tsv` *Table with gene abundance from Kallisto* {file_exist_check(os.path.join(out_folder, "expression", f"{rna}.abundance_genes.tsv"))}
 * `reports/` *Contains the reports for the experiment*
     * [`{patient}_D.multiqc.html`](reports/{patient}_D.multiqc.html) *QC report for the DNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.multiqc.html"))}
-    * `{patient}_R.multiqc.html` *QC report for the RNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.multiqc.html"))}
+    * [`{patient}_R.multiqc.html`](reports/{patient}_R.multiqc.html) *QC report for the RNA analysis* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.multiqc.html"))}
     * `{rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(os.path.join(out_folder, "reports", f"{rna}.anno_fuse.tsv"))}
-    * [`{patient}.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
-    * [`{patient}.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
+    * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_D.pcgr.html"))}
+    * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(os.path.join(out_folder, "reports", f"{patient}_R.pcgr.html"))}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
         * `{patient}_D.acmg.grch38.maf` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.maf"))}
         * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(os.path.join(out_folder, "reports", "pcgr", f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv"))}
