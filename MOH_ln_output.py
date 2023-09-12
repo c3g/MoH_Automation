@@ -272,6 +272,7 @@ def deliver_dna(
     ):
     os.makedirs(raw_folder, exist_ok=True)
     # beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
+    # DNA_N
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam")):
         raw_dna_n_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0])
         delivered_dna_n_bam = os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam"))[0])
@@ -280,6 +281,10 @@ def deliver_dna(
     # check if topup
     for bam_n in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam")):
         updated = get_link_log(bam_n, raw_folder, os.path.basename(bam_n), log, updated, old_log)
+        bam_n_index = bam_n + ".bai"
+        if os.path.exists(bam_n_index):
+            updated = get_link_log(bam_n_index, raw_folder, f"{os.path.basename(bam_n)}.bai", log, updated, old_log)
+    # DNA_T
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam")):
         raw_dna_t_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam"))[0])
         delivered_dna_t_bam = os.path.basename(glob.glob(os.path.join(raw_folder, f"{patient.dna_t}.bam"))[0])
@@ -288,6 +293,9 @@ def deliver_dna(
     # check if topup
     for bam_t in glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DT", "*.bam")):
         updated = get_link_log(bam_t, raw_folder, os.path.basename(bam_t), log, updated, old_log)
+        bam_t_index = bam_t + ".bai"
+        if os.path.exists(bam_t_index):
+            updated = get_link_log(bam_t_index, raw_folder, f"{os.path.basename(bam_t)}.bai", log, updated, old_log)
 
     os.makedirs(var_folder, exist_ok=True)
     dna_vcf_g = extract_fileloc_field(connection, patient.sample, "DNA_VCF_G")
@@ -328,6 +336,10 @@ def deliver_dna(
     os.makedirs(raw_cnv_folder, exist_ok=True)
     cnvkit_vcf = extract_fileloc_field(connection, patient.sample, "cnvkit_vcf")
     updated = get_link_log(cnvkit_vcf, raw_cnv_folder, f"{patient.sample_true}.cnvkit.vcf.gz", log, updated, old_log)
+    if cnvkit_vcf != "NA":
+        cnvkit_vcf_index = cnvkit_vcf + ".tbi"
+        if os.path.exists(cnvkit_vcf_index):
+            updated = get_link_log(cnvkit_vcf_index, raw_cnv_folder, f"{patient.sample_true}.cnvkit.vcf.gz.tbi", log, updated, old_log)
 
     os.makedirs(align_folder, exist_ok=True)
     final_dna_bam_n = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_N")
@@ -631,6 +643,7 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}.circos.png` *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.circos.png"))}
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
     * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz"))}
+    * `{patient}.cnvkit.vcf.gz.tbi` *Index of Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz.tbi"))}
 * `alignment/` *Contains the alignment data for each sample*
     * `{dna_n}.bam` *Alignment of normal against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_n}.bam"))}
     * `{dna_n}.bam.bai` *Index of Alignment of normal against the reference* {file_exist_check(os.path.join(out_folder, "alignment", f"{dna_n}.bam.bai"))}
@@ -671,7 +684,7 @@ Using an Illumina NovaSeq 6000 instrument, Whole Genome Sequencing (WGS) was per
 Bioinformatics analyses were performed using the [GenPipes][GenPipes_BB][^GenPipes_] Tumor-Pair and RNA-seq analytical pipelines (detailed documentation can be found [here][GenPipes_RTD]). Specific parameter values and reference databases are tracked in corresponding *\*.ini* files found under the `parameters` directory. An explanation of the various steps is detailed below.
 
 ## WGS
-For WGS samples, [GATK][GATK_]’s best practices and procedures were followed. Quality trimmed and adapter-clipped reads were first aligned to the GRCh38 reference[^genome_ref_] with BWA-MEM[^BWA-MEM_]. Alignments were then sorted, realigned around Indels, and marked for duplicates. Base qualities were improved using Base Quality Score Recalibration (BQSR). A MultiQC[^MultiQC_] report was generated per patient to flag any inconsistency in overall coverage, QC bias, tumor purity ([PURPLE][purple_]) and normal or tumor contamination and concordance estimations (ConPair[^ConPair_]).  Somatic and germline calls were generated using an ensemble approach combining four independent variant callers: GATK MuTect2, Strelka2[^Strelka2_], VarDict[^VarDict_] and VarScan2[^VarScan2_]. Somatic and germline variants identified in two or more callers were further annotated and prioritized using the PCGR/CSPR[^PCGR_] reporting system to classify somatic and germline calls using ACMP/AMP classification, perform tumor mutation burden (TMB) estimation, microsatellite instability (MSI) classification, mutational signature estimations, and kataegis detection. Structural Variants were called using GRIDSS with PURPLE and LINX[^GRIDSS_PURPLE_LINX_] as an interpretation tool, and CNAs were called with [Sequenza][Sequenza_] and CNVKit[^CNVKit_]. 
+For WGS samples, [GATK][GATK_]’s best practices and procedures were followed. Quality trimmed and adapter-clipped reads were first aligned to the GRCh38 reference[^genome_ref_] with BWA-MEM[^BWA-MEM_]. Alignments were then sorted, realigned around Indels, and marked for duplicates. Base qualities were improved using Base Quality Score Recalibration (BQSR). A MultiQC[^MultiQC_] report was generated per patient to flag any inconsistency in overall coverage, QC bias, tumor purity ([PURPLE][purple_]) and normal or tumor contamination and concordance estimations (ConPair[^ConPair_]).  Somatic and germline calls were generated using an ensemble approach combining four independent variant callers: GATK MuTect2, Strelka2[^Strelka2_], VarDict[^VarDict_] and VarScan2[^VarScan2_]. Somatic and germline variants identified in two or more callers were further annotated and prioritized using the PCGR/CSPR[^PCGR_] reporting system to classify somatic and germline calls using ACMP/AMP classification, perform tumor mutation burden (TMB) estimation, microsatellite instability (MSI) classification, mutational signature estimations, and kataegis detection. Structural Variants were called using GRIDSS with PURPLE and LINX[^GRIDSS_PURPLE_LINX_] as an interpretation tool, and CNAs were called with CNVKit[^CNVKit_]. 
 
 ## WTS
 For WTS, transcript abundance was estimated using the Kallisto[^Kallisto_] pseudoaligner from quality trimmed and adapter-clipped reads. For WTS variant calling, a full alignment to the same GRCh38 reference was performed using STAR[^STAR_] and the alignments were sorted, realigned and duplicates were marked using GATK best practices and procedures. Fusions in WTS data were assessed using both STAR-FUSION[^STAR-FUSION_] and Arriba[^Arriba_] fusion callers and reported using AnnoFuse[^AnnoFuse_]. Finally, aligned reads were used to call variants with the GATK haplotype caller. Variant calls were then filtered, annotated and prioritized using PCGR/CSPR reporting systems.
@@ -710,8 +723,6 @@ In both WGS and WTS, reports were generated with MultiQC for visualization of ke
 [^PCGR_]: Nakken S, Fournous G, Vodák D, Aasheim LB, Myklebost O, Hovig E. Personal Cancer Genome Reporter: variant interpretation report for precision oncology. Bioinformatics. 2018 May 15;34(10):1778-1780. doi: 10.1093/bioinformatics/btx817. PMID: 29272339; PMCID: PMC5946881.
 
 [^GRIDSS_PURPLE_LINX_]: GRIDSS, PURPLE, LINX: Unscrambling the tumor genome via integrated analysis of structural variation and copy number. Daniel L. Cameron, Jonathan Baber, Charles Shale, Anthony T. Papenfuss, Jose Espejo Valle-Inclan, Nicolle Besselink, Edwin Cuppen, Peter Priestley. bioRxiv 781013; doi: https://doi.org/10.1101/781013
-
-[Sequenza_]: https://cran.r-project.org/web/packages/sequenza/vignettes/sequenza.html#content
 
 [^CNVKit_]: Talevich E, Shain AH, Botton T, Bastian BC. CNVkit: Genome-Wide Copy Number Detection and Visualization from Targeted DNA Sequencing. PLoS Comput Biol. 2016 Apr 21;12(4):e1004873. doi: 10.1371/journal.pcbi.1004873. PMID: 27100738; PMCID: PMC4839673.
 
