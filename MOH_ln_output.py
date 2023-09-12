@@ -614,6 +614,7 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     rna_raw = ""
     for rna_raw_fq in glob.glob(os.path.join(out_folder, "raw_data", "*RT*.fastq.gz")):
         rna_raw += f"""\n    * `{os.path.basename(rna_raw_fq)}` *Raw RNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", os.path.basename(rna_raw_fq)))}"""
+    linx = ""
     for linx_file in glob.glob(os.path.join(out_folder, "svariants", "linx", "*")):
         linx += f"""\n        * `{os.path.basename(linx_file)}` {file_exist_check(os.path.join(out_folder, "svariants", "linx", os.path.basename(linx_file)))}"""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
