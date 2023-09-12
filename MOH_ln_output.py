@@ -162,6 +162,7 @@ def main():
             expression_folder = os.path.join(out_folder, "expression")
             # Contains all svariants
             svar_folder = os.path.join(out_folder, "svariants")
+            linx_folder = os.path.join(svar_folder, "linx")
 
             # updated keeps track of if we need to update the metrics and warnings file
             # old_log stores the data in the log file to see if things need updating
@@ -193,6 +194,7 @@ def main():
                     raw_folder,
                     var_folder,
                     svar_folder,
+                    linx_folder,
                     cal_folder,
                     raw_cnv_folder,
                     align_folder,
@@ -258,6 +260,7 @@ def deliver_dna(
     raw_folder,
     var_folder,
     svar_folder,
+    linx_folder,
     cal_folder,
     raw_cnv_folder,
     align_folder,
@@ -380,6 +383,13 @@ def deliver_dna(
     updated = get_link_log(purple_germline, svar_folder, f"{patient.sample_true}.driver.catalog.germline.tsv", log, updated, old_log)
     purple_circos = extract_fileloc_field(connection, patient.sample, "purple_circos")
     updated = get_link_log(purple_circos, svar_folder, f"{patient.sample_true}.circos.png", log, updated, old_log)
+    # linx all tsvs and pngs
+    os.makedirs(linx_folder, exist_ok=True)
+    linx_genpipes_folder = os.path.join(MOH_MAIN_FOLDER, "SVariants", f"{patient.sample}-*DT", "linx")
+    for linx_tsv in glob.glob(os.path.join(linx_genpipes_folder, "*.tsv")):
+        updated = get_link_log(linx_tsv, raw_folder, os.path.basename(linx_tsv), log, updated, old_log)
+    for linx_png in glob.glob(os.path.join(linx_genpipes_folder, "plot", "*.png")):
+        updated = get_link_log(linx_tsv, raw_folder, os.path.basename(linx_png), log, updated, old_log)
 
     os.makedirs(pcgr_folder, exist_ok=True)
     pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
@@ -640,7 +650,8 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}.gripss.filtered.germline.vcf.gz` *Annotated and filtered germline structural variant calls from GRIDSS using GRIPSS* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.gripss.filtered.germline.vcf.gz"))}
     * `{patient}.driver.catalog.somatic.tsv` *Driver somatic structural variant calls* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.driver.catalog.somatic.tsv"))}
     * `{patient}.driver.catalog.germline.tsv` *Driver germline structural variant calls* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.driver.catalog.germline.tsv"))}
-    * `{patient}.circos.png` *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.circos.png"))}
+    * [`{patient}.circos.png`](svariants/{patient}.circos.png) *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.circos.png"))}
+    * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
     * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz"))}
     * `{patient}.cnvkit.vcf.gz.tbi` *Index of Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz.tbi"))}
