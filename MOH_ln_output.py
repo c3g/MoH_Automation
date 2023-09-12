@@ -385,7 +385,7 @@ def deliver_dna(
     updated = get_link_log(purple_circos, svar_folder, f"{patient.sample_true}.circos.png", log, updated, old_log)
     # linx all tsvs and pngs
     os.makedirs(linx_folder, exist_ok=True)
-    linx_genpipes_folder = os.path.join(MOH_MAIN_FOLDER, "SVariants", f"{patient.sample}-*DT", "linx")
+    linx_genpipes_folder = os.path.join(MOH_MAIN_FOLDER, "SVariants", f"{patient.sample}", "linx")
     for linx_tsv in glob.glob(os.path.join(linx_genpipes_folder, "*.tsv")):
         updated = get_link_log(linx_tsv, raw_folder, os.path.basename(linx_tsv), log, updated, old_log)
     for linx_png in glob.glob(os.path.join(linx_genpipes_folder, "plot", "*.png")):
