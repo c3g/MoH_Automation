@@ -614,6 +614,8 @@ def generate_readme(readme_file, patient, dna_n, dna_t, rna, log, updated, old_l
     rna_raw = ""
     for rna_raw_fq in glob.glob(os.path.join(out_folder, "raw_data", "*RT*.fastq.gz")):
         rna_raw += f"""\n    * `{os.path.basename(rna_raw_fq)}` *Raw RNA reads for the Tumor sample* {file_exist_check(os.path.join(out_folder, "raw_data", os.path.basename(rna_raw_fq)))}"""
+    for linx_file in glob.glob(os.path.join(out_folder, "svariants", "linx", "*")):
+        linx += f"""\n        * `{os.path.basename(linx_file)}` {file_exist_check(os.path.join(out_folder, "svariants", "linx", os.path.basename(linx_file)))}"""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
@@ -651,7 +653,7 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}.driver.catalog.somatic.tsv` *Driver somatic structural variant calls* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.driver.catalog.somatic.tsv"))}
     * `{patient}.driver.catalog.germline.tsv` *Driver germline structural variant calls* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.driver.catalog.germline.tsv"))}
     * [`{patient}.circos.png`](svariants/{patient}.circos.png) *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(os.path.join(out_folder, "svariants", f"{patient}.circos.png"))}
-    * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*
+    * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*{linx}
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
     * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz"))}
     * `{patient}.cnvkit.vcf.gz.tbi` *Index of Raw cnvkit output* {file_exist_check(os.path.join(out_folder, "raw_cnv", f"{patient}.cnvkit.vcf.gz.tbi"))}
