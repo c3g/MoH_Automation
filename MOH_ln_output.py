@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 
+# standard import
 import argparse
-import sys
-import os
-import datetime
-import progressbar
-import pandas as pd
-import markdown
 import csv
+import datetime
 import glob
 import logging
+import os
+
+import markdown
+import pandas as pd
+import progressbar
 from pymdownx import emoji
 
 from  DB_OPS import (
