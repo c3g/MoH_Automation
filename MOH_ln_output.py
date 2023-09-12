@@ -387,9 +387,9 @@ def deliver_dna(
     os.makedirs(linx_folder, exist_ok=True)
     linx_genpipes_folder = os.path.join(MOH_MAIN_FOLDER, "SVariants", f"{patient.sample}", "linx")
     for linx_tsv in glob.glob(os.path.join(linx_genpipes_folder, "*.tsv")):
-        updated = get_link_log(linx_tsv, raw_folder, os.path.basename(linx_tsv), log, updated, old_log)
+        updated = get_link_log(linx_tsv, linx_folder, os.path.basename(linx_tsv), log, updated, old_log)
     for linx_png in glob.glob(os.path.join(linx_genpipes_folder, "plot", "*.png")):
-        updated = get_link_log(linx_tsv, raw_folder, os.path.basename(linx_png), log, updated, old_log)
+        updated = get_link_log(linx_tsv, linx_folder, os.path.basename(linx_png), log, updated, old_log)
 
     os.makedirs(pcgr_folder, exist_ok=True)
     pcgr_maf = extract_fileloc_field(connection, patient.sample, "pcgr_maf")
