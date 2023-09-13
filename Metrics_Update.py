@@ -403,17 +403,28 @@ def extract_insert_size(sample, patient, sample_type):
             with h5py.File(filename, 'r') as h5file:
                 frequencies = np.asarray(h5file['aux']['fld'])
                 values = np.arange(0, len(frequencies), 1)
-                dataset = np.repeat(values, frequencies)
-                median_insert_size = np.median(dataset)
-                mean_insert_size = np.mean(dataset)
+                # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
+                ord = np.argsort(values)
+                cdf = np.cumsum(frequencies[ord])
+                median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)]
+                mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=2)
         elif sample_type in ('DN', 'DT'):
-            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
-            with open(filename, 'r', encoding="utf-8") as csvfile:
-                reader = csv.DictReader(csvfile, delimiter="\t")
-                for row in reader:
-                    if row["Sample"] == sample:
-                        median_insert_size = row["median_insert_size"]
-                        mean_insert_size = row["mean_insert_size"]
+            filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, "raw_data_qualimapReport/insert_size_histogram.txt")
+            dataset = np.genfromtxt(fname=filename, delimiter="\t", skip_header=1)
+            frequencies = dataset[:, 1]
+            values = dataset[:, 0]
+            # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
+            ord = np.argsort(values)
+            cdf = np.cumsum(frequencies[ord])
+            median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)]
+            mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=2)
+            # filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
+            # with open(filename, 'r', encoding="utf-8") as csvfile:
+            #     reader = csv.DictReader(csvfile, delimiter="\t")
+            #     for row in reader:
+            #         if row["Sample"] == sample:
+            #             median_insert_size = row["median_insert_size"]
+            #             mean_insert_size = row["mean_insert_size"]
     except FileNotFoundError:
         pass
     return median_insert_size, mean_insert_size
