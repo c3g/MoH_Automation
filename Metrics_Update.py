@@ -406,8 +406,8 @@ def extract_insert_size(sample, patient, sample_type):
                 # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
                 ord = np.argsort(values)
                 cdf = np.cumsum(frequencies[ord])
-                median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)]
-                mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=2)
+                median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)].astype('float64')
+                mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=1)
         elif sample_type in ('DN', 'DT'):
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, "raw_data_qualimapReport/insert_size_histogram.txt")
             dataset = np.genfromtxt(fname=filename, delimiter="\t", skip_header=1)
@@ -417,7 +417,7 @@ def extract_insert_size(sample, patient, sample_type):
             ord = np.argsort(values)
             cdf = np.cumsum(frequencies[ord])
             median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)]
-            mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=2)
+            mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=1)
             # filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
             # with open(filename, 'r', encoding="utf-8") as csvfile:
             #     reader = csv.DictReader(csvfile, delimiter="\t")
