@@ -163,10 +163,10 @@ class Progress(SampleData):
     def Update_status(self):
         # DNA
         dna_n_transferred = "NA"
-        if self.ts_run_proc_bam_dna_n != "NA":
+        if self.run_proc_bam_dna_n != "NA":
             dna_n_transferred = "Complete"
         dna_t_transferred = "NA"
-        if self.ts_run_proc_bam_dna_t != "NA":
+        if self.run_proc_bam_dna_t != "NA":
             dna_t_transferred = "Complete"
         dna_alignment= "NA"
         if self.final_dna_bam_t != "NA":
