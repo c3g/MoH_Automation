@@ -70,8 +70,8 @@ def main():
     parser.add_argument('--loglevel', help='Sets logging level', choices=logging._levelToName.values(), default='INFO')
     args = parser.parse_args()
 
-    connection = create_connection("/scratch/stretenp/moh_test/MOH_analysis.db")
-    # connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
+    # connection = create_connection("/scratch/stretenp/moh_test/MOH_analysis.db")
+    connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
     patients = extract_sample_names(connection)
 
     if args.black_list:
@@ -140,8 +140,8 @@ def main():
 
             # Folders used for Delivery
             # base_folder = '/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/' # Base Folder
-            # out_folder = '/lustre03/project/6007512/C3G/projects/share/MOH' # Output Folder
-            out_folder = '/scratch/stretenp/MOH' # Output Folder
+            out_folder = '/lustre03/project/6007512/C3G/projects/share/MOH' # Output Folder
+            # out_folder = '/scratch/stretenp/MOH' # Output Folder
             # Contains Warnings.txt Readme.txt Log.txt and all subfolders
             out_folder = os.path.join(out_folder, patient.institution, patient.cohort, patient.sample_true)
             # Contains raw bams and fastqs
