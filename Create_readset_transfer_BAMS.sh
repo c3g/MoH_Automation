@@ -54,16 +54,17 @@ for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         QUAL_OF=33
         BED=""
         BAM="raw_reads/"$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam"
-        FASTQ1=""
+        BAI="raw_reads/"$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bai"
+	FASTQ1=""
         FASTQ2=""
         echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUN_NAME"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
         # Adding readset to be transferred in a list file
         echo $TEMP"/"$readset_name"_readset.tsv" $BEL_LOC$sample_name"/"$readset_name"_readset.tsv">>$TEMP"/"$LISTFILE;
-        # Adding bam to be transferred in a list file
+        # Adding bam and bai to be transferred in a list file
         echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam">>$TEMP"/"$LISTFILE;
-
+	echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bai">>$TEMP"/"$LISTFILE;
         echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bam>>"$TEMP/"$LOGFILE;
-
+	echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bai>>"$TEMP/"$LOGFILE;
 done;
 else
         echo "No BAM files found";
