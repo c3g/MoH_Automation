@@ -508,13 +508,13 @@ def get_link_log(input_file, output_folder, output_file, log, updated, old_log):
                 log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             if old_time != new_time:
                 os.remove(os.path.join(output_folder, output_file))
-                # os.link(input_file, os.path.join(output_folder, output_file))
-                os.symlink(input_file, os.path.join(output_folder, output_file))
+                os.link(input_file, os.path.join(output_folder, output_file))
+                # os.symlink(input_file, os.path.join(output_folder, output_file))
                 log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "Updated")
                 updated = True
         else:
-            # os.link(input_file, os.path.join(output_folder, output_file))
-            os.symlink(input_file, os.path.join(output_folder, output_file))
+            os.link(input_file, os.path.join(output_folder, output_file))
+            # os.symlink(input_file, os.path.join(output_folder, output_file))
             log_new(os.path.join(os.path.basename(output_folder), output_file), log, new_time, "New")
             updated = True
     return updated
