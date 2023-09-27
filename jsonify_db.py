@@ -7,7 +7,9 @@ import re
 import csv
 import os
 import hashlib
+import h5py
 import logging
+import numpy as np
 from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
@@ -20,7 +22,7 @@ def main():
     patient_dict = get_patient_dict(main_raw_reads_folder)
     readset_dict, sample_dict = jsonify_run_processing(patient_dict, prefix_path)
     jsonify_transfer(sample_dict, prefix_path)
-    jsonify_genpipes_tumourpair(sample_dict, prefix_path)
+    jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path)
     jsonify_genpipes_rnaseqlight(sample_dict, prefix_path)
 
 
@@ -289,7 +291,10 @@ def jsonify_transfer(sample_dict, prefix_path):
                 json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
-def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
+def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
+    """
+    TODO: Add all files belonging to this protocol
+    """
     ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/TumorPair.config.trace.ini")
     to_parse = False
     ini_content = []
@@ -346,15 +351,103 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
         job_jsons.append(recalibration_tumourpair(sample, prefix_path))
         job_jsons.append(strelka2_paired_germline_tumourpair(patient, prefix_path))
         job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
+        job_jsons.append(tumour_pair_multiqc(patient, prefix_path))
 
         # Conpair
         job_jsons.append(extract_conpair(patient, sample, tumour, prefix_path))
         # Purple
         job_jsons.append(extract_purple(sample, patient, prefix_path))
         # Qualimap
-        job_json_qualimap, job_json_multiqc = extract_qualimap_multiqc(sample, patient, prefix_path)
-        job_jsons.append(job_json_qualimap)
-        job_jsons.append(job_json_multiqc)
+        job_jsons.append(extract_qualimap(sample, prefix_path))
+        # Picard
+        job_jsons.append(extract_picard_tumourpair(sample, prefix_path))
+        for (_, readset) in sample_dict_dna[sample]:
+            readset_json = {
+                "readset_name": f"{readset}",
+                "job": []
+            }
+            # readset_json["job"].append(job_json_conpair)
+            # readset_json["job"].append(job_json_purple)
+            # readset_json["job"].append(job_json_qualimap)
+            # readset_json["job"].append(job_json_multiqc)
+            # readset_json["job"].append(job_json_picard)
+            job_jsons = list(filter(lambda job_json: job_json is not None, job_jsons))
+            for job_json in job_jsons:
+                readset_json["job"].append(job_json)
+            if readset_json["job"]:
+                sample_json["readset"].append(readset_json)
+        if sample_json["readset"]:
+            json_output["sample"].append(sample_json)
+    # print(json.dumps(json_output, indent=4))
+    if json_output["sample"]:
+        with open("jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=4)
+
+def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
+    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/TumorPair.config.trace.ini")
+    to_parse = False
+    ini_content = []
+    with open(ini_file, 'r') as file:
+        for line in file:
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "[DEFAULT]" in line:
+                to_parse = True
+            if to_parse:
+                ini_content.append(line)
+    # From where to parse genpipes version and cmd line
+    json_output = {
+        "project_name": "MOH-Q",
+        "operation_config_name": "genpipes_ini",
+        "operation_config_version": f"{genpipes_version}",
+        "operation_config_md5sum": f"{md5(ini_file)}",
+        "operation_config_data": f"{''.join(ini_content)}",
+        "operation_platform": "beluga",
+        "operation_cmd_line": "tumor_pair.py -s 1-13,15-38 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini Custom_ini/Custom_MOH_topups.ini -g TP_run.sh",
+        "operation_name": "genpipes_rnaseq_light",
+        "sample": []
+        }
+    sample_dict_dna = {}
+    for sample in sample_dict:
+        if not sample.endswith("RT"):
+            sample_dict_dna[sample] = sample_dict[sample]
+        # if sample == "MoHQ-MU-17-1251-OC1-1DT":
+        #     sample_dict_dna[sample] = sample_dict[sample]
+    length = len(sample_dict_dna)
+    i = 0
+    for sample in sample_dict_dna:
+        i += 1
+        eta = round(float(100*i/length), 2)
+        logger.info(f"jsonify_genpipes_tumourpair - {eta}%")
+        patient = sample_dict_dna[sample][0][0]
+        if sample.endswith("DT"):
+            tumour = True
+        else:
+            tumour = False
+        sample_json = {
+            "sample_name": f"{sample}",
+            "readset": []
+        }
+        job_jsons = []
+
+        job_jsons.append(sym_link_final_bam_tumourpair(patient, sample, tumour, prefix_path))
+        job_jsons.append(gatk_variant_annotator_germline_tumourpair(patient, prefix_path))
+        job_jsons.append(gatk_variant_annotator_somatic_tumourpair(patient, prefix_path))
+        job_jsons.append(paired_mutect2_tumourpair(patient, prefix_path))
+        job_jsons.append(vardict_paired_tumourpair(patient, prefix_path))
+        job_jsons.append(paired_varscan2_tumourpair(patient, prefix_path))
+        job_jsons.append(cnvkit_batch_tumourpair(patient, prefix_path))
+        job_jsons.append(recalibration_tumourpair(sample, prefix_path))
+        job_jsons.append(strelka2_paired_germline_tumourpair(patient, prefix_path))
+        job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
+        job_jsons.append(tumour_pair_multiqc(patient, prefix_path))
+
+        # Conpair
+        job_jsons.append(extract_conpair(patient, sample, tumour, prefix_path))
+        # Purple
+        job_jsons.append(extract_purple(sample, patient, prefix_path))
+        # Qualimap
+        job_jsons.append(extract_qualimap(sample, prefix_path))
         # Picard
         job_jsons.append(extract_picard_tumourpair(sample, prefix_path))
         for (_, readset) in sample_dict_dna[sample]:
@@ -381,7 +474,7 @@ def jsonify_genpipes_tumourpair(sample_dict, prefix_path):
 
 
 def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
-    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/RnaSeq.config.trace.ini")
+    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/RnaSeqLight.config.trace.ini")
     to_parse = False
     ini_content = []
     with open(ini_file, 'r') as file:
@@ -420,7 +513,7 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
         # Picard
         job_jsons.append(extract_picard_rna(sample, prefix_path))
         # Kallisto
-        job_jsons.append(kallisto_rnaseqlight(sample, prefix_path))
+        job_jsons.append(extract_kallisto_rnaseqlight(sample, prefix_path))
         for (_, readset) in sample_dict_rna[sample]:
             readset_json = {
                 "readset_name": f"{readset}",
@@ -436,6 +529,65 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
     # print(json.dumps(json_output, indent=4))
     if json_output["sample"]:
         with open("jsons/genpipes_rnaseqlight.json", 'w', encoding='utf-8') as f:
+            json.dump(json_output, f, ensure_ascii=False, indent=4)
+
+def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
+    """
+    TODO: Add all files belonging to this protocol
+    """
+    ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/RnaSeq.config.trace.ini")
+    to_parse = False
+    ini_content = []
+    with open(ini_file, 'r') as file:
+        for line in file:
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "[DEFAULT]" in line:
+                to_parse = True
+            if to_parse:
+                ini_content.append(line)
+    # From where to parse genpipes version and cmd line
+    json_output = {
+        "project_name": "MOH-Q",
+        "operation_config_name": "genpipes_ini",
+        "operation_config_version": f"{genpipes_version}",
+        "operation_config_md5sum": f"{md5(ini_file)}",
+        "operation_config_data": f"{''.join(ini_content)}",
+        "operation_platform": "beluga",
+        "operation_cmd_line": "rnaseq.py -s 1-7,10-23 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/Custom_ini/tumor_rna.moh.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini -g RNASeq_run.sh -t cancer",
+        "operation_name": "genpipes_rnaseq_light",
+        "sample": []
+        }
+    sample_dict_rna = {}
+    for sample in sample_dict:
+        if sample.endswith("RT"):
+            sample_dict_rna[sample] = sample_dict[sample]
+        # if sample == "MoHQ-MU-17-1251-OC1-1DT":
+        #     sample_dict_rna[sample] = sample_dict[sample]
+    for sample in sample_dict_rna:
+        sample_json = {
+            "sample_name": f"{sample}",
+            "readset": []
+        }
+        job_jsons = []
+
+        # Rnaseqc2
+        job_jsons.append(extract_rnaseqc2_rna(sample, prefix_path))
+        for (_, readset) in sample_dict_rna[sample]:
+            readset_json = {
+                "readset_name": f"{readset}",
+                "job": []
+            }
+            job_jsons = list(filter(lambda job_json: job_json is not None, job_jsons))
+            for job_json in job_jsons:
+                readset_json["job"].append(job_json)
+            if readset_json["job"]:
+                sample_json["readset"].append(readset_json)
+        if sample_json["readset"]:
+            json_output["sample"].append(sample_json)
+    # print(json.dumps(json_output, indent=4))
+    if json_output["sample"]:
+        with open("jsons/genpipes_rnaseqcancer.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
@@ -615,6 +767,61 @@ def extract_purple(sample, patient, prefix_path):
         job_json = None
     return job_json
 
+def extract_rnaseqc2_rna(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/rnaseqc2/rnaseqc2.*{sample}*.o")), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/rnaseqc2/rnaseqc2.*{sample}*.o file found")
+    job_json = {
+        "job_name": "rnaseqc2",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": [],
+        "metric": []
+    }
+    try:
+        no_expression_profiling_efficiency = no_ribosomal_contamination_count = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample, "rnaseqc2",  f'{sample}.sorted.mdup.bam.metrics.tsv')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json["job_status"] = "COMPLETED"
+            for line in file:
+                if line.startswith("Expression Profiling Efficiency"):
+                    value = line.split("\t")[1]
+                    job_json["metric"].append({
+                        "metric_name": "expression_profiling_efficiency",
+                        "metric_value": f"{value}",
+                        "metric_flag": "PASS",
+                        "metric_deliverable": True
+                        })
+                elif line.startswith("rRNA Rate"):
+                    value = line.split("\t")[1]
+                    if float(value)>0.35:
+                        flag = "FAILED"
+                    elif float(value)>0.1:
+                        flag = "WARNING"
+                    job_json["metric"].append({
+                        "metric_name": "ribosomal_contamination_count",
+                        "metric_value": f"{value}",
+                        "metric_flag": f"{flag}",
+                        "metric_deliverable": True
+                        })
+            job_json["file"].append({
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                })
+    except FileNotFoundError:
+        no_expression_profiling_efficiency = no_ribosomal_contamination_count = True
+
+    if no_expression_profiling_efficiency and no_ribosomal_contamination_count:
+        job_json = None
+
+    return job_json
+
 def extract_picard_rna(sample, prefix_path):
     job_status = None
     job_start = None
@@ -632,35 +839,35 @@ def extract_picard_rna(sample, prefix_path):
         "file": [],
         "metric": []
     }
-    # median_insert_size
-    try:
-        no_median_insert_size = False
-        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
-        with open(filename, 'r', encoding="utf-8") as file:
-            job_json["job_status"] = "COMPLETED"
-            lines = file.readlines()
-            line = lines[7]
-            metrics = line.split("\t")
-            value = metrics[0]
-            if float(value)<300:
-                flag = "WARNING"
-            elif float(value)<150:
-                flag = "FAILED"
-            else:
-                flag = "PASS"
-            job_json["metric"].append({
-                "metric_name": "median_insert_size",
-                "metric_value": f"{value}",
-                "metric_flag": f"{flag}",
-                "metric_deliverable": True
-                })
-            job_json["file"].append({
-                "location_uri": f"beluga://{filename}",
-                "file_name": f"{os.path.basename(filename)}"
-                })
-            print(f"\n\nmedian_insert_size {sample}\n\n")
-    except FileNotFoundError:
-        no_median_insert_size = True
+    # # median_insert_size
+    # try:
+    #     no_median_insert_size = False
+    #     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/rna', sample + '.insert_size_metrics')
+    #     with open(filename, 'r', encoding="utf-8") as file:
+    #         job_json["job_status"] = "COMPLETED"
+    #         lines = file.readlines()
+    #         line = lines[7]
+    #         metrics = line.split("\t")
+    #         value = metrics[0]
+    #         if float(value)<300:
+    #             flag = "WARNING"
+    #         elif float(value)<150:
+    #             flag = "FAILED"
+    #         else:
+    #             flag = "PASS"
+    #         job_json["metric"].append({
+    #             "metric_name": "median_insert_size",
+    #             "metric_value": f"{value}",
+    #             "metric_flag": f"{flag}",
+    #             "metric_deliverable": True
+    #             })
+    #         job_json["file"].append({
+    #             "location_uri": f"beluga://{filename}",
+    #             "file_name": f"{os.path.basename(filename)}"
+    #             })
+    #         print(f"\n\nmedian_insert_size {sample}\n\n")
+    # except FileNotFoundError:
+    #     no_median_insert_size = True
     # bases_over_q30_percent
     try:
         no_bases_over_q30_percent = False
@@ -699,13 +906,13 @@ def extract_picard_rna(sample, prefix_path):
     except FileNotFoundError:
         no_bases_over_q30_percent = True
 
-    if no_median_insert_size and no_bases_over_q30_percent:
+    if no_bases_over_q30_percent:
         job_json = None
 
     return job_json
 
 
-def kallisto_rnaseqlight(sample, prefix_path):
+def extract_kallisto_rnaseqlight(sample, prefix_path):
     job_status = None
     job_start = None
     job_stop = None
@@ -726,6 +933,37 @@ def kallisto_rnaseqlight(sample, prefix_path):
     job_json = add_output_file(filename, job_json, True)
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_genes.tsv')
     job_json = add_output_file(filename, job_json, True)
+    try:
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance.h5')
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+        with h5py.File(filename, 'r') as h5file:
+            frequencies = np.asarray(h5file['aux']['fld'])
+            values = np.arange(0, len(frequencies), 1)
+            # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
+            ord = np.argsort(values)
+            cdf = np.cumsum(frequencies[ord])
+            median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)].astype('float64')
+            mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=1)
+            job_json["job_status"] = "COMPLETED"
+            job_json["metric"].append({
+                "metric_name": "mean_insert_size",
+                "metric_value": f"{mean_insert_size}",
+                "metric_flag": "PASS",
+                "metric_deliverable": True
+                })
+            job_json["metric"].append({
+                "metric_name": "median_insert_size",
+                "metric_value": f"{median_insert_size}",
+                "metric_flag": "PASS",
+                "metric_deliverable": True
+                })
+
+    except FileNotFoundError:
+        pass
+        # logger.warning(f"{filename} not found, no kallisto metrics will be stored.")
 
     if not job_json["file"]:
         job_json = None
@@ -758,151 +996,151 @@ def run_annofuse_rnaseqlight(sample, prefix_path):
     return job_json
 
 
-def extract_qualimap_multiqc(sample, patient, prefix_path):
-    qualimap_job_status = None
-    qualimap_job_start = None
-    qualimap_job_stop = None
-    try:
-        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o")), key=os.path.getmtime)[-1]
-        with open(latest, 'r', encoding="utf-8") as file:
-            qualimap_job_status = "COMPLETED"
-            for line in file:
-                if "AccrueTime" in line:
-                    qualimap_job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
-                elif "EndTime" in line:
-                    qualimap_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
-    except IndexError:
-        logger.warning(f"No job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
-    job_json_qualimap = {
-        "job_name": "qualimap",
-        "job_start": qualimap_job_start,
-        "job_stop": qualimap_job_stop,
-        "job_status": qualimap_job_status,
-        "file": [],
-        "metric": []
-    }
-    multiqc_job_status = None
-    multiqc_job_start = None
-    multiqc_job_stop = None
-
+def tumour_pair_multiqc(patient, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
     try:
         latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_pair_multiqc/multiqc.*{patient}*.o")), key=os.path.getmtime)[-1]
         with open(latest, 'r', encoding="utf-8") as file:
-            multiqc_job_status = "COMPLETED"
+            job_status = "COMPLETED"
             for line in file:
                 if "AccrueTime" in line:
-                    multiqc_job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
                 elif "EndTime" in line:
-                    multiqc_job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
     except IndexError:
         logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
-    job_json_multiqc = {
+    job_json = {
         "job_name": "multiqc",
-        "job_start": multiqc_job_start,
-        "job_stop": multiqc_job_stop,
-        "job_status": multiqc_job_status,
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
         "file": []
     }
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', f'{patient}.multiqc.html')
     if os.path.exists(filename):
-        job_json_multiqc["job_status"] = "COMPLETED"
-        job_json_multiqc["file"].append({
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
             "location_uri": f"beluga://{filename}",
             "file_name": f"{os.path.basename(filename)}",
             "file_deliverable": True
             })
-    # median_insert_size
+    else:
+        logger.warning(f"No {filename} file found")
+        job_json = None
+
+    return job_json
+
+def extract_qualimap(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
     try:
-        no_insert_size = False
-        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
-        with open(filename, 'r', encoding="utf-8") as file:
-            job_json_multiqc["job_status"] = "COMPLETED"
-            job_json_qualimap["job_status"] = "COMPLETED"
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
             for line in file:
-                parsed_line = line.split("\t")
-                if parsed_line[0] == sample:
-                    value = round(float(parsed_line[7]), 0)
-                    if float(value)<300:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
+    job_json = {
+        "job_name": "qualimap",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": [],
+        "metric": []
+    }
+
+    try:
+        no_median_insert_size = no_dedup_mean_coverage = no_aligned_reads_count = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
+        with open(filename, 'r', encoding="utf-8") as file:
+            job_json["file"].append({
+                "location_uri": f"beluga://{filename}",
+                "file_name": f"{os.path.basename(filename)}"
+                })
+            job_json["job_status"] = "COMPLETED"
+            for line in file:
+                # median_insert_size
+                if "median insert size" in line:
+                    metrics = line.split(" ")
+                    value = int(metrics[-1])
+                    if value<300:
                         flag = "WARNING"
-                    elif float(value)<150:
+                    elif value<150:
                         flag = "FAILED"
                     else:
                         flag = "PASS"
-                    job_json_qualimap["metric"].append({
+                    job_json["metric"].append({
                         "metric_name": "median_insert_size",
                         "metric_value": f"{value}",
                         "metric_flag": f"{flag}",
                         "metric_deliverable": True
                         })
-                    job_json_multiqc["file"].append({
-                        "location_uri": f"beluga://{filename}",
-                        "file_name": f"{os.path.basename(filename)}"
+                # dedup_mean_coverage
+                elif "mean coverageData" in line:
+                    metrics = line.split(" ")
+                    value = float(metrics[-1].replace('X', ''))
+                    job_json["metric"].append({
+                        "metric_name": "dedup_mean_coverage",
+                        "metric_value": f"{value}",
+                        "metric_flag": "PASS",
+                        "metric_deliverable": True
                         })
-    except FileNotFoundError:
-        no_insert_size = True
-    # dedup_coverage
-    try:
-        no_dedup_coverage = False
-        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
-        with open(filename, 'r', encoding="utf-8") as file:
-            job_json_qualimap["job_status"] = "COMPLETED"
-            lines = file.readlines()
-            line = lines[71]
-            metrics = line.split(" ")
-            value = float(metrics[-1].replace('X', ''))
-            job_json_qualimap["metric"].append({
-                "metric_name": "dedup_coverage",
-                "metric_value": f"{value}",
-                "metric_flag": "PASS",
-                "metric_deliverable": True
-                })
-            job_json_qualimap["file"].append({
-                "location_uri": f"beluga://{filename}",
-                "file_name": f"{os.path.basename(filename)}"
-                })
-    except (FileNotFoundError, ValueError):
-        no_dedup_coverage = True
-    # aligned_reads_count
-    try:
-        no_aligned_reads_count = False
-        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_general_stats.txt')
-        with open(filename, 'r', encoding="utf-8") as csvfile:
-            job_json_multiqc["job_status"] = "COMPLETED"
-            job_json_qualimap["job_status"] = "COMPLETED"
-            reader = csv.DictReader(csvfile, delimiter="\t")
-            for row in reader:
-                if row["Sample"] == sample and row['QualiMap_mqc-generalstats-qualimap-mapped_reads']:
-                    value = row["QualiMap_mqc-generalstats-qualimap-mapped_reads"]
-                    if float(value)<260000000 and sample.endswith('DN'):
+                elif "number of mapped reads" in line:
+                    metrics = line.split(" ")
+                    value = int(metrics[-2].replace(",", ""))
+                    if value<260000000 and sample.endswith('DN'):
                         flag = "FAILED"
-                    elif float(value)<660000000 and sample.endswith('DN'):
+                    elif value<660000000 and sample.endswith('DN'):
                         flag = "WARNING"
-                    elif float(value)<530000000 and sample.endswith('DT'):
+                    elif value<530000000 and sample.endswith('DT'):
                         flag = "FAILED"
-                    elif float(value)<1330000000 and sample.endswith('DT'):
+                    elif value<1330000000 and sample.endswith('DT'):
                         flag = "WARNING"
                     else:
                         flag = "PASS"
-                    job_json_qualimap["metric"].append({
+                    job_json["metric"].append({
                         "metric_name": "aligned_reads_count",
                         "metric_value": f"{value}",
                         "metric_flag": f"{flag}",
                         "metric_deliverable": True
                         })
-                    job_json_multiqc["file"].append({
-                        "location_uri": f"beluga://{filename}",
-                        "file_name": f"{os.path.basename(filename)}"
-                        })
+    except FileNotFoundError:
+        no_median_insert_size = no_dedup_mean_coverage = no_aligned_reads_count = True
 
-    except (FileNotFoundError, KeyError):
-        no_aligned_reads_count = True
+    # mean_insert_size
+    try:
+        no_mean_insert_size = False
+        filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, "raw_data_qualimapReport", "insert_size_histogram.txt")
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}"
+            })
+        dataset = np.genfromtxt(fname=filename, delimiter="\t", skip_header=1)
+        frequencies = dataset[:, 1]
+        values = dataset[:, 0]
+        # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
+        value = np.around(np.average(values, weights=frequencies), decimals=1)
+        job_json["job_status"] = "COMPLETED"
+        job_json["metric"].append({
+            "metric_name": "mean_insert_size",
+            "metric_value": f"{value}",
+            "metric_flag": "PASS",
+            "metric_deliverable": True
+            })
+    except FileNotFoundError:
+        no_mean_insert_size = True
 
-    if no_insert_size and no_dedup_coverage and no_aligned_reads_count:
-        job_json_qualimap = job_json_multiqc = None
-    elif no_insert_size and no_aligned_reads_count:
-        job_json_multiqc = None
+    if no_mean_insert_size and no_median_insert_size and no_dedup_mean_coverage and no_aligned_reads_count:
+        job_json = None
 
-    return job_json_qualimap, job_json_multiqc
+    return job_json
 
 def extract_picard_tumourpair(sample, prefix_path):
     job_status = None
