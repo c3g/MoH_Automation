@@ -639,7 +639,6 @@ Within this directory you will find the results of the analysis for a single pat
     * `{patient}.hc.vt.annot.vcf.gz.tbi` *Index of Variants found using RNA sample* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.vcf.gz.tbi"))}
     * `{patient}.hc.vt.annot.filt.vcf.gz` *Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.filt.vcf.gz"))}
     * `{patient}.hc.vt.annot.filt.vcf.gz.tbi` *Index of Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(os.path.join(out_folder, "variants", f"{patient}.hc.vt.annot.filt.vcf.gz.tbi"))}
-    * `{patient}.vcf.gz` *Contains the results of all callers for both DNA and RNA (:warning: Not yet available)*
     * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
         * `{patient}.mutect2.somatic.vt.vcf.gz` *Somatic results for mutect2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.mutect2.somatic.vt.vcf.gz"))}
         * `{patient}.strelka2.germline.vt.vcf.gz` *Germline results for strelka2* {file_exist_check(os.path.join(out_folder, "variants", "caller_vcfs", f"{patient}.strelka2.germline.vt.vcf.gz"))}
