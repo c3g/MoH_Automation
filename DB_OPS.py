@@ -866,7 +866,7 @@ def update_fileloc_details(sample):
                 :big_wig_tracks_f,
                 :big_wig_tracks_r,
                 :rna_abundance_ini,
-                :rna_varianini
+                :rna_variants_ini
                 )
             ;
             """,
