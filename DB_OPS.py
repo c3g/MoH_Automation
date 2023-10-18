@@ -332,7 +332,8 @@ def extract_fileloc_details(conn, sample):
     cur = conn.cursor()
     cur.execute(f"""SELECT * FROM File_Locations WHERE Sample='{sample}'""")
     result = cur.fetchone()
-    ret.update(result)
+    if result:
+        ret.update(result)
     return ret
 
 def extract_timestamp_details(conn, sample):
@@ -390,7 +391,8 @@ def extract_timestamp_details(conn, sample):
     cur = conn.cursor()
     cur.execute(f"""SELECT * FROM Timestamps WHERE Sample='{sample}'""")
     result = cur.fetchone()
-    ret.update(result)
+    if result:
+        ret.update(result)
     return ret
 
 def update_timestamp_details(sample):
