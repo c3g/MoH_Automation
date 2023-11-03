@@ -18,16 +18,21 @@ def main():
     parser = argparse.ArgumentParser(prog='run_processing2json.py', description="Creates json file for project tracking database for a given run processing.")
     parser.add_argument('--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
     parser.add_argument('--output', required=False, help="Output json filename (Default: <input_filename>.json).")
+    parser.add_argument('--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
     args = parser.parse_args()
 
     if not args.output:
         output = f"{os.path.basename(args.input).split('.')[0]}.json"
     else:
         output = args.output
+    if args.lane:
+        lanes = list(args.lane)
+    else:
+        lanes = ["1", "2", "3", "4"]
 
-    jsonify_run_processing(args.input, output)
+    jsonify_run_processing(args.input, output, lanes)
 
-def jsonify_run_processing(input_csv, output):
+def jsonify_run_processing(input_csv, output, lanes):
     readset_dict = {}
     sample_dict = {}
     run_list = []
@@ -47,7 +52,7 @@ def jsonify_run_processing(input_csv, output):
             }
     for run_row in run_list:
         sample = run_row['Sample Name']
-        if sample.startswith("MoHQ"):
+        if sample.startswith("MoHQ") and run_row['Lane'] in lanes:
             result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             patient = result.group(1)
             cohort = result.group(2)
@@ -178,7 +183,7 @@ def jsonify_run_processing(input_csv, output):
 
 def dna_raw_mean_coverage_check(value, tumour):
     if not value:
-        raise Exception(f"Missing 'Mean Coverage': {value}")
+        raise Exception(f"Missing value for 'Mean Coverage'")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -189,7 +194,7 @@ def dna_raw_mean_coverage_check(value, tumour):
 
 def rna_raw_reads_count_check(value):
     if not value:
-        raise Exception(f"Missing 'Clusters': {value}")
+        raise Exception(f"Missing value for 'Clusters'")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -200,7 +205,7 @@ def rna_raw_reads_count_check(value):
 
 def dna_raw_duplication_rate_check(value):
     if not value:
-        raise Exception(f"Missing 'Dup. Rate (%)': {value}")
+        raise Exception(f"Missing value for 'Dup. Rate (%)'")
     if not value:
         ret = "FAILED"
     elif float(value)>50:
@@ -213,7 +218,7 @@ def dna_raw_duplication_rate_check(value):
 
 def median_insert_size_check(value):
     if not value:
-        raise Exception(f"Missing 'Mapped Insert Size (median)': {value}")
+        raise Exception(f"Missing value for 'Mapped Insert Size (median)'")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
