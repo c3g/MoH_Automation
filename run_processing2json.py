@@ -72,7 +72,7 @@ def jsonify_run_processing(input_csv, output):
 
             copylist = os.path.join(os.path.dirname(input_csv), f"{os.path.basename(input_csv).split('.')[0]}.copylist.txt")
             if not os.path.isfile(copylist):
-                raise FileNotFoundError(copylist)
+                raise Exception(f"File {copylist} not found; required to fing raw data (bams/fastqs) location")
             fastq1 = fastq2 = ""
             with open(copylist, 'r') as file:
                 for line in file:
@@ -177,6 +177,8 @@ def jsonify_run_processing(input_csv, output):
 
 
 def dna_raw_mean_coverage_check(value, tumour):
+    if not value:
+        raise Exception(f"Missing 'Mean Coverage': {value}")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -186,6 +188,8 @@ def dna_raw_mean_coverage_check(value, tumour):
     return ret
 
 def rna_raw_reads_count_check(value):
+    if not value:
+        raise Exception(f"Missing 'Clusters': {value}")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -195,6 +199,8 @@ def rna_raw_reads_count_check(value):
     return ret
 
 def dna_raw_duplication_rate_check(value):
+    if not value:
+        raise Exception(f"Missing 'Dup. Rate (%)': {value}")
     if not value:
         ret = "FAILED"
     elif float(value)>50:
@@ -206,6 +212,8 @@ def dna_raw_duplication_rate_check(value):
     return ret
 
 def median_insert_size_check(value):
+    if not value:
+        raise Exception(f"Missing 'Mapped Insert Size (median)': {value}")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
