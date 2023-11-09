@@ -31,14 +31,15 @@ BEL_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
 # Narval Endpoint #not used
 NAR_EP='a1713da6-098f-40e6-b3aa-034efe8b6e5b'
 # abacus Endpoint
-ABA_EP='6c66d53d-a79d-11e8-96fa-0a6d4e044368'
+ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 
 # Loop over BAMS
 # This is specific for MoHQ named Bams!
 if ls "$Location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
 echo "Bams Transfered">>"$TEMP/"$LOGFILE;
 for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
-        sample_name=`echo "$i" | cut -d'/' -f11`
+        j=`echo "$i" |sed 's/.sorted.bam/.sorted.bai/g'`
+	sample_name=`echo "$i" | cut -d'/' -f11`
         readset_name="`echo "$i" | cut -d'/' -f11`_`echo "$i" | cut -d'/' -f12`"
         file_name=`echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g'`
         # Make the oneliner readset file
@@ -54,7 +55,7 @@ for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         QUAL_OF=33
         BED=""
         BAM="raw_reads/"$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam"
-        BAI="raw_reads/"$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bai"
+        BAI="raw_reads/"$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam.bai"
 	FASTQ1=""
         FASTQ2=""
         echo -e $sample_name"\t"$sample_name"."$RUNID"_"$LANE"\t"$RUNID"_"$LANE"\t"$RUNTYPE"\t"$RUN_NAME"\t"$LANE"\t"$ADAP1"\t"$ADAP2"\t"$QUAL_OF"\t"$BED"\t"$FASTQ1"\t"$FASTQ2"\t"$BAM>>"$TEMP/"$readset_name"_readset.tsv";
@@ -62,9 +63,9 @@ for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
         echo $TEMP"/"$readset_name"_readset.tsv" $BEL_LOC$sample_name"/"$readset_name"_readset.tsv">>$TEMP"/"$LISTFILE;
         # Adding bam and bai to be transferred in a list file
         echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam">>$TEMP"/"$LISTFILE;
-	echo $i $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bai">>$TEMP"/"$LISTFILE;
+	echo $j $BEL_LOC$sample_name"/"${file_name}_${RUNID}"_"${LANE}".bam.bai">>$TEMP"/"$LISTFILE;
         echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bam>>"$TEMP/"$LOGFILE;
-	echo "$i"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bai>>"$TEMP/"$LOGFILE;
+	echo "$j"","$sample_name"/"${file_name}_${RUNID}_${LANE}.bam.bai>>"$TEMP/"$LOGFILE;
 done;
 else
         echo "No BAM files found";
@@ -129,4 +130,4 @@ label=${Location%?}
 label=${label##*/}
 
 # Start the batch transfer
-globus transfer --submission-id $sub_id --label "$label" --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP
+ globus transfer --submission-id $sub_id --label "$label" --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP
