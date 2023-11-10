@@ -374,22 +374,25 @@ def main():
                                     readset_dna_out.append("\t".join(line))
                         final_sample_n = sample_n
                     # Already analyzed sample Tumor
-                    analyzed_sample_t = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DT"))[0])
-                    for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*_readset.tsv")):
-                        with open(analysed_readset, 'rt') as readset_in:
-                            reader = csv.reader(readset_in, delimiter="\t")
-                            next(reader, None)
-                            for line in reader:
-                                # Needed to match topup to existing sample even if name is not the exact same
-                                line[0] = analyzed_sample_t
-                                # Making fastq/bam paths absolute
-                                if line[-1]:
-                                    line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
-                                if line[-2]:
-                                    line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
-                                if line[-3]:
-                                    line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
-                                readset_dna_out.append("\t".join(line))
+                    try:
+                        analyzed_sample_t = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DT"))[0])
+                        for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*_readset.tsv")):
+                            with open(analysed_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Needed to match topup to existing sample even if name is not the exact same
+                                    line[0] = analyzed_sample_t
+                                    # Making fastq/bam paths absolute
+                                    if line[-1]:
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
+                                    if line[-2]:
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
+                                    if line[-3]:
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
+                                    readset_dna_out.append("\t".join(line))
+                    except IndexError:
+                        analyzed_sample_t = None
                     if analyzed_sample_t and final_sample_n:
                         pair_out.append(f"{patient},{analyzed_sample_n},{analyzed_sample_t}")
                         if not args.dry_run:
@@ -463,22 +466,25 @@ def main():
                                     readset_dna_out.append("\t".join(line))
                         final_sample_t = sample_t
                     # Already analyzed sample Normal
-                    analyzed_sample_n = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DN"))[0])
-                    for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*_readset.tsv")):
-                        with open(analysed_readset, 'rt') as readset_in:
-                            reader = csv.reader(readset_in, delimiter="\t")
-                            next(reader, None)
-                            for line in reader:
-                                # Needed to match topup to existing sample even if name is not the exact same
-                                line[0] = analyzed_sample_n
-                                # Making fastq/bam paths absolute
-                                if line[-1]:
-                                    line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
-                                if line[-2]:
-                                    line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
-                                if line[-3]:
-                                    line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
-                                readset_dna_out.append("\t".join(line))
+                    try:
+                        analyzed_sample_n = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DN"))[0])
+                        for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*_readset.tsv")):
+                            with open(analysed_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Needed to match topup to existing sample even if name is not the exact same
+                                    line[0] = analyzed_sample_n
+                                    # Making fastq/bam paths absolute
+                                    if line[-1]:
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
+                                    if line[-2]:
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
+                                    if line[-3]:
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
+                                    readset_dna_out.append("\t".join(line))
+                    except IndexError:
+                        analyzed_sample_n = None
                     if analyzed_sample_n and final_sample_t:
                         pair_out.append(f"{patient},{analyzed_sample_n},{final_sample_t}")
                         if not args.dry_run:
