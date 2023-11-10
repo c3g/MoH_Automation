@@ -293,7 +293,6 @@ def main():
                         dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
                         os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_t), exist_ok=True)
                         for file_name in dna_t_files:
-                            # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name))
                             shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, sample_t))
                         os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
                         # Update database
@@ -310,8 +309,6 @@ def main():
                             "NA",
                             "NA"
                             )
-                    # else:
-                    #     print(" ".join([sample.sample for _, sample in sample.items()]))
                 # Topup not pair
                 elif sample_n:
                     try:
@@ -320,7 +317,6 @@ def main():
                         # Set to None as string to make the glob below not find without failing
                         analyzed_sample_n = "None"
                     if glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*.bam")):
-                        # if not args.dry_run:
                         transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))
                         if not transferred_readsets:
                             sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}\nExiting...")
@@ -400,11 +396,10 @@ def main():
                             dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
                             os.makedirs(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n), exist_ok=True)
                             for file_name in dna_n_files:
-                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
-                    # else:
-                    #     print(" ".join([sample.sample for _, sample in sample.items()]))
+                    else:
+                        readset_dna_out = []
                 elif sample_t:
                     try:
                         analyzed_sample_t = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DT"))[0])
@@ -492,9 +487,10 @@ def main():
                             dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
                             os.makedirs(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t), exist_ok=True)
                             for file_name in dna_t_files:
-                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
+                    else:
+                        readset_dna_out = []
                 # Writting outputs for each patient
                 if readset_dna_out and pair_out:
                     readset_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_{date_formatted}_TP_readset.tsv")
@@ -510,19 +506,6 @@ def main():
                     print(f"Generated {readset_dna_file} and {pair_dna_file}")
                     readset_dna_out = []
                     pair_out = []
-
-            # if not args.dry_run:
-            # with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
-            #     readset_file.write(f"{readset_header}\n")
-            #     for readset_line in readset_dna_out:
-            #         readset_file.write(f"{readset_line}\n")
-            #     for pair_line in pair_out:
-            #         pair_file.write(f"{pair_line}\n")
-            # for readset_line in readset_dna_out:
-            #     print(readset_line)
-            # for pair_line in pair_out:
-            #     print(pair_line)
-            # print(f"Generated {readset_dna_file} and {pair_dna_file}")
 
         else:
             print("No DNA pairs to Move")
