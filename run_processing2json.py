@@ -160,6 +160,7 @@ def jsonify_run_processing(input_csv, output, lanes):
             readset_json = {
                 "experiment_sequencing_technology": None,
                 "experiment_type": f"{run_row['Library Type']}",
+                "experiment_nucleic_acid_type": "RNA" if run_row['Library Type'] == "RNASeq" else "DNA",
                 "experiment_library_kit": None,
                 "experiment_kit_expiration_date": None,
                 "readset_name": readset_name,
