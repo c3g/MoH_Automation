@@ -125,11 +125,11 @@ def main():
                                 line[0] = analyzed_rna_sample
                                 # Making fastq/bam paths absolute
                                 if line[-1]:
-                                    line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                    line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_rna_sample, os.path.basename(line[-1]))
                                 if line[-2]:
-                                    line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                    line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_rna_sample, os.path.basename(line[-2]))
                                 if line[-3]:
-                                    line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                    line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_rna_sample, os.path.basename(line[-3]))
                                 readset_rna_out.append("\t".join(line))
                     rna_sample = analyzed_rna_sample
                 if not args.dry_run:
@@ -251,11 +251,11 @@ def main():
                                     line[0] = analyzed_sample_n
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
                         sample_n = analyzed_sample_n
                     # Already analyzed sample Tumour
@@ -274,11 +274,11 @@ def main():
                                     line[0] = analyzed_sample_t
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
                         sample_t = analyzed_sample_t
                     pair_out.append(f"{patient},{sample_n},{sample_t}")
@@ -293,7 +293,6 @@ def main():
                         dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
                         os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_t), exist_ok=True)
                         for file_name in dna_t_files:
-                            # print(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name))
                             shutil.move(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, sample_t))
                         os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, to_transfer_sample_t))
                         # Update database
@@ -310,8 +309,6 @@ def main():
                             "NA",
                             "NA"
                             )
-                    # else:
-                    #     print(" ".join([sample.sample for _, sample in sample.items()]))
                 # Topup not pair
                 elif sample_n:
                     try:
@@ -320,7 +317,6 @@ def main():
                         # Set to None as string to make the glob below not find without failing
                         analyzed_sample_n = "None"
                     if glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*.bam")):
-                        # if not args.dry_run:
                         transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))
                         if not transferred_readsets:
                             sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}\nExiting...")
@@ -333,11 +329,11 @@ def main():
                                     line[0] = analyzed_sample_n
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
@@ -348,12 +344,33 @@ def main():
                                     line[0] = analyzed_sample_n
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
+                                    if line[-2]:
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
+                                    if line[-3]:
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
+                                    readset_dna_out.append("\t".join(line))
+                        final_sample_n = analyzed_sample_n
+                    else:
+                        transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_n, "*_readset.tsv"))
+                        if not transferred_readsets:
+                            sys.exit(f"Sample {sample_n} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_n)}\nExiting...")
+                        for transferred_readset in transferred_readsets:
+                            with open(transferred_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Making fastq/bam paths absolute
+                                    if line[-1]:
                                         line[-1] = os.path.join(beluga_main_folder, line[-1])
                                     if line[-2]:
                                         line[-2] = os.path.join(beluga_main_folder, line[-2])
                                     if line[-3]:
                                         line[-3] = os.path.join(beluga_main_folder, line[-3])
                                     readset_dna_out.append("\t".join(line))
+                        final_sample_n = sample_n
+                    # Already analyzed sample Tumor
+                    try:
                         analyzed_sample_t = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DT"))[0])
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
@@ -364,23 +381,25 @@ def main():
                                     line[0] = analyzed_sample_t
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
+                    except IndexError:
+                        analyzed_sample_t = None
+                    if analyzed_sample_t and final_sample_n:
                         pair_out.append(f"{patient},{analyzed_sample_n},{analyzed_sample_t}")
                         if not args.dry_run:
                             # Move file
                             dna_n_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
-                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_n), exist_ok=True)
+                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n), exist_ok=True)
                             for file_name in dna_n_files:
-                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_n, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_n))
-                    # else:
-                    #     print(" ".join([sample.sample for _, sample in sample.items()]))
+                    else:
+                        readset_dna_out = []
                 elif sample_t:
                     try:
                         analyzed_sample_t = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DT"))[0])
@@ -401,11 +420,11 @@ def main():
                                     line[0] = analyzed_sample_t
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
@@ -416,12 +435,33 @@ def main():
                                     line[0] = analyzed_sample_t
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-1]))
+                                    if line[-2]:
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-2]))
+                                    if line[-3]:
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_t, os.path.basename(line[-3]))
+                                    readset_dna_out.append("\t".join(line))
+                        final_sample_t = analyzed_sample_t
+                    else:
+                        transferred_readsets = glob.glob(os.path.join(beluga_transferred_raw_reads_folder, sample_t, "*_readset.tsv"))
+                        if not transferred_readsets:
+                            sys.exit(f"Sample {sample_t} doesn't have a readset file, there is an issue with the transfer. Please check {os.path.join(beluga_transferred_raw_reads_folder, sample_t)}\nExiting...")
+                        for transferred_readset in transferred_readsets:
+                            with open(transferred_readset, 'rt') as readset_in:
+                                reader = csv.reader(readset_in, delimiter="\t")
+                                next(reader, None)
+                                for line in reader:
+                                    # Making fastq/bam paths absolute
+                                    if line[-1]:
                                         line[-1] = os.path.join(beluga_main_folder, line[-1])
                                     if line[-2]:
                                         line[-2] = os.path.join(beluga_main_folder, line[-2])
                                     if line[-3]:
                                         line[-3] = os.path.join(beluga_main_folder, line[-3])
                                     readset_dna_out.append("\t".join(line))
+                        final_sample_t = sample_t
+                    # Already analyzed sample Normal
+                    try:
                         analyzed_sample_n = os.path.basename(glob.glob(os.path.join(beluga_main_raw_reads_folder, f"{patient}-*DN"))[0])
                         for analysed_readset in glob.glob(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_n, "*_readset.tsv")):
                             with open(analysed_readset, 'rt') as readset_in:
@@ -432,21 +472,25 @@ def main():
                                     line[0] = analyzed_sample_n
                                     # Making fastq/bam paths absolute
                                     if line[-1]:
-                                        line[-1] = os.path.join(beluga_main_folder, line[-1])
+                                        line[-1] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-1]))
                                     if line[-2]:
-                                        line[-2] = os.path.join(beluga_main_folder, line[-2])
+                                        line[-2] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-2]))
                                     if line[-3]:
-                                        line[-3] = os.path.join(beluga_main_folder, line[-3])
+                                        line[-3] = os.path.join(beluga_main_folder, "raw_reads", analyzed_sample_n, os.path.basename(line[-3]))
                                     readset_dna_out.append("\t".join(line))
-                        pair_out.append(f"{patient},{analyzed_sample_n},{analyzed_sample_t}")
+                    except IndexError:
+                        analyzed_sample_n = None
+                    if analyzed_sample_n and final_sample_t:
+                        pair_out.append(f"{patient},{analyzed_sample_n},{final_sample_t}")
                         if not args.dry_run:
                             # Move file
                             dna_t_files = os.listdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
-                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, sample_t), exist_ok=True)
+                            os.makedirs(os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t), exist_ok=True)
                             for file_name in dna_t_files:
-                                # print(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name))
                                 shutil.move(os.path.join(beluga_transferred_raw_reads_folder, sample_t, file_name), os.path.join(beluga_main_raw_reads_folder, analyzed_sample_t))
                             os.rmdir(os.path.join(beluga_transferred_raw_reads_folder, sample_t))
+                    else:
+                        readset_dna_out = []
                 # Writting outputs for each patient
                 if readset_dna_out and pair_out:
                     readset_dna_file = os.path.join(args.output_folder, "readset_pair_files_DNA", f"{patient}_{date_formatted}_TP_readset.tsv")
@@ -462,19 +506,6 @@ def main():
                     print(f"Generated {readset_dna_file} and {pair_dna_file}")
                     readset_dna_out = []
                     pair_out = []
-
-            # if not args.dry_run:
-            # with open(readset_dna_file, "w", encoding="utf-8") as readset_file, open(pair_dna_file, "w", encoding="utf-8") as pair_file:
-            #     readset_file.write(f"{readset_header}\n")
-            #     for readset_line in readset_dna_out:
-            #         readset_file.write(f"{readset_line}\n")
-            #     for pair_line in pair_out:
-            #         pair_file.write(f"{pair_line}\n")
-            # for readset_line in readset_dna_out:
-            #     print(readset_line)
-            # for pair_line in pair_out:
-            #     print(pair_line)
-            # print(f"Generated {readset_dna_file} and {pair_dna_file}")
 
         else:
             print("No DNA pairs to Move")
