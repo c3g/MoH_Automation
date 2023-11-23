@@ -655,7 +655,13 @@ class Progress(SampleData):
                     self.ts_rna_multiqc = getime(rna_multiqc_file)
                     self.rna_multiqc = rna_multiqc_file
             except FileNotFoundError:
-                pass
+                rna_multiqc_file_new = os.path.join(MAIN_FOLDER, "metrics/multiqc_by_sample", self.rna, f"{self.rna}.multiqc.html")
+                try:
+                    if self.ts_rna_multiqc != getime(rna_multiqc_file_new):
+                        self.ts_rna_multiqc = getime(rna_multiqc_file_new)
+                        self.rna_multiqc = rna_multiqc_file_new
+                except FileNotFoundError:
+                    pass
 
     def Gather_PCGR(self):
         if self.dna_n_true == "NA":
