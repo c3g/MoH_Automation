@@ -30,72 +30,72 @@ def mark_deliverables(input_json, output_json):
     deliverables_tumorpair_ensemble = {
         "merge_gatk_variant_annotator.germline.*": {
             "files": [
-                r".*.ensemble.germline.vt.annot.vcf.gz",
-                r".*.ensemble.germline.vt.annot.vcf.gz.tbi"
+                "[+].ensemble.germline.vt.annot.vcf.gz",
+                "[+].ensemble.germline.vt.annot.vcf.gz.tbi"
                 ]
             },
         "merge_gatk_variant_annotator.somatic.*": {
             "files": [
-                r".*.ensemble.somatic.vt.annot.vcf.gz",
-                r".*.ensemble.somatic.vt.annot.vcf.gz.tbi"
+                "[+].ensemble.somatic.vt.annot.vcf.gz",
+                "[+].ensemble.somatic.vt.annot.vcf.gz.tbi"
                 ]
             },
         "merge_filter_mutect2.*": {
             "files": [
-                r".*.mutect2.somatic.vt.vcf.gz",
-                r".*.mutect2.somatic.vt.vcf.gz.tbi"
+                "[+].mutect2.somatic.vt.vcf.gz",
+                "[+].mutect2.somatic.vt.vcf.gz.tbi"
                 ]
             },
         "strelka2_paired_germline.filter.*": {
             "files": [
-                r".*.strelka2.germline.vt.vcf.gz"
+                "[+].strelka2.germline.vt.vcf.gz"
                 ]
             },
         "strelka2_paired_somatic.filter.*": {
             "files": [
-                r".*.strelka2.somatic.vt.vcf.gz"
+                "[+].strelka2.somatic.vt.vcf.gz"
                 ]
             },
         "merge_filter_paired_vardict.*": {
             "files": [
-                r".*.vardict.germline.vt.vcf.gz",
-                r".*.vardict.germline.vt.vcf.gz.tbi",
-                r".*.vardict.somatic.vt.vcf.gz",
-                r".*.vardict.somatic.vt.vcf.gz.tbi"
+                "[+].vardict.germline.vt.vcf.gz",
+                "[+].vardict.germline.vt.vcf.gz.tbi",
+                "[+].vardict.somatic.vt.vcf.gz",
+                "[+].vardict.somatic.vt.vcf.gz.tbi"
                 ]
             },
         "merge_varscan2.*": {
             "files": [
-                r".*.varscan2.germline.vt.vcf.gz",
-                r".*.varscan2.germline.vt.vcf.gz.tbi",
-                r".*.varscan2.somatic.vt.vcf.gz",
-                r".*.varscan2.somatic.vt.vcf.gz.tbi"
+                "[+].varscan2.germline.vt.vcf.gz",
+                "[+].varscan2.germline.vt.vcf.gz.tbi",
+                "[+].varscan2.somatic.vt.vcf.gz",
+                "[+].varscan2.somatic.vt.vcf.gz.tbi"
                 ]
             },
         "cnvkit_batch.call.*": {
             "files": [
-                r".*.cnvkit.vcf.gz",
-                r".*.cnvkit.vcf.gz.tbi"
+                "[+].cnvkit.vcf.gz",
+                "[+].cnvkit.vcf.gz.tbi"
                 ]
             },
         "gatk_print_reads.*": {
             "files": [
-                r".*.sorted.dup.recal.bam",
-                r".*.sorted.dup.recal.bam.bai",
-                r".*.sorted.dup.recal.bam.md5"
+                "[+].sorted.dup.recal.bam",
+                "[+].sorted.dup.recal.bam.bai",
+                "[+].sorted.dup.recal.bam.md5"
                 ]
             },
         "multiqc.*": {
             "files": [
-                r".*.multiqc.html"
+                "[+].multiqc.html"
                 ]
             },
         "report_pcgr.*": {
             "files": [
-                r".*.pcgr_acmg.grch38.flexdb.html",
-                r".*.pcgr_acmg.grch38.maf",
-                r".*.pcgr_acmg.grch38.snvs_indels.tiers.tsv",
-                r".*.pcgr_acmg.grch38.cna_segments.tsv.gz"
+                "[+].pcgr_acmg.grch38.flexdb.html",
+                "[+].pcgr_acmg.grch38.maf",
+                "[+].pcgr_acmg.grch38.snvs_indels.tiers.tsv",
+                "[+].pcgr_acmg.grch38.cna_segments.tsv.gz"
                 ]
             },
         "conpair_concordance_contamination.*": {
@@ -119,8 +119,8 @@ def mark_deliverables(input_json, output_json):
             },
         "purple.purity.*": {
             "files": [
-                r".*.driver.catalog.somatic.tsv",
-                r".*.driver.catalog.germline.tsv",
+                "[+].driver.catalog.somatic.tsv",
+                "[+].driver.catalog.germline.tsv",
                 ],
             "metrics": [
                 "purity"
@@ -131,53 +131,53 @@ def mark_deliverables(input_json, output_json):
     deliverables_tumorpair_sv = {
         "gridss_paired_somatic.*": {
             "files": [
-                r".*.gridss.vcf.gz"
+                "[+].gridss.vcf.gz"
                 ]
             },
         "gripss_filter.somatic.*": {
             "files": [
-                r".*.gripss.filtered.somatic.vcf.gz"
+                "[+].gripss.filtered.somatic.vcf.gz"
                 ]
             },
         "gripss_filter.germline.*": {
             "files": [
-                r".*.gripss.filtered.germline.vcf.gz"
+                "[+].gripss.filtered.germline.vcf.gz"
                 ]
             },
         "purple.purity.*": {
             "files": [
-                r".*.circos.png"
+                "[+].circos.png"
                 ]
             },
         "linx_annotations_germline.*": {
             "files": [
-                r".*.linx.germline.clusters.tsv",
-                r".*.linx.germline.disruption.tsv",
-                r".*.linx.germline.driver.catalog.tsv",
-                r".*.linx.germline.links.tsv",
-                r".*.linx.germline.svs.tsv"
+                "[+].linx.germline.clusters.tsv",
+                "[+].linx.germline.disruption.tsv",
+                "[+].linx.germline.driver.catalog.tsv",
+                "[+].linx.germline.links.tsv",
+                "[+].linx.germline.svs.tsv"
                 ]
             },
         "linx_annotations_somatic.*": {
             "files": [
-                r".*.linx.breakend.tsv",
-                r".*.linx.clusters.tsv",
-                r".*.linx.driver.catalog.tsv",
-                r".*.linx.drivers.tsv",
-                r".*.linx.fusion.tsv",
-                r".*.linx.links.tsv",
-                r".*.linx.svs.tsv",
-                r".*.linx.vis_copy_number.tsv",
-                r".*.linx.vis_fusion.tsv",
-                r".*.linx.vis_gene_exon.tsv",
-                r".*.linx.vis_protein_domain.tsv",
-                r".*.linx.vis_segments.tsv",
-                r".*.linx.vis_sv_data.tsv"
+                "[+].linx.breakend.tsv",
+                "[+].linx.clusters.tsv",
+                "[+].linx.driver.catalog.tsv",
+                "[+].linx.drivers.tsv",
+                "[+].linx.fusion.tsv",
+                "[+].linx.links.tsv",
+                "[+].linx.svs.tsv",
+                "[+].linx.vis_copy_number.tsv",
+                "[+].linx.vis_fusion.tsv",
+                "[+].linx.vis_gene_exon.tsv",
+                "[+].linx.vis_protein_domain.tsv",
+                "[+].linx.vis_segments.tsv",
+                "[+].linx.vis_sv_data.tsv"
                 ]
             },
         "linx_plot.*": {
             "files": [
-                r".*.cluster-\d\d\d.sv\d\d.\d\d\d.png"
+                r"[+].cluster-\d\d\d.sv\d\d.\d\d\d.png"
             ]
         }
     }
@@ -185,29 +185,29 @@ def mark_deliverables(input_json, output_json):
     deliverables_rnaseq_cancer = {
         "filter_gatk.*": {
             "files": [
-                r".*.hc.vt.annot.vcf.gz",
-                r".*.hc.vt.annot.flt.vcf.gz",
-                r".*.hc.vt.annot.flt.vcf.gz.tbi",
-                r".*.hc.vt.annot.flt.vcf.gz.md5"
+                "[+].hc.vt.annot.vcf.gz",
+                "[+].hc.vt.annot.flt.vcf.gz",
+                "[+].hc.vt.annot.flt.vcf.gz.tbi",
+                "[+].hc.vt.annot.flt.vcf.gz.md5"
                 ]
             },
         "gatk_print_reads.*": {
             "files": [
-                r".*.sorted.mdup.split.recal.bam",
-                r".*.sorted.mdup.split.recal.bam.bai",
-                r".*.sorted.mdup.split.recal.bam.md5"
+                "[+].sorted.mdup.split.recal.bam",
+                "[+].sorted.mdup.split.recal.bam.bai",
+                "[+].sorted.mdup.split.recal.bam.md5"
                 ]
             },
         "report_pcgr.*": {
             "files": [
-                r".*.pcgr_acmg.grch38.flexdb.html",
-                r".*.pcgr_acmg.grch38.maf",
-                r".*.pcgr_acmg.grch38.snvs_indels.tiers.tsv"
+                "[+].pcgr_acmg.grch38.flexdb.html",
+                "[+].pcgr_acmg.grch38.maf",
+                "[+].pcgr_acmg.grch38.snvs_indels.tiers.tsv"
                 ]
             },
         "run_annoFuse.*": {
             "files": [
-                r".*.putative_driver_fusions.tsv"
+                "[+].putative_driver_fusions.tsv"
                 ]
             },
         "picard_rna_metrics.*": {
@@ -224,7 +224,7 @@ def mark_deliverables(input_json, output_json):
         "multiqc.*": {
             "files": [
                 "multiqc_*.html",
-                r".*.multiqc.html"
+                "[+].multiqc.html"
                 ]
             },
     }
