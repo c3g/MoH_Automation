@@ -273,47 +273,48 @@ def iterate_json(current_json_hash, deliverables_metrics_json):
                         for file in job["file"]:
                             result = re.match('|'.join(deliverables_metrics_json[key_to_use]["files"]), file["file_name"])
                             if result:
-                                file["deliverable"] = True
+                                file["file_deliverable"] = True
                     except KeyError:
                         pass
                     try:
                         for metric in job["metric"]:
                             result = re.match('|'.join(deliverables_metrics_json[key_to_use]["metrics"]), metric["metric_name"])
                             if result:
-                                metric["deliverable"] = True
+                                metric["metric_deliverable"] = True
                             # Checking thresholds for flagging metrics
                             metric_name = metric["metric_name"]
                             metric_value = metric["metric_value"]
+                            metric["metric_flag"] = "PASS"
                             # Concordance
                             if metric_name == "concordance" and float(metric_value) < 99:
-                                metric["flag"] = "FAILED"
+                                metric["metric_flag"] = "FAILED"
                             # Contamination
                             if metric_name == "contamination":
                                 if float(metric_value) > 0.5:
-                                    metric["flag"] = "WARNING"
+                                    metric["metric_flag"] = "WARNING"
                                 elif float(metric_value) > 0.05:
-                                    metric["flag"] = "FAILED"
+                                    metric["metric_flag"] = "FAILED"
                             # Median Insert Size
                             if metric_name == "median_insert_size":
                                 if int(metric_value) < 300:
-                                    metric["flag"] = "WARNING"
+                                    metric["metric_flag"] = "WARNING"
                                 elif int(metric_value) < 150:
-                                    metric["flag"] = "FAILED"
+                                    metric["metric_flag"] = "FAILED"
                             # Dedup Coverage DN
                             if metric_name == "dedup_coverage" and float(metric_value) < 30 and sample["sample_name"].endswith("DN"):
-                                metric["flag"] = "FAILED"
+                                metric["metric_flag"] = "FAILED"
                             # Dedup Coverage DT
                             if metric_name == "dedup_coverage" and float(metric_value) < 80 and sample["sample_name"].endswith("DT"):
-                                metric["flag"] = "FAILED"
+                                metric["metric_flag"] = "FAILED"
                             # Purity
                             if metric_name == "purity" and int(metric_value) < 30:
-                                metric["flag"] = "FAILED"
+                                metric["metric_flag"] = "FAILED"
                             # rRNA rate
                             if metric_name == "rrna_rate":
                                 if float(metric_value) > 0.35:
-                                    metric["flag"] = "FAILED"
+                                    metric["metric_flag"] = "FAILED"
                                 elif float(metric_value) > 0.1:
-                                    metric["flag"] = "WARNING"
+                                    metric["metric_flag"] = "WARNING"
                     except KeyError:
                         pass
     return current_json_hash
