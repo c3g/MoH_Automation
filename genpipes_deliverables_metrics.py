@@ -11,7 +11,7 @@ logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=log
 logger = logging.getLogger(__name__)
 
 def main():
-    parser = argparse.ArgumentParser(prog='run_processing2json.py', description="Adds appropriate deliverables on files and metrics + metrics thresholds.")
+    parser = argparse.ArgumentParser(prog=os.path.basename(__file__), description="Adds appropriate deliverables on files and metrics + metrics thresholds.")
     parser.add_argument('--input', required=True, help="Input json produced by GenPipes processing.")
     parser.add_argument('--output', required=False, help="Output json filename (Default: <input_filename>_tagged.json).")
     args = parser.parse_args()
