@@ -111,7 +111,9 @@ def main():
                     rna = False
                 elif "RNA" in white_list[patient_name]:
                     rna = True
-                    if float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) <= 80000000:
+                    if extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count") == "NA":
+                        logger.warning(f"Metric Raw_Reads_Count for Sample {patient.rna} is NA")
+                    elif float(extract_sample_metrics(patient.conn, patient.rna, "Raw_Reads_Count")) <= 80000000:
                         logger.warning(f"Metric Raw_Reads_Count for Sample {patient.rna} is <= 80.000.000")
             else:
                 # Check if samples reach the threashold for delivery
