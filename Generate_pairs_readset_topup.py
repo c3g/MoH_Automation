@@ -520,6 +520,8 @@ class Sample():
         super(Sample, self).__init__()
         self.sample = sample
         result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+        if not result:
+            raise SystemExit(f"Sample {sample} doesn't conform to regex '^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)'")
         self.patient = result.group(1)
         self.cohort = result.group(2)
         self.institution = result.group(3)
