@@ -368,9 +368,9 @@ class Progress(SampleData):
                                     fastq2 = True
 
                 if not fastq1:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"No fastq1 found for {self.rna_true} in {TRANSFER_LOGS}")
                 if not fastq2:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"No fastq2 found for {self.rna_true} in {TRANSFER_LOGS}")
             else:
                 if self.run_proc_fastq_1_rna != "NA":
                     fastq1_transferred = os.path.basename(self.beluga_fastq_1_rna)
