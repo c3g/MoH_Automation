@@ -22,10 +22,14 @@ while getopts 'hc:p::t:r:i:' OPTION; do
         beluga_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
         path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         scheduler="slurm"
+        export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
+        
       elif [[ $cluster == abacus ]]; then
         beluga_ini=""
         path="/lb/project/mugqic/projects/MOH/MAIN"
         scheduler="pbs"
+        export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
+        export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
       fi
       echo "cluster: $cluster"
       ;;
@@ -49,6 +53,10 @@ while getopts 'hc:p::t:r:i:' OPTION; do
       ;;
   esac
 done
+
+export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
+export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
+module use $MUGQIC_INSTALL_HOME/modulefiles $MUGQIC_INSTALL_HOME_DEV/modulefiles
 
 ##################################################
 # Initialization
