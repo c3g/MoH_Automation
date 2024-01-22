@@ -131,9 +131,14 @@ $custom_ini \
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
+    today=$(date +%Y-%m-%dT)
+    chmod 664 *.${protocol}.${today}*.config.trace.ini
+    chmod 774 $genpipes_file
     echo '-> Chunking...'
     $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
-    chmod -R 664 ${patient}_${timestamp}_chunks
+    exit
+    chmod 775 ${patient}_${timestamp}_chunks
+    chmod 664 ${patient}_${timestamp}_chunks/*
     echo '-> Submitting...'
     $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks
     cat /dev/null > ${patient}_${timestamp}.txt
