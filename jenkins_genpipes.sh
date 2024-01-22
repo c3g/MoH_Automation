@@ -86,7 +86,7 @@ RNA_light.custom.ini \
 -g rnaseq_light.sh \
 --json-pt"
       chunk_submit=true
-      genpipes_file=rnaseq_light_$sample_$timestamp.sh
+      genpipes_file=rnaseq_light_${sample}_${timestamp}.sh
   elif test $pipeline == rnaseq; then
       # rnaseq
       echo "$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
@@ -100,17 +100,17 @@ Custom_ini/tumor_rna.moh.ini \
 -g rnaseq_cancer.sh \
 --json-pt"
       chunk_submit=true
-      genpipes_file=rnaseq_cancer_$sample_$timestamp.sh
+      genpipes_file=rnaseq_cancer_${sample}_${timestamp}.sh
   elif test $pipeline == tumor_pair; then
       # tumor_pair
       if test $protocol == ensemble; then
         steps="5-13,15-38"
         custom_ini="TP_ensemble.custom.ini"
-        genpipes_file="tumor_pair_ensemble_$sample_$timestamp.sh"
+        genpipes_file="tumor_pair_ensemble_${sample}_${timestamp}.sh"
       elif test $protocol == sv; then
         steps="12-16"
         custom_ini="TP_sv.custom.ini"
-        genpipes_file="tumor_pair_sv_$sample_$timestamp.sh"
+        genpipes_file="tumor_pair_sv_${sample}_${timestamp}.sh"
       fi
       echo "$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
