@@ -139,11 +139,11 @@ $custom_ini \
     chmod 775 ${patient}_${timestamp}_chunks
     chmod 664 ${patient}_${timestamp}_chunks/*
     echo '-> Submitting...'
-    $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks
     cat /dev/null > ${patient}_${timestamp}.txt
-    (sleep 1 && submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
+    (sleep 1 && $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
     echo $! >> ${patient}_${timestamp}.txt
     echo "PATIENT: ${patient}" >> ${patient}_${timestamp}.txt
     echo "LOG:" >> ${patient}_${timestamp}.txt
+    chmod 664 ${patient}_${timestamp}.txt
   fi
 done < ${path}/${input_file}
