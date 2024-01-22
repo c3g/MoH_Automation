@@ -113,7 +113,7 @@ Custom_ini/tumor_rna.moh.ini \
         custom_ini="TP_sv.custom.ini"
         genpipes_file="tumor_pair_sv_${patient}_${timestamp}.sh"
       fi
-      echo "$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
+      $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
 -s $steps \
 -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini ${beluga_ini}\
@@ -123,7 +123,7 @@ $custom_ini \
 -r $readset_file \
 -p $pair_file \
 -g $genpipes_file \
---json-pt"
+--json-pt
       chunk_submit=true
   fi
   # Chunking & Submission
