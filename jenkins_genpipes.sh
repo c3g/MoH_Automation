@@ -57,6 +57,7 @@ done
 export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
 export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
 module use $MUGQIC_INSTALL_HOME/modulefiles $MUGQIC_INSTALL_HOME_DEV/modulefiles
+export JOB_MAIL=c3g-processing@fakeemail.ca
 
 ##################################################
 # Initialization
@@ -74,6 +75,7 @@ while IFS=, read -r readset_file pair_file; do
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' $readset_file)
   sample=$(awk 'NR>1{print $1}' $readset_file)
   # echo $sample
+  echo '-> Running GenPipes...'
   # GenPipes call
   if test $pipeline == rnaseq_light; then
       # rnaseq_light
@@ -130,8 +132,14 @@ $custom_ini \
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
     echo '-> Chunking...'
-    $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file job_chunks 20
+    $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
+    chmod -R 664 ${patient}_${timestamp}_chunks
     echo '-> Submitting...'
-    $MUGQIC_PIPELINES_HOME/utils/submit_genpipes -n 800 job_chunks
+    $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks
+    cat /dev/null > ${patient}_${timestamp}.txt
+    (sleep 1 && submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
+    echo $! >> ${patient}_${timestamp}.txt
+    echo "PATIENT: ${patient}" >> ${patient}_${timestamp}.txt
+    echo "LOG:" >> ${patient}_${timestamp}.txt
   fi
 done < ${path}/${input_file}
