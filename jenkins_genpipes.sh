@@ -116,7 +116,8 @@ Custom_ini/tumor_rna.moh.ini \
       $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
 -s $steps \
--c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini ${beluga_ini}\
+-c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
+$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini ${beluga_ini}\
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 $custom_ini \
 -j $scheduler \
