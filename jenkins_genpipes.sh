@@ -136,7 +136,6 @@ $custom_ini \
     chmod 774 $genpipes_file
     echo '-> Chunking...'
     $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
-    exit
     chmod 775 ${patient}_${timestamp}_chunks
     chmod 664 ${patient}_${timestamp}_chunks/*
     echo '-> Submitting...'
