@@ -80,7 +80,7 @@ while IFS=, read -r readset_file pair_file; do
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' $readset_file)
   sample=$(awk 'NR>1{print $1}' $readset_file)
   # echo $sample
-  echo '-> Running GenPipes for ${patient}...'
+  echo "-> Running GenPipes for ${patient}..."
   # GenPipes call
   if test $pipeline == rnaseq_light; then
       # rnaseq_light
@@ -139,11 +139,11 @@ $custom_ini \
     today=$(date +%Y-%m-%dT)
     chmod 664 *.${protocol}.${today}*.config.trace.ini
     chmod 774 $genpipes_file
-    echo '-> Chunking for ${patient}...'
+    echo "-> Chunking for ${patient}..."
     $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
     chmod 775 ${patient}_${timestamp}_chunks
     chmod 664 ${patient}_${timestamp}_chunks/*
-    echo '-> Submitting for ${patient}...'
+    echo "-> Submitting for ${patient}..."
     cat /dev/null > ${patient}_${timestamp}.txt
     (sleep 1 && $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
     echo $! >> ${patient}_${timestamp}.txt
