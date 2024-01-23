@@ -84,7 +84,7 @@ while IFS=, read -r readset_file pair_file; do
   # GenPipes call
   if test $pipeline == rnaseq_light; then
       # rnaseq_light
-      echo "$MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
+$MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini ${beluga_ini} \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
@@ -92,12 +92,12 @@ RNA_light.custom.ini \
 -j $scheduler \
 -r $readset_file \
 -g rnaseq_light.sh \
---json-pt"
+--json-pt
       chunk_submit=true
       genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
   elif test $pipeline == rnaseq; then
       # rnaseq
-      echo "$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
+$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
 -s 1-8,11-28 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnase.base.ini ${beluga_ini} \
@@ -106,7 +106,7 @@ Custom_ini/tumor_rna.moh.ini \
 -j $scheduler \
 -r $readset_file \
 -g rnaseq_cancer.sh \
---json-pt"
+--json-pt
       chunk_submit=true
       genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
   elif test $pipeline == tumor_pair; then
