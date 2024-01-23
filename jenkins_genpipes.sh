@@ -86,7 +86,7 @@ while IFS=, read -r readset_file pair_file; do
       # rnaseq_light
       echo "$MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini ${beluga_ini}\
+-c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini ${beluga_ini} \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 RNA_light.custom.ini \
 -j $scheduler \
@@ -100,7 +100,7 @@ RNA_light.custom.ini \
       echo "$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
 -s 1-8,11-28 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnase.base.ini ${beluga_ini}\
+-c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnase.base.ini ${beluga_ini} \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 Custom_ini/tumor_rna.moh.ini \
 -j $scheduler \
@@ -124,7 +124,7 @@ Custom_ini/tumor_rna.moh.ini \
 -t $protocol \
 -s $steps \
 -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
-$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini ${beluga_ini}\
+$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini ${beluga_ini} \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 $custom_ini \
 -j $scheduler \
