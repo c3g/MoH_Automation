@@ -19,13 +19,11 @@ while getopts 'hc:p::t:r:i:' OPTION; do
     c)
       cluster="$OPTARG"
       if [[ $cluster == beluga ]]; then
-        beluga_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
         path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         scheduler="slurm"
         export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         
       elif [[ $cluster == abacus ]]; then
-        beluga_ini=""
         path="/lb/project/mugqic/projects/MOH/MAIN"
         scheduler="pbs"
         export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
@@ -68,6 +66,12 @@ module load mugqic/python/3.10.2
 
 export MUGQIC_PIPELINES_HOME=${path}/genpipes_moh/genpipes
 
+if [[ $cluster == beluga ]]; then
+  beluga_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
+elif [[ $cluster == abacus ]]; then
+  beluga_ini=""
+fi
+
 cd $path
 
 while IFS=, read -r readset_file pair_file; do
@@ -75,7 +79,7 @@ while IFS=, read -r readset_file pair_file; do
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' $readset_file)
   sample=$(awk 'NR>1{print $1}' $readset_file)
   # echo $sample
-  echo '-> Running GenPipes...'
+  echo '-> Running GenPipes for ${patient}...'
   # GenPipes call
   if test $pipeline == rnaseq_light; then
       # rnaseq_light
@@ -134,11 +138,11 @@ $custom_ini \
     today=$(date +%Y-%m-%dT)
     chmod 664 *.${protocol}.${today}*.config.trace.ini
     chmod 774 $genpipes_file
-    echo '-> Chunking...'
+    echo '-> Chunking for ${patient}...'
     $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
     chmod 775 ${patient}_${timestamp}_chunks
     chmod 664 ${patient}_${timestamp}_chunks/*
-    echo '-> Submitting...'
+    echo '-> Submitting for ${patient}...'
     cat /dev/null > ${patient}_${timestamp}.txt
     (sleep 1 && $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
     echo $! >> ${patient}_${timestamp}.txt
