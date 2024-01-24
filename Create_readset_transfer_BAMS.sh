@@ -106,8 +106,8 @@ for i in "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         echo $i $BEL_LOC$sample_name"/"$file_name1>>$TEMP"/"$LISTFILE;
         echo $j $BEL_LOC$sample_name"/"$file_name2>>$TEMP"/"$LISTFILE;
 
-        echo "$i"","$sample_name"/"$file_name1>>"TEMP/"$LOGFILE;
-        echo "$j"","$sample_name"/"$file_name2>>"TEMP/"$LOGFILE;
+        echo $i","$sample_name"/"$file_name1>>$TEMP"/"$LOGFILE;
+        echo $j","$sample_name"/"$file_name2>>$TEMP"/"$LOGFILE;
 done;
 else
         echo "No fastq files found";
@@ -130,4 +130,4 @@ label=${Location%?}
 label=${label##*/}
 
 # Start the batch transfer
- globus transfer --submission-id $sub_id --label "$label" --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP
+# globus transfer --submission-id $sub_id --label "$label" --batch $TEMP"/"$LISTFILE $ABA_EP $BEL_EP

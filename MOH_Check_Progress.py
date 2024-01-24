@@ -368,9 +368,9 @@ class Progress(SampleData):
                                     fastq2 = True
 
                 if not fastq1:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq1} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"No fastq1 found for {self.rna_true} in {TRANSFER_LOGS}")
                 if not fastq2:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {fastq2} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"No fastq2 found for {self.rna_true} in {TRANSFER_LOGS}")
             else:
                 if self.run_proc_fastq_1_rna != "NA":
                     fastq1_transferred = os.path.basename(self.beluga_fastq_1_rna)
@@ -655,7 +655,13 @@ class Progress(SampleData):
                     self.ts_rna_multiqc = getime(rna_multiqc_file)
                     self.rna_multiqc = rna_multiqc_file
             except FileNotFoundError:
-                pass
+                rna_multiqc_file_new = os.path.join(MAIN_FOLDER, "metrics/multiqc_by_sample", self.rna, f"{self.rna}.multiqc.html")
+                try:
+                    if self.ts_rna_multiqc != getime(rna_multiqc_file_new):
+                        self.ts_rna_multiqc = getime(rna_multiqc_file_new)
+                        self.rna_multiqc = rna_multiqc_file_new
+                except FileNotFoundError:
+                    pass
 
     def Gather_PCGR(self):
         if self.dna_n_true == "NA":
