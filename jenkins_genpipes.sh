@@ -145,7 +145,7 @@ $custom_ini \
     echo "-> Chunking for ${patient}..."
     "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "${patient}_${timestamp}_chunks"
     chmod 775 "${patient}_${timestamp}_chunks"
-    chmod 664 "${patient}_${timestamp}_chunks/*"
+    chmod 664 "${patient}_${timestamp}_chunks"/*
     echo "-> Submitting for ${patient}..."
     cat /dev/null > "${patient}_${timestamp}.txt"
     {
