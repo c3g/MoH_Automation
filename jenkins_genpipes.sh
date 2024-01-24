@@ -19,8 +19,8 @@ while getopts 'hc:p::t:r:i:' OPTION; do
     c)
       cluster="$OPTARG"
       if [[ $cluster == beluga ]]; then
-        # path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
-        path="/scratch/stretenp/tmp/MoH_GenPipes"
+        path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+        # path="/scratch/stretenp/tmp/MoH_GenPipes"
         scheduler="slurm"
         export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         
