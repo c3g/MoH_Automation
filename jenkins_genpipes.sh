@@ -55,7 +55,7 @@ done
 
 export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
 export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
-module use $MUGQIC_INSTALL_HOME/modulefiles $MUGQIC_INSTALL_HOME_DEV/modulefiles
+module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
 export JOB_MAIL=c3g-processing@fakeemail.ca
 
 ##################################################
@@ -73,82 +73,84 @@ elif [[ $cluster == abacus ]]; then
   beluga_ini=""
 fi
 
-cd $path
+cd "$path"
 
 while IFS=, read -r readset_file pair_file; do
   timestamp=$(date +%Y-%m-%dT%H.%M.%S)
-  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' $readset_file)
-  sample=$(awk 'NR>1{print $1}' $readset_file)
+  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
+  # sample=$(awk 'NR>1{print $1}' "$readset_file")
   # echo $sample
   echo "-> Running GenPipes for ${patient}..."
   # GenPipes call
-  if test $pipeline == rnaseq_light; then
-      # rnaseq_light
-$MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
+  if test "$pipeline" == rnaseq_light; then
+    # rnaseq_light
+    "$MUGQIC_PIPELINES_HOME"/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini ${beluga_ini} \
-$MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
+-c "$MUGQIC_PIPELINES_HOME"/pipelines/rnaseq_light/rnaseq_light.base.ini "$beluga_ini" \
+"$MUGQIC_PIPELINES_HOME"/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 RNA_light.custom.ini \
--j $scheduler \
--r $readset_file \
+-j "$scheduler" \
+-r "$readset_file" \
 -g rnaseq_light.sh \
 --json-pt
-      chunk_submit=true
-      genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
-  elif test $pipeline == rnaseq; then
-      # rnaseq
-$MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
--t $protocol \
+    chunk_submit=true
+    genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
+  elif test "$pipeline" == rnaseq; then
+    # rnaseq
+    "$MUGQIC_PIPELINES_HOME"/pipelines/rnaseq/rnaseq.py \
+-t "$protocol" \
 -s 1-8,11-28 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnase.base.ini ${beluga_ini} \
-$MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-Custom_ini/tumor_rna.moh.ini \
--j $scheduler \
--r $readset_file \
+-c "$MUGQIC_PIPELINES_HOME"/pipelines/rnaseq/rnase.base.ini "$beluga_ini" \
+"$MUGQIC_PIPELINES_HOME"/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
+RNA_cancer.custom.ini \
+-j "$scheduler" \
+-r "$readset_file" \
 -g rnaseq_cancer.sh \
 --json-pt
-      chunk_submit=true
-      genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
-  elif test $pipeline == tumor_pair; then
-      # tumor_pair
-      if test $protocol == ensemble; then
-        steps="5-13,15-38"
-        custom_ini="TP_ensemble.custom.ini"
-        genpipes_file="tumor_pair_ensemble_${patient}_${timestamp}.sh"
-      elif test $protocol == sv; then
-        steps="12-16"
-        custom_ini="TP_sv.custom.ini"
-        genpipes_file="tumor_pair_sv_${patient}_${timestamp}.sh"
-      fi
-      $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
--t $protocol \
--s $steps \
--c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
-$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini ${beluga_ini} \
-$MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-$custom_ini \
--j $scheduler \
--r $readset_file \
--p $pair_file \
--g $genpipes_file \
+    chunk_submit=true
+    genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
+  elif test "$pipeline" == tumor_pair; then
+    # tumor_pair
+    if test "$protocol" == ensemble; then
+      steps="5-13,15-38"
+      custom_ini="TP_ensemble.custom.ini"
+      genpipes_file="tumor_pair_ensemble_${patient}_${timestamp}.sh"
+    elif test "$protocol" == sv; then
+      steps="12-16"
+      custom_ini="TP_sv.custom.ini"
+      genpipes_file="tumor_pair_sv_${patient}_${timestamp}.sh"
+    fi
+    "$MUGQIC_PIPELINES_HOME"/pipelines/tumor_pair/tumor_pair.py \
+-t "$protocol" \
+-s "$steps" \
+-c "$MUGQIC_PIPELINES_HOME"/pipelines/tumor_pair/tumor_pair.base.ini \
+"$MUGQIC_PIPELINES_HOME"/pipelines/tumor_pair/tumor_pair.extras.ini "$beluga_ini" \
+"$MUGQIC_PIPELINES_HOME"/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
+"$custom_ini" \
+-j "$scheduler" \
+-r "$readset_file" \
+-p "$pair_file" \
+-g "$genpipes_file" \
 --json-pt
-      chunk_submit=true
+    chunk_submit=true
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
     today=$(date +%Y-%m-%dT)
-    chmod 664 *.${protocol}.${today}*.config.trace.ini
-    chmod 774 $genpipes_file
+    chmod 664 -- *."$protocol"."$today"*.config.trace.ini
+    chmod 774 "$genpipes_file"
     echo "-> Chunking for ${patient}..."
-    $MUGQIC_PIPELINES_HOME/utils/chunk_genpipes.sh $genpipes_file ${patient}_${timestamp}_chunks
-    chmod 775 ${patient}_${timestamp}_chunks
-    chmod 664 ${patient}_${timestamp}_chunks/*
+    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "${patient}_${timestamp}_chunks"
+    chmod 775 "${patient}_${timestamp}_chunks"
+    chmod 664 "${patient}_${timestamp}_chunks/*"
     echo "-> Submitting for ${patient}..."
-    cat /dev/null > ${patient}_${timestamp}.txt
-    (sleep 1 && $MUGQIC_PIPELINES_HOME/utils/submit_genpipes ${patient}_${timestamp}_chunks >> ${patient}_${timestamp}.txt 2>&1) & echo -n "PID: " >> ${patient}_${timestamp}.txt
-    echo $! >> ${patient}_${timestamp}.txt
-    echo "PATIENT: ${patient}" >> ${patient}_${timestamp}.txt
-    echo "LOG:" >> ${patient}_${timestamp}.txt
-    chmod 664 ${patient}_${timestamp}.txt
+    cat /dev/null > "${patient}_${timestamp}.txt"
+    {
+      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}_${timestamp}_chunks" 2>&1) & echo -n "PID: "
+      echo $!
+      echo "PATIENT: ${patient}"
+      echo "LOG: "
+    } >> "${patient}_${timestamp}.txt"
+    chmod 664 "${patient}_${timestamp}.txt"
   fi
-done < ${path}/${input_file}
+done < "${path}/${input_file}"
