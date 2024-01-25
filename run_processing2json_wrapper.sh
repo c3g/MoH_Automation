@@ -40,12 +40,16 @@ cat /dev/null > all.runs.txt.tmp
 
 find "$runs_folder"/*/ -maxdepth 1 -iname "*M[O\|o]H*Run*" -type d -exec basename {} \; > all.runs.txt.tmp
 # Diff between ingested runs and all runs to find new runs not ingested
-diff -Bw <(sort ingested.runs.txt) <(sort all.runs.txt.tmp) | grep "^>" | sed s:"> ":: > new.runs.tmp
+diff -Bw <(sort ingested.runs.txt) <(sort all.runs.txt.tmp) | grep "^>" | sed s:"> ":: > new.runs.tmp && ret=$? || ret=$?
+
+if ((ret >= 2)); then
+ exit "$ret"
+fi
 
 if [ -s new.runs.tmp ]; then
   while IFS= read -r run; do
     echo "-> Processing $run"
-    input="$runs_folder/*/$/*-novaseq-run.align_bwa_mem.csv"
+    input=$(find "$runs_folder"/*/"$run/" -name "$run-novaseq-run.align_bwa_mem.csv")
     echo "./run_processing2json.py --input $input --output $path/$run.json"
   done < new.runs.tmp
 else
