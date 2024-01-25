@@ -51,7 +51,7 @@ if [ -s new.runs.tmp ]; then
     echo "-> Processing $run"
     input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
     # shellcheck disable=SC2086
-    ./run_processing2json.py --input $input --output $path/$run.json
+    ~/moh_automation/run_processing2json.py --input $input --output $path/$run.json
     echo "$run" >> ingested.runs.txt
   done < new.runs.tmp
 else
