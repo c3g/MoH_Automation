@@ -49,7 +49,7 @@ fi
 if [ -s new.runs.tmp ]; then
   while IFS= read -r run; do
     echo "-> Processing $run"
-    input=$(find "$runs_folder"/*/"$run/" -name "$run-novaseq-run.align_bwa_mem.csv")
+    input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
     echo "./run_processing2json.py --input $input --output $path/$run.json"
   done < new.runs.tmp
 else
