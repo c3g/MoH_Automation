@@ -43,22 +43,13 @@ find "$runs_folder"/*/ -maxdepth 1 -iname "*M[O\|o]H*Run*" -type d -exec basenam
 diff -Bw <(sort ingested.runs.txt) <(sort all.runs.txt.tmp) | grep "^>" | sed s:"> ":: > new.runs.tmp
 
 if [ -s new.runs.tmp ]; then
-  while IFS= read -r  run; do
+  while IFS= read -r run; do
     echo "-> Processing $run"
     input="$runs_folder/*/$/*-novaseq-run.align_bwa_mem.csv"
     echo "./run_processing2json.py --input $input --output $path/$run.json"
   done < new.runs.tmp
-  # for file in "$runs_folder"/*/$/*-novaseq-run.align_bwa_mem.csv; do
-  #   echo "$file"
-  #   IFS='/' read -r -a array <<< "$file"
-  #   year="${array[6]}"
-  #   run_name="${array[7]}"
-  # done
 else
-    echo "No new runs detected."
-    rm new.runs.tmp
-    rm all.runs.txt.tmp
-    exit
+  echo "No new runs detected."
 fi
 
-rm all.runs.txt.tmp
+rm all.runs.txt.tmp new.runs.tmp
