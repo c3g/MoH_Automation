@@ -21,7 +21,7 @@ while getopts 'h' OPTION; do
 done
 
 export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
-export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
+export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
 module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
 
 ##################################################
