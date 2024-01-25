@@ -50,7 +50,9 @@ if [ -s new.runs.tmp ]; then
   while IFS= read -r run; do
     echo "-> Processing $run"
     input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
-    echo "./run_processing2json.py --input $input --output $path/$run.json"
+    # shellcheck disable=SC2086
+    ./run_processing2json.py --input $input --output $path/$run.json
+    echo "$run" >> ingested.runs.txt
   done < new.runs.tmp
 else
   echo "No new runs detected."
