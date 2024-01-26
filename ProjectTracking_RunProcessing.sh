@@ -50,8 +50,14 @@ if [ -s new.runs.tmp ]; then
   while IFS= read -r run; do
     echo "-> Processing $run"
     input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
+    # Json creation from run csv file
     # shellcheck disable=SC2086
     ~/moh_automation/run_processing2json.py --input $input --output $path/$run.json
+    # Using client to add new runs to database
+    # shellcheck disable=SC1090
+    source ~/project_tracking_cli/venv/bin/activate
+    # shellcheck disable=SC2086
+    pt_cli ingest run_processing --input-json $path/$run.json
     echo "$run" >> ingested.runs.txt
   done < new.runs.tmp
 else
