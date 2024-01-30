@@ -54,6 +54,7 @@ if [ -s new.runs.tmp ]; then
       # Json creation from run csv file
       # shellcheck disable=SC2086
       ~/moh_automation/run_processing2json.py --input $input --output $path/$run.json
+      chmod 664 "$path/$run.json"
       # Using client to add new runs to database
       # shellcheck disable=SC1090
       source ~/project_tracking_cli/venv/bin/activate
@@ -62,7 +63,7 @@ if [ -s new.runs.tmp ]; then
       # pt_cli ingest run_processing --input-json $path/$run.json
       # echo "$run" >> ingested.runs.txt
     else
-      echo "--> WARNING: Missing $input file, skipping..."
+      echo "--> WARNING: Missing $runs_folder/*/$run/$run-run.align_bwa_mem.csv file, skipping..."
     fi
   done < new.runs.tmp
 else
