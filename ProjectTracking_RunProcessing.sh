@@ -57,8 +57,9 @@ if [ -s new.runs.tmp ]; then
     # shellcheck disable=SC1090
     source ~/project_tracking_cli/venv/bin/activate
     # shellcheck disable=SC2086
-    pt_cli ingest run_processing --input-json $path/$run.json
-    echo "$run" >> ingested.runs.txt
+    pt_cli route /project
+    # pt_cli ingest run_processing --input-json $path/$run.json
+    # echo "$run" >> ingested.runs.txt
   done < new.runs.tmp
 else
   echo "No new runs detected."
