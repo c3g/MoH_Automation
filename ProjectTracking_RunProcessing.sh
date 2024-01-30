@@ -27,7 +27,10 @@ module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefi
 ##################################################
 # Initialization
 module purge
-module load mugqic/python/3.10.2
+# module load mugqic/python/3.10.2
+# Using python from pt_cli env
+# shellcheck disable=SC1090
+source ~/project_tracking_cli/venv/bin/activate
 
 path=/lb/project/mugqic/projects/MOH/RunProcessing
 
@@ -56,8 +59,6 @@ if [ -s new.runs.tmp ]; then
       ~/moh_automation/run_processing2json.py --input $input --output $path/$run.json
       chmod 664 "$path/$run.json"
       # Using client to add new runs to database
-      # shellcheck disable=SC1090
-      source ~/project_tracking_cli/venv/bin/activate
       # shellcheck disable=SC2086
       pt_cli route /project
       # pt_cli ingest run_processing --input-json $path/$run.json
