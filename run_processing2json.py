@@ -52,7 +52,7 @@ def jsonify_run_processing(input_csv, output, lanes):
     for run_row in run_list:
         sample = run_row['Sample Name']
         if sample.startswith("MoHQ") and run_row['Lane'] in lanes:
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             patient = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
@@ -94,7 +94,6 @@ def jsonify_run_processing(input_csv, output, lanes):
                                 ]
                             break
                         elif file_path.endswith(".fastq.gz"):
-                            print(file_path)
                             if "_R1_" in file_path:
                                 fastq1 = os.path.basename(file_path)
                                 fastq1_location_uri = file_path
