@@ -60,7 +60,13 @@ if [ -s new.runs.tmp ]; then
       chmod 664 "$path/$run.json"
       # Using client to add new runs to database
       # shellcheck disable=SC2086
-      pt-cli ingest run_processing --input-json $path/$run.json
+      ret="$(pt-cli ingest run_processing --input-json $path/$run.json 2>&1 || true)"
+      if [[ $ret == *"has to be unique"* ]]; then
+        echo -e "$ret"
+      else
+        echo -e "$ret"
+        exit 1
+      fi
       echo "$run" >> ingested.runs.txt
     else
       echo "--> WARNING: Missing $runs_folder/*/$run/$run-run.align_bwa_mem.csv file, skipping..."
