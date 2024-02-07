@@ -94,10 +94,11 @@ def jsonify_run_processing(input_csv, output, lanes):
                                 ]
                             break
                         elif file_path.endswith(".fastq.gz"):
-                            if "R1" in file_path:
+                            print(file_path)
+                            if "_R1_" in file_path:
                                 fastq1 = os.path.basename(file_path)
                                 fastq1_location_uri = file_path
-                            elif "R2" in file_path:
+                            elif "_R2_" in file_path:
                                 fastq2 = os.path.basename(file_path)
                                 fastq2_location_uri = file_path
                             if fastq1 and fastq2:
