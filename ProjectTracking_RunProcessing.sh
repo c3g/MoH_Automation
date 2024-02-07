@@ -61,10 +61,8 @@ if [ -s new.runs.tmp ]; then
       # Using client to add new runs to database
       # shellcheck disable=SC2086
       ret="$(pt-cli ingest run_processing --input-json $path/$run.json 2>&1 || true)"
-      if [[ $ret == *"has to be unique"* ]]; then
-        echo -e "$ret"
-      else
-        echo -e "$ret"
+      echo -e "$ret"
+      if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
         exit 1
       fi
       echo "$run" >> ingested.runs.txt
