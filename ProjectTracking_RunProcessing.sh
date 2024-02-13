@@ -44,10 +44,10 @@ run_processing2json_args=""
 if [[ ${lane[*]} != "" ]]; then
   run_processing2json_args="${run_processing2json_args} -l ${lane[*]}"
 fi
-if [[ ${lane[*]} != "" ]]; then
+if [[ ${sample[*]} != "" ]]; then
   run_processing2json_args="${run_processing2json_args} -s ${sample[*]}"
 fi
-if [[ ${lane[*]} != "" ]]; then
+if [[ ${xsample[*]} != "" ]]; then
   run_processing2json_args="${run_processing2json_args} -x ${xsample[*]}"
 fi
 
