@@ -3,14 +3,34 @@ set -eu -o pipefail
 
 
 usage() {
-  echo "script usage: ProjectTracking_RunProcessing.sh -h"
+  echo "script usage: ProjectTracking_RunProcessing.sh -h [-r runid] [-l lane] [-s sample] [-x xsample]"
   echo "Usage:"
   echo " -h                               Display this help message."
+  echo " -r <runid>                       RunID found in abacus under /lb/robot/research/processing/novaseq."
+  echo " -l <lane>                        Lane(s) to be ingested (default: all)."
+  echo " -s <sample>                      Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: all)."
+  echo " -x <xsample>                     Sample Name(s) to be EXCLUDED (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: none)."
   exit 1
   }
 
-while getopts 'h' OPTION; do
+while getopts 'hr::l::s::x:' OPTION; do
   case "$OPTION" in
+    r)
+      runid="$OPTARG"
+      echo "jenkins runid: $runid"
+      ;;
+    l)
+      lane+=("$OPTARG")
+      echo "jenkins lane: " "${lane[@]}"
+      ;;
+    s)
+      sample+=("$OPTARG")
+      echo "jenkins sample: " "${sample[@]}"
+      ;;
+    x)
+      xsample+=("$OPTARG")
+      echo "jenkins xsample: " "${xsample[@]}"
+      ;;
     h)
       usage
       ;;
@@ -19,6 +39,17 @@ while getopts 'h' OPTION; do
       ;;
   esac
 done
+
+run_processing2json_args=""
+if [[ ${#lane[@]} != 0 ]]; then
+  run_processing2json_args="${run_processing2json_args} -l " "${lane[@]}"
+fi
+if [[ ${#sample[@]} != 0 ]]; then
+  run_processing2json_args="${run_processing2json_args} -s " "${sample[@]}"
+fi
+if [[ ${#xsample[@]} != 0 ]]; then
+  run_processing2json_args="${run_processing2json_args} -x " "${xsample[@]}"
+fi
 
 export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
 export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
@@ -39,44 +70,21 @@ cd "$path"
 ## Prepare run list
 echo "-> Detecting new runs..."
 runs_folder=/lb/robot/research/processing/novaseq
-cat /dev/null > all.runs.txt.tmp
-
-find "$runs_folder"/*/ -maxdepth 1 -iname "*M[O\|o]H*Run*" -type d -exec basename {} \; > all.runs.txt.tmp
-# Diff between ingested runs and all runs to find new runs not ingested
-diff -Bw <(sort ingested.runs.txt) <(sort all.runs.txt.tmp) | grep "^>" | sed s:"> ":: > new.runs.tmp && ret=$? || ret=$?
-
-if ((ret >= 2)); then
- exit "$ret"
-fi
-
-if [ -s new.runs.tmp ]; then
-  while IFS= read -r run; do
-    input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
-    echo "-> Processing $run, file $input..."
-    if [ -s "$input" ]; then
-      # Json creation from run csv file
-      # shellcheck disable=SC2086
-      ret="$(~/moh_automation/run_processing2json.py --input $input --output $path/$run.json 2>&1 || true)"
-      if ((ret >= 1)); then
-        echo -e "$ret"
-        echo "--> ERROR: Cf. above, skipping..."
-      else
-        chmod 664 "$path/$run.json"
-        # Using client to add new runs to database
-        # shellcheck disable=SC2086
-        ret="$(pt-cli ingest run_processing --input-json $path/$run.json 2>&1 || true)"
-        echo -e "$ret"
-        if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
-          exit 1
-        fi
-        echo "$run" >> ingested.runs.txt
-      fi
-    else
-      echo "--> WARNING: Missing $runs_folder/*/$run/$run-run.align_bwa_mem.csv file, skipping..."
-    fi
-  done < new.runs.tmp
+input=$(find "$runs_folder"/*/"$runid/" -name "$runid-run.align_bwa_mem.csv")
+echo "-> Processing $runid, file $input..."
+if [ -s "$input" ]; then
+  # Json creation from run csv file
+  # shellcheck disable=SC2086
+  ~/moh_automation/run_processing2json.py $run_processing2json_args --input $input --output $path/$runid.json
+  chmod 664 "$path/$runid.json"
+  # Using client to add new runs to database
+  # shellcheck disable=SC2086
+  ret="$(pt-cli ingest run_processing --input-json $path/$runid.json 2>&1 || true)"
+  echo -e "$ret"
+  if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
+    exit 1
+  fi
 else
-  echo "No new runs detected."
+  echo "--> ERROR: Missing $runs_folder/*/$runid/$runid-run.align_bwa_mem.csv file"
+  exit 1
 fi
-
-rm all.runs.txt.tmp new.runs.tmp
