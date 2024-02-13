@@ -17,6 +17,9 @@ def main():
     parser.add_argument('--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
     parser.add_argument('--output', required=False, help="Output json filename (Default: <input_filename>.json).")
     parser.add_argument('--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--sample', required=False, help="Only considers sample(s) provided for json creation.", nargs='+')
+    group.add_argument('--xsample', required=False, help="Ignores sample(s) provided for json creation.", nargs='+')
     args = parser.parse_args()
 
     if not args.output:
@@ -28,17 +31,26 @@ def main():
     else:
         lanes = ["1", "2", "3", "4"]
 
-    jsonify_run_processing(args.input, output, lanes)
-
-def jsonify_run_processing(input_csv, output, lanes):
-    """ Writing RUn Processing json based on csv"""
-    readset_dict = {}
-    sample_dict = {}
+    samples = []
+    input_csv = args.input
     run_list = []
     with open(input_csv, 'rt') as run_file_in:
         reader = csv.DictReader(run_file_in)
         for row in reader:
             run_list.append(row)
+            samples.append(row['Sample Name'])
+
+    if args.sample:
+        samples = list(args.sample)
+    elif args.xsample:
+        samples = list(set(samples).difference(list(args.xsample)))
+
+    jsonify_run_processing(input_csv, run_list, output, lanes, samples)
+
+def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
+    """ Writing RUn Processing json based on csv"""
+    readset_dict = {}
+    sample_dict = {}
     json_output = {
             "operation_platform": "abacus",
             "project_fms_id": None,
@@ -51,7 +63,7 @@ def jsonify_run_processing(input_csv, output, lanes):
             }
     for run_row in run_list:
         sample = run_row['Sample Name']
-        if sample.startswith("MoHQ") and run_row['Lane'] in lanes:
+        if sample.startswith("MoHQ") and run_row['Lane'] in lanes and sample in samples:
             result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             patient = result.group(1)
             cohort = result.group(2)
