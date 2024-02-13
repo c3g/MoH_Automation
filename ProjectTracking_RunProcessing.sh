@@ -17,19 +17,19 @@ while getopts 'hr::l::s::x:' OPTION; do
   case "$OPTION" in
     r)
       runid="$OPTARG"
-      echo "jenkins runid: $runid"
+      echo "runid: $runid"
       ;;
     l)
       lane+=("$OPTARG")
-      echo "jenkins lane: " "${lane[@]}"
+      echo "lane: ${lane[*]}"
       ;;
     s)
       sample+=("$OPTARG")
-      echo "jenkins sample: " "${sample[@]}"
+      echo "sample: ${sample[*]}"
       ;;
     x)
       xsample+=("$OPTARG")
-      echo "jenkins xsample: " "${xsample[@]}"
+      echo "xsample: ${xsample[*]}"
       ;;
     h)
       usage
@@ -42,13 +42,13 @@ done
 
 run_processing2json_args=""
 if [[ ${#lane[@]} != 0 ]]; then
-  run_processing2json_args="${run_processing2json_args} -l " "${lane[@]}"
+  run_processing2json_args="${run_processing2json_args} -l ${lane[*]}"
 fi
 if [[ ${#sample[@]} != 0 ]]; then
-  run_processing2json_args="${run_processing2json_args} -s " "${sample[@]}"
+  run_processing2json_args="${run_processing2json_args} -s ${sample[*]}"
 fi
 if [[ ${#xsample[@]} != 0 ]]; then
-  run_processing2json_args="${run_processing2json_args} -x " "${xsample[@]}"
+  run_processing2json_args="${run_processing2json_args} -x ${xsample[*]}"
 fi
 
 export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
