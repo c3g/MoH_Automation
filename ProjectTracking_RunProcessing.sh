@@ -3,7 +3,7 @@ set -eu -o pipefail
 
 
 usage() {
-  echo "script usage: run_processing2json_wrapper.sh -h [-c cluster] [-p pipeline] [-t protocol] [-i input_file]"
+  echo "script usage: ProjectTracking_RunProcessing.sh -h"
   echo "Usage:"
   echo " -h                               Display this help message."
   exit 1
@@ -51,21 +51,26 @@ fi
 
 if [ -s new.runs.tmp ]; then
   while IFS= read -r run; do
-    echo "-> Processing $run"
     input=$(find "$runs_folder"/*/"$run/" -name "$run-run.align_bwa_mem.csv")
+    echo "-> Processing $run, file $input..."
     if [ -s "$input" ]; then
       # Json creation from run csv file
       # shellcheck disable=SC2086
-      ~/moh_automation/run_processing2json.py --input $input --output $path/$run.json
-      chmod 664 "$path/$run.json"
-      # Using client to add new runs to database
-      # shellcheck disable=SC2086
-      ret="$(pt-cli ingest run_processing --input-json $path/$run.json 2>&1 || true)"
-      echo -e "$ret"
-      if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
-        exit 1
+      ret="$(~/moh_automation/run_processing2json.py --input $input --output $path/$run.json 2>&1 || true)"
+      if ((ret >= 1)); then
+        echo -e "$ret"
+        echo "--> ERROR: Cf. above, skipping..."
+      else
+        chmod 664 "$path/$run.json"
+        # Using client to add new runs to database
+        # shellcheck disable=SC2086
+        ret="$(pt-cli ingest run_processing --input-json $path/$run.json 2>&1 || true)"
+        echo -e "$ret"
+        if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
+          exit 1
+        fi
+        echo "$run" >> ingested.runs.txt
       fi
-      echo "$run" >> ingested.runs.txt
     else
       echo "--> WARNING: Missing $runs_folder/*/$run/$run-run.align_bwa_mem.csv file, skipping..."
     fi

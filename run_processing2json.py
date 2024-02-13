@@ -118,15 +118,15 @@ def jsonify_run_processing(input_csv, output, lanes):
                                 break
             raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
-                raw_reads_count_flag = rna_raw_reads_count_check(run_row['Clusters'])
+                raw_reads_count_flag = rna_raw_reads_count_check(sample, run_row['Clusters'])
             raw_duplication_rate_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_duplication_rate_flag = dna_raw_duplication_rate_check(run_row['Dup. Rate (%)'])
-            raw_median_insert_size_flag = median_insert_size_check(run_row['Mapped Insert Size (median)'])
+                raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, run_row['Dup. Rate (%)'])
+            raw_median_insert_size_flag = median_insert_size_check(sample, run_row['Mapped Insert Size (median)'])
             raw_mean_insert_size_flag = "PASS"
             raw_mean_coverage_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_mean_coverage_flag = dna_raw_mean_coverage_check(run_row['Mean Coverage'], sample_tumour)
+                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, run_row['Mean Coverage'], sample_tumour)
             metric_json = [
                 {
                     "metric_name": "raw_reads_count",
@@ -182,10 +182,10 @@ def jsonify_run_processing(input_csv, output, lanes):
     return readset_dict, sample_dict
 
 
-def dna_raw_mean_coverage_check(value, tumour):
+def dna_raw_mean_coverage_check(sample, value, tumour):
     """ Mean Coverage DNA metric check """
     if not value:
-        raise Exception("Missing value for 'Mean Coverage'")
+        raise Exception(f"Missing 'Mean Coverage' value for {sample}")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -194,10 +194,10 @@ def dna_raw_mean_coverage_check(value, tumour):
         ret = "PASS"
     return ret
 
-def rna_raw_reads_count_check(value):
+def rna_raw_reads_count_check(sample, value):
     """ Clusters RNA metric check """
     if not value:
-        raise Exception("Missing value for 'Clusters'")
+        raise Exception(f"Missing 'Clusters' value for {sample}")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -206,10 +206,10 @@ def rna_raw_reads_count_check(value):
         ret = "PASS"
     return ret
 
-def dna_raw_duplication_rate_check(value):
+def dna_raw_duplication_rate_check(sample, value):
     """ Dup. Rate (%) DNA metric check """
     if not value:
-        raise Exception("Missing value for 'Dup. Rate (%)'")
+        raise Exception(f"Missing 'Dup. Rate (%)' value for {sample}")
     if not value:
         ret = "FAILED"
     elif float(value)>50:
@@ -220,10 +220,10 @@ def dna_raw_duplication_rate_check(value):
         ret = "PASS"
     return ret
 
-def median_insert_size_check(value):
+def median_insert_size_check(sample, value):
     """ Mapped Insert Size (median) metric check """
     if not value:
-        raise Exception("Missing value for 'Mapped Insert Size (median)'")
+        raise Exception(f"Missing 'Mapped Insert Size (median)' value for {sample}")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
