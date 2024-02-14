@@ -14,12 +14,12 @@ logger = logging.getLogger(__name__)
 def main():
     """ Main """
     parser = argparse.ArgumentParser(prog='run_processing2json.py', description="Creates json file for project tracking database for a given run processing.")
-    parser.add_argument('--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
-    parser.add_argument('--output', required=False, help="Output json filename (Default: <input_filename>.json).")
-    parser.add_argument('--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
+    parser.add_argument('-i', '--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
+    parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
+    parser.add_argument('-l', '--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
     group = parser.add_mutually_exclusive_group()
-    group.add_argument('--sample', required=False, help="Only considers sample(s) provided for json creation.", nargs='+')
-    group.add_argument('--xsample', required=False, help="Ignores sample(s) provided for json creation.", nargs='+')
+    group.add_argument('-s', '--sample', required=False, help="Only considers sample(s) provided for json creation.", nargs='+')
+    group.add_argument('-x', '--xsample', required=False, help="Ignores sample(s) provided for json creation.", nargs='+')
     args = parser.parse_args()
 
     if not args.output:
