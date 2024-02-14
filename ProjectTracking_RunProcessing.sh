@@ -41,13 +41,13 @@ while getopts 'hr::l::s::x:' OPTION; do
 done
 
 run_processing2json_args=""
-if [[ ${lane[*]} != "" ]]; then
+if declare -p lane >&/dev/null; then
   run_processing2json_args="${run_processing2json_args} -l ${lane[*]}"
 fi
-if [[ $sample != "" ]]; then
+if declare -p sample >&/dev/null; then
   run_processing2json_args="${run_processing2json_args} -s ${sample[*]}"
 fi
-if [[ ${xsample[*]} != "" ]]; then
+if declare -p xsample >&/dev/null; then
   run_processing2json_args="${run_processing2json_args} -x ${xsample[*]}"
 fi
 
