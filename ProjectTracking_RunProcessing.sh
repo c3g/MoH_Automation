@@ -68,7 +68,6 @@ path=/lb/project/mugqic/projects/MOH/RunProcessing
 cd "$path"
 
 ## Prepare run list
-echo "-> Detecting new runs..."
 runs_folder=/lb/robot/research/processing/novaseq
 input=$(find "$runs_folder"/*/"$runid/" -name "$runid-run.align_bwa_mem.csv")
 echo "-> Processing $runid, file $input..."
