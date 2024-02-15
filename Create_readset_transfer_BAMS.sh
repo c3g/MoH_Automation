@@ -17,7 +17,7 @@ then
 else
     Location=$Location"/"
 fi
-echo "$Location"
+echo "-> Checking for files in Run $Location"
 echo "Transfered From $Location" >> "$TEMP/$LOGFILE"
 
 # Location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
@@ -132,7 +132,7 @@ F_NAME=${MET_LOC##*/}
 echo "$MET_LOC /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/$F_NAME" >> "$TEMP/$LISTFILE"
 
 # Load globus module
-module load mugqic/globus-cli/3.7.0
+module load mugqic/globus-cli/3.24.0
 
 # Generate and store a UUID for the submission-id
 sub_id="$(globus task generate-submission-id)"
@@ -140,14 +140,19 @@ label=${Location%?}
 label=${label##*/}
 
 # Start the batch transfer
-task_id="$(globus transfer --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $BEL_EP)"
+task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $BEL_EP)"
 
 echo "Waiting on 'globus transfer' task '$task_id'"
-globus task wait "$task_id" --timeout 30
+globus task wait "$task_id" --polling-interval 60 -H
+# shellcheck disable=SC2181
 if [ $? -eq 0 ]; then
-    echo "source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate"
-    echo "/lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json --operation_cmd_line \"globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $BEL_EP\""
-    echo "pt-cli ingest transfer --input-json "
+    module unload mugqic/globus-cli/3.24.0
+    # shellcheck disable=SC1091
+    source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
+    # shellcheck disable=SC2086
+    /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $BEL_EP"
+    # shellcheck disable=SC2086
+    pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json}
 else
     echo "$task_id failed!"
 fi

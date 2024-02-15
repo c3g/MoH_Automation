@@ -58,7 +58,7 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
                         transfer_dict[readset_name]["bam_src_location_uri"] = src_location_uri
 
                 elif ".fastq" in line:
-                    readset_name = fields[0].split('/')[10].replace("Sample_", "new")
+                    readset_name = fields[0].split('/')[10].replace("Sample_", "")
                     src_location_uri = f"abacus://{fields[0]}"
                     dest_location_uri = f"beluga://{fields[1].strip()}"
                     if "_R1_" in line:
@@ -78,29 +78,29 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
                             }
                         transfer_dict[readset_name]["fastq2_src_location_uri"] = src_location_uri
 
-    for readset in transfer_dict:
-        if "bam_src_location_uri" in transfer_dict[readset]:
+    for readset, file in transfer_dict.items():
+        if "bam_src_location_uri" in file:
             file_json = [
                 {
-                    "src_location_uri": transfer_dict[readset]["bam_src_location_uri"],
-                    "dest_location_uri": transfer_dict[readset]["bam_dest_location_uri"]
+                    "src_location_uri": file["bam_src_location_uri"],
+                    "dest_location_uri": file["bam_dest_location_uri"]
                 },
                 {
-                    "src_location_uri": transfer_dict[readset]["bai_src_location_uri"],
-                    "dest_location_uri": transfer_dict[readset]["bai_dest_location_uri"],
+                    "src_location_uri": file["bai_src_location_uri"],
+                    "dest_location_uri": file["bai_dest_location_uri"],
 
                 }
             ]
-        if "fastq1_src_location_uri" in transfer_dict[readset]:
+        if "fastq1_src_location_uri" in file:
             file_json = [
                 {
-                    "src_location_uri": transfer_dict[readset]["fastq1_src_location_uri"],
-                    "dest_location_uri": transfer_dict[readset]["fastq1_dest_location_uri"]
+                    "src_location_uri": file["fastq1_src_location_uri"],
+                    "dest_location_uri": file["fastq1_dest_location_uri"]
 
                 },
                 {
-                    "src_location_uri": transfer_dict[readset]["fastq2_src_location_uri"],
-                    "dest_location_uri": transfer_dict[readset]["fastq2_dest_location_uri"],
+                    "src_location_uri": file["fastq2_src_location_uri"],
+                    "dest_location_uri": file["fastq2_dest_location_uri"],
 
                 }
             ]
