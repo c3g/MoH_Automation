@@ -361,7 +361,7 @@ def extract_contamination(patient, sample_type):
         # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
         # It has to print nothing to be ok, otherwise it means a manual check is required.
         if len(filename) > 1:
-            print(f" WARNING: Manual check reauired for patient {patient} as more than 1 concordance file is found: {filename}")
+            print(f" WARNING: Manual check required for patient {patient} as more than 1 concordance file is found (by default the first one is selected for tghe metric): {filename}")
         try:
             with open(filename[0], 'r', encoding="utf-8") as file:
                 for line in file:
@@ -383,7 +383,7 @@ def extract_concordance(patient, sample, sample_type):
         # Test if unsure about finding more than 1 concordance file for normal sample based on the glob above.
         # It has to print nothing to be ok, otherwise it means a manual check is required.
         if len(filename) > 1:
-            print(f" WARNING: Manual check reauired for patient {patient} as more than 1 concordance file is found: {filename}")
+            print(f" WARNING: Manual check required for patient {patient} as more than 1 concordance file is found(by default the first one is selected for tghe metric): {filename}")
         try:
             with open(filename[0], 'r', encoding="utf-8") as file:
                 for line in file:
@@ -401,7 +401,10 @@ def extract_insert_size(sample, patient, sample_type):
         if sample_type == 'RT':
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance.h5')
             with h5py.File(filename, 'r') as h5file:
-                frequencies = np.asarray(h5file['aux']['fld'])
+                try:
+                    frequencies = np.asarray(h5file['aux']['fld'])
+                except OSError:
+                    raise Exception(f"ERROR: file {filename} for sample {sample} is corrupted.")
                 values = np.arange(0, len(frequencies), 1)
                 # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
                 ord = np.argsort(values)
@@ -418,13 +421,6 @@ def extract_insert_size(sample, patient, sample_type):
             cdf = np.cumsum(frequencies[ord])
             median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)]
             mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=1)
-            # filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', patient + '.multiqc_data', 'multiqc_qualimap_bamqc_genome_results.txt')
-            # with open(filename, 'r', encoding="utf-8") as csvfile:
-            #     reader = csv.DictReader(csvfile, delimiter="\t")
-            #     for row in reader:
-            #         if row["Sample"] == sample:
-            #             median_insert_size = row["median_insert_size"]
-            #             mean_insert_size = row["mean_insert_size"]
     except FileNotFoundError:
         pass
     return median_insert_size, mean_insert_size
@@ -437,7 +433,7 @@ def extract_dedup_coverage(sample):
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
             line = lines[71]
-            #line is      mean coverageData = 304.9902X
+            # line is mean coverageData = 304.9902X
             metrics = line.split(" ")
             ret = float(metrics[-1].replace('X', ''))
     except (FileNotFoundError, ValueError):

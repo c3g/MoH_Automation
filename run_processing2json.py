@@ -2,12 +2,9 @@
 
 import argparse
 import json
-import glob
-import sys
 import re
 import csv
 import os
-import hashlib
 import logging
 from datetime import datetime
 
@@ -15,10 +12,14 @@ logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=log
 logger = logging.getLogger(__name__)
 
 def main():
+    """ Main """
     parser = argparse.ArgumentParser(prog='run_processing2json.py', description="Creates json file for project tracking database for a given run processing.")
-    parser.add_argument('--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
-    parser.add_argument('--output', required=False, help="Output json filename (Default: <input_filename>.json).")
-    parser.add_argument('--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
+    parser.add_argument('-i', '--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
+    parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
+    parser.add_argument('-l', '--lane', required=False, help="Only considers lane(s) provided for json creation.", nargs='+')
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('-s', '--sample', required=False, help="Only considers sample(s) provided for json creation.", nargs='+')
+    group.add_argument('-x', '--xsample', required=False, help="Ignores sample(s) provided for json creation.", nargs='+')
     args = parser.parse_args()
 
     if not args.output:
@@ -30,16 +31,26 @@ def main():
     else:
         lanes = ["1", "2", "3", "4"]
 
-    jsonify_run_processing(args.input, output, lanes)
-
-def jsonify_run_processing(input_csv, output, lanes):
-    readset_dict = {}
-    sample_dict = {}
+    samples = []
+    input_csv = args.input
     run_list = []
     with open(input_csv, 'rt') as run_file_in:
         reader = csv.DictReader(run_file_in)
         for row in reader:
             run_list.append(row)
+            samples.append(row['Sample Name'])
+
+    if args.sample:
+        samples = list(args.sample)
+    elif args.xsample:
+        samples = list(set(samples).difference(list(args.xsample)))
+
+    jsonify_run_processing(input_csv, run_list, output, lanes, samples)
+
+def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
+    """ Writing RUn Processing json based on csv"""
+    readset_dict = {}
+    sample_dict = {}
     json_output = {
             "operation_platform": "abacus",
             "project_fms_id": None,
@@ -52,8 +63,8 @@ def jsonify_run_processing(input_csv, output, lanes):
             }
     for run_row in run_list:
         sample = run_row['Sample Name']
-        if sample.startswith("MoHQ") and run_row['Lane'] in lanes:
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+        if sample.startswith("MoHQ") and run_row['Lane'] in lanes and sample in samples:
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             patient = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
@@ -64,10 +75,11 @@ def jsonify_run_processing(input_csv, output, lanes):
                 "patient_institution": institution,
                 "sample": []
                 }
-            if sample.endswith("T"):
-                sample_tumour = True
-            else:
-                sample_tumour = False
+            # if sample.endswith("T"):
+            #     sample_tumour = True
+            # else:
+            #     sample_tumour = False
+            sample_tumour = sample.endswith("T")
             sample_json = {
                 "sample_fms_id": None,
                 "sample_name": sample,
@@ -77,7 +89,7 @@ def jsonify_run_processing(input_csv, output, lanes):
 
             copylist = os.path.join(os.path.dirname(input_csv), f"{os.path.basename(input_csv).split('.')[0]}.copylist.txt")
             if not os.path.isfile(copylist):
-                raise Exception(f"File {copylist} not found; required to fing raw data (bams/fastqs) location")
+                raise Exception(f"File {copylist} not found; required to find raw data (bams/fastqs) location")
             fastq1 = fastq2 = ""
             with open(copylist, 'r') as file:
                 for line in file:
@@ -94,10 +106,10 @@ def jsonify_run_processing(input_csv, output, lanes):
                                 ]
                             break
                         elif file_path.endswith(".fastq.gz"):
-                            if "R1" in file_path:
+                            if "_R1_" in file_path:
                                 fastq1 = os.path.basename(file_path)
                                 fastq1_location_uri = file_path
-                            elif "R2" in file_path:
+                            elif "_R2_" in file_path:
                                 fastq2 = os.path.basename(file_path)
                                 fastq2_location_uri = file_path
                             if fastq1 and fastq2:
@@ -118,15 +130,15 @@ def jsonify_run_processing(input_csv, output, lanes):
                                 break
             raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
-                raw_reads_count_flag = rna_raw_reads_count_check(run_row['Clusters'])
+                raw_reads_count_flag = rna_raw_reads_count_check(sample, run_row['Clusters'])
             raw_duplication_rate_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_duplication_rate_flag = dna_raw_duplication_rate_check(run_row['Dup. Rate (%)'])
-            raw_median_insert_size_flag = median_insert_size_check(run_row['Mapped Insert Size (median)'])
+                raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, run_row['Dup. Rate (%)'])
+            raw_median_insert_size_flag = median_insert_size_check(sample, run_row['Mapped Insert Size (median)'])
             raw_mean_insert_size_flag = "PASS"
             raw_mean_coverage_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_mean_coverage_flag = dna_raw_mean_coverage_check(run_row['Mean Coverage'], sample_tumour)
+                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, run_row['Mean Coverage'], sample_tumour)
             metric_json = [
                 {
                     "metric_name": "raw_reads_count",
@@ -182,9 +194,10 @@ def jsonify_run_processing(input_csv, output, lanes):
     return readset_dict, sample_dict
 
 
-def dna_raw_mean_coverage_check(value, tumour):
+def dna_raw_mean_coverage_check(sample, value, tumour):
+    """ Mean Coverage DNA metric check """
     if not value:
-        raise Exception(f"Missing value for 'Mean Coverage'")
+        raise Exception(f"Missing 'Mean Coverage' value for {sample}")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -193,9 +206,10 @@ def dna_raw_mean_coverage_check(value, tumour):
         ret = "PASS"
     return ret
 
-def rna_raw_reads_count_check(value):
+def rna_raw_reads_count_check(sample, value):
+    """ Clusters RNA metric check """
     if not value:
-        raise Exception(f"Missing value for 'Clusters'")
+        raise Exception(f"Missing 'Clusters' value for {sample}")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -204,9 +218,10 @@ def rna_raw_reads_count_check(value):
         ret = "PASS"
     return ret
 
-def dna_raw_duplication_rate_check(value):
+def dna_raw_duplication_rate_check(sample, value):
+    """ Dup. Rate (%) DNA metric check """
     if not value:
-        raise Exception(f"Missing value for 'Dup. Rate (%)'")
+        raise Exception(f"Missing 'Dup. Rate (%)' value for {sample}")
     if not value:
         ret = "FAILED"
     elif float(value)>50:
@@ -217,9 +232,10 @@ def dna_raw_duplication_rate_check(value):
         ret = "PASS"
     return ret
 
-def median_insert_size_check(value):
+def median_insert_size_check(sample, value):
+    """ Mapped Insert Size (median) metric check """
     if not value:
-        raise Exception(f"Missing value for 'Mapped Insert Size (median)'")
+        raise Exception(f"Missing 'Mapped Insert Size (median)' value for {sample}")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
