@@ -37,7 +37,8 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
             if line.startswith("/lb/robot/research/processing/novaseq/20"):
                 fields = line.split(" ")
                 if ".bam" in line:
-                    readset_name = f"{fields[0].split('/')[10]}_{fields[0].split('/')[11]}"
+                    path_l = fields[0].split('/')
+                    readset_name = f"{path_l[10]}.{path_l[11].replace('run', '')}"
                     src_location_uri = f"abacus://{fields[0]}"
                     dest_location_uri = f"beluga://{fields[1].strip()}"
                     if "bam.bai" in line:
@@ -58,7 +59,11 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
                         transfer_dict[readset_name]["bam_src_location_uri"] = src_location_uri
 
                 elif ".fastq" in line:
-                    readset_name = fields[0].split('/')[10].replace("Sample_", "")
+                    path_l = fields[0].split('/')
+                    run_name_l = path_l[7].split('_')
+                    sample_name = path_l[10].split('_')[1]
+                    lane = path_l[8].split('.')[1]
+                    readset_name = f"{sample_name}.{run_name_l[1]}_{run_name_l[2]}_{lane}"
                     src_location_uri = f"abacus://{fields[0]}"
                     dest_location_uri = f"beluga://{fields[1].strip()}"
                     if "_R1_" in line:
