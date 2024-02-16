@@ -89,22 +89,34 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
 
             copylist = os.path.join(os.path.dirname(input_csv), f"{os.path.basename(input_csv).split('.')[0]}.copylist.txt")
             if not os.path.isfile(copylist):
-                raise Exception(f"File {copylist} not found; required to find raw data (bams/fastqs) location")
+                raise Exception(f"File {copylist} not found; required to find raw data (bams/bais/fastqs) location")
             fastq1 = fastq2 = ""
             with open(copylist, 'r') as file:
                 for line in file:
                     if sample in line:
                         fields = line.split(",")
                         file_path = fields[3].strip()
-                        if file_path.endswith(".bam"):
-                            file_json = [
-                                {
-                                    "location_uri": f"abacus://{file_path}",
-                                    "file_name": f"{os.path.basename(file_path)}",
-                                    "file_deliverable": True
-                                    }
-                                ]
-                            break
+                        if re.search(r'ba.$', file_path):
+                            if file_path.endswith(".bam"):
+                                bam = os.path.basename(file_path)
+                                bam_location_uri = file_path
+                            elif file_path.endswith(".bai"):
+                                bai = os.path.basename(file_path)
+                                bai_location_uri = file_path
+                            if bam and bai:
+                                file_json = [
+                                    {
+                                        "location_uri": f"abacus://{bam_location_uri}",
+                                        "file_name": f"{bam}",
+                                        "file_deliverable": True
+                                        },
+                                    {
+                                        "location_uri": f"abacus://{bai_location_uri}",
+                                        "file_name": f"{bai}",
+                                        "file_deliverable": True
+                                        }
+                                    ]
+                                break
                         elif file_path.endswith(".fastq.gz"):
                             if "_R1_" in file_path:
                                 fastq1 = os.path.basename(file_path)
