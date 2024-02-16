@@ -41,7 +41,8 @@ if ls "$Location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
         j=${i//.sorted.bam/.sorted.bai}
         # j=$(echo "$i" | sed 's/.sorted.bam/.sorted.bai/g')
     	sample_name=$(echo "$i" | cut -d'/' -f11)
-        readset_name="$(echo "$i" | cut -d'/' -f11)_$(echo "$i" | cut -d'/' -f12)"
+        readset_name="$(echo "$i" | cut -d'/' -f11).$(echo "$i" | cut -d'/' -f12)"
+        readset_name="${readset_name/run/}"
         file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
         # Make the oneliner readset file
         touch "$TEMP/${readset_name}_readset.tsv";
@@ -82,11 +83,11 @@ if ls "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
     echo "fastq's Transfered" >> "$TEMP/$LOGFILE"
     for i in "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         j="${i/_R1_/_R2_}"
-        sample_name=$(echo "$i" | cut -d'/' -f11)
-        sample_name="${sample_name%_*}"
-        sample_name="${sample_name/Sample_/}"
-        readset_name=$(echo "$i" | cut -d'/' -f11)
-        readset_name="${readset_name/Sample_/}"
+        sample_name=$(echo "$i" | cut -d'/' -f11 | cut -d'_' -f2)
+        lane=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
+        liba=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f2)
+        libb=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f3)
+        readset_name="${sample_name}.${liba}_${libb}_${lane}"
         file_name1=$(echo "$i" | cut -d'/' -f12)
         file_name2="${file_name1/_R1_/_R2_}"
         # Make the oneliner readset file
