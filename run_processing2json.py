@@ -90,7 +90,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             copylist = os.path.join(os.path.dirname(input_csv), f"{os.path.basename(input_csv).split('.')[0]}.copylist.txt")
             if not os.path.isfile(copylist):
                 raise Exception(f"File {copylist} not found; required to find raw data (bams/bais/fastqs) location")
-            fastq1 = fastq2 = ""
+            fastq1 = fastq2 = bam = bai = ""
             with open(copylist, 'r') as file:
                 for line in file:
                     if sample in line:
