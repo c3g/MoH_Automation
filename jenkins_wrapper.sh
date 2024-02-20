@@ -1,6 +1,8 @@
 #!/bin/bash
 set -eu -o pipefail
 
+echo "Launching MoH wrapper..."
+
 ##################################################
 # Setup module
 module load mugqic/python/3.10.4
@@ -36,3 +38,5 @@ echo -e "...Done.\n"
 # STEP 4: Deliver data
 #echo "Running MOH_ln_output.py ..."
 #./MOH_ln_output.py
+
+echo "Finished MoH_wrapper execution."
