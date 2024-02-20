@@ -98,6 +98,8 @@ declare -A patients_associative_array=()
 declare -A samples_associative_array=()
 
 {
+  # Empty read to skip first line of readset file Cf. https://stackoverflow.com/questions/31911179/ignoring-first-line-column-header-while-reading-a-file-in-bash
+  read -r
   while IFS=$'\t' read -r -a readset_fileArray; do
     sample=${readset_fileArray[0]}
     readset=${readset_fileArray[1]}
@@ -108,7 +110,6 @@ declare -A samples_associative_array=()
 } < "$readset_file"
 
 for patient in "${!patients_associative_array[@]}"; do
-  echo "$patient"
   if [ "$pipeline" = "tumor_pair" ] && [ "$protocol" = "ensemble" ]; then
     {
       echo "--recursive $ABA_MAIN/alignment/realign/${patient} $BEL_MAIN/alignment/realign/${patient}"
@@ -127,7 +128,6 @@ for patient in "${!patients_associative_array[@]}"; do
 
 
   for sample in ${patients_associative_array[$patient]} ; do
-    echo "$sample"
     if [ "$pipeline" = "rnaseq_light" ]; then
       {
         echo "--recursive $ABA_MAIN/kallisto/${sample} $BEL_MAIN/kallisto/${sample}"
@@ -139,7 +139,6 @@ for patient in "${!patients_associative_array[@]}"; do
     if [ "$pipeline" = "rnaseq" ] && [ "$protocol" = "cancer" ]; then
       {
         echo "--recursive $ABA_MAIN/alignment/${sample} $BEL_MAIN/alignment/${sample}"
-        echo "--recursive $ABA_MAIN/alignment_1stPass/${sample} $BEL_MAIN/alignment_1stPass/${sample}"
         echo "--recursive $ABA_MAIN/fusion/${sample} $BEL_MAIN/fusion/${sample}"
         echo "--recursive $ABA_MAIN/metrics/${sample} $BEL_MAIN/metrics/${sample}"
         echo "--recursive $ABA_MAIN/metrics/multiqc_by_sample/${sample} $BEL_MAIN/metrics/multiqc_by_sample/${sample}"
@@ -176,7 +175,7 @@ label=${readset_file%.*}
 label=${label##*/}
 
 # Start the batch transfer
-task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $BEL_EP)"
+task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$ABA_LOG_LOC/$LISTFILE" $ABA_EP $BEL_EP)"
 
 echo "Waiting on 'globus transfer' task '$task_id'"
 globus task wait "$task_id" --polling-interval 60 -H
@@ -186,7 +185,7 @@ if [ $? -eq 0 ]; then
   # shellcheck disable=SC1091
   source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $BEL_EP" --genpipes $genpipes_json
+  /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $ABA_LOG_LOC/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $ABA_LOG_LOC/$LISTFILE $ABA_EP $BEL_EP" --genpipes $genpipes_json
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json}
 else

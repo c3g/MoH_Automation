@@ -5,6 +5,7 @@ import glob
 import json
 import os
 import logging
+from pathlib import Path
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -14,12 +15,13 @@ def main():
     parser = argparse.ArgumentParser(prog='transfer2json.py', description="Creates json file for project tracking database for a given transfer of data.")
     parser.add_argument('-i', '--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
     parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
-    parser.add_argument('--genpipes', required=False, help="GenPipes json file when creating json for a GenPipes transfer.")
+    parser.add_argument('-j', '--genpipes', required=False, help="GenPipes json file when creating json for a GenPipes transfer.")
     parser.add_argument('--operation_cmd_line', required=True, help="Command used for transfer.")
     args = parser.parse_args()
 
     if not args.output:
-        output = os.path.basename(args.input).replace('.txt', '.json')
+        base_name, _ = os.path.splitext(args.input)
+        output = os.path.basename(base_name) + ".json"
     else:
         output = args.output
 
@@ -111,8 +113,10 @@ def jsonify_genpipes_transfer(batch_file, genpipes_json, output, operation_cmd_l
         for readset in sample['readset']:
             for job in readset['job']:
                 for file in job['file']:
-                    genpipes_file[file['file_name']] = readset['readset_name']
-
+                    if file['file_name'] in genpipes_file:
+                        genpipes_file[file['file_name']].append(readset['readset_name'])
+                    else:
+                        genpipes_file[file['file_name']] = [readset['readset_name']]
     json_output = {
         "operation_platform": "abacus",
         "operation_cmd_line": operation_cmd_line,
@@ -127,7 +131,37 @@ def jsonify_genpipes_transfer(batch_file, genpipes_json, output, operation_cmd_l
                 filename = glob.glob(os.path.join(fields[1], '**'), recursive=True)
                 for current_file in filename:
                     if os.path.basename(current_file) in genpipes_file:
-                        readset_name = genpipes_file[os.path.basename(current_file)]
+                        for readset_name in genpipes_file[os.path.basename(current_file)]:
+                            relative_file_path = current_file.replace(fields[1], '')
+                            src_location_uri_file = f"{src_location_uri}{relative_file_path}"
+                            dest_location_uri_file = f"{dest_location_uri}{relative_file_path}"
+                            if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
+                                for readset in json_output["readset"]:
+                                    if readset_name == readset["readset_name"]:
+                                        readset["file"].append(
+                                            {
+                                                "src_location_uri": src_location_uri_file,
+                                                "dest_location_uri": dest_location_uri_file
+                                            }
+                                        )
+                            else:
+                                json_output["readset"].append(
+                                    {
+                                        "readset_name": readset_name,
+                                        "file": [
+                                            {
+                                                "src_location_uri": src_location_uri_file,
+                                                "dest_location_uri": dest_location_uri_file
+                                            }
+                                        ]
+                                    }
+                                )
+            else:
+                src_location_uri = f"abacus://{fields[0]}"
+                dest_location_uri = f"beluga://{fields[1].strip()}"
+                current_file = os.path.basename(fields[0])
+                if current_file in genpipes_file:
+                    for readset_name in genpipes_file[os.path.basename(current_file)]:
                         relative_file_path = current_file.replace(fields[1], '')
                         src_location_uri_file = f"{src_location_uri}{relative_file_path}"
                         dest_location_uri_file = f"{dest_location_uri}{relative_file_path}"
@@ -152,36 +186,6 @@ def jsonify_genpipes_transfer(batch_file, genpipes_json, output, operation_cmd_l
                                     ]
                                 }
                             )
-            else:
-                src_location_uri = f"abacus://{fields[0]}"
-                dest_location_uri = f"beluga://{fields[1].strip()}"
-                current_file = os.path.basename(fields[0])
-                if current_file in genpipes_file:
-                    readset_name = genpipes_file[os.path.basename(current_file)]
-                    relative_file_path = current_file.replace(fields[1], '')
-                    src_location_uri_file = f"{src_location_uri}{relative_file_path}"
-                    dest_location_uri_file = f"{dest_location_uri}{relative_file_path}"
-                    if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
-                        for readset in json_output["readset"]:
-                            if readset_name == readset["readset_name"]:
-                                readset["file"].append(
-                                    {
-                                        "src_location_uri": src_location_uri_file,
-                                        "dest_location_uri": dest_location_uri_file
-                                    }
-                                )
-                    else:
-                        json_output["readset"].append(
-                            {
-                                "readset_name": readset_name,
-                                "file": [
-                                    {
-                                        "src_location_uri": src_location_uri_file,
-                                        "dest_location_uri": dest_location_uri_file
-                                    }
-                                ]
-                            }
-                        )
 
     # print(json.dumps(json_output, ensure_ascii=False, indent=4))
 
