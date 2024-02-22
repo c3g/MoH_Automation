@@ -72,6 +72,10 @@ fi
 #   usage
 # fi
 
+# The label is the readset file name
+label=${readset_file%.*}
+label=${label##*/}
+
 # Beluga main folder location
 BEL_MAIN="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 # Beluga log file location
@@ -87,12 +91,10 @@ ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 
 TIMESTAMP=$(date +%FT%H.%M.%S)
 # LOGFILE="$TIMESTAMP_transfer_GenPipes.log"
-LISTFILE="${TIMESTAMP}_transfer_GenPipes.list"
+LISTFILE="${label}_${TIMESTAMP}_transfer_GenPipes.list"
 
 # samples files, case,normal,tumor
 # Activate beluga endpoint, before
-readset_file=$1
-pipeline=$1
 
 declare -A patients_associative_array=()
 declare -A samples_associative_array=()
@@ -171,8 +173,6 @@ module load mugqic/globus-cli/3.24.0
 
 # Generate and store a UUID for the submission-id
 sub_id="$(globus task generate-submission-id)"
-label=${readset_file%.*}
-label=${label##*/}
 
 # Start the batch transfer
 task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$ABA_LOG_LOC/$LISTFILE" $ABA_EP $BEL_EP)"

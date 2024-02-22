@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
 
-# Temporary File Location, you may want to change it to your scratch for easier clean up.
-TEMP='/lb/project/mugqic/projects/MOH/TEMP'
-TIMESTAMP=$(date +%FT%H.%M.%S)
-LOGFILE=$TIMESTAMP"_transfer_log.txt"
-LISTFILE=$TIMESTAMP"_transfer_list.txt"
-touch "$TEMP/$LOGFILE"
-touch "$TEMP/$LISTFILE"
-echo "Log file of transfer from abacus to Beluga" > "$TEMP/$LOGFILE"
-
-# Location of processing data
+# Location of processing data: Input to the script
 Location="$1"
 if [[ $Location == */ ]]
 then
@@ -17,6 +8,20 @@ then
 else
     Location=$Location"/"
 fi
+
+# The label is the run name based on the path given as argument
+label=${Location%?}
+label=${label##*/}
+
+# Temporary File Location, you may want to change it to your scratch for easier clean up.
+TEMP='/lb/project/mugqic/projects/MOH/TEMP'
+TIMESTAMP=$(date +%FT%H.%M.%S)
+LOGFILE="${label}_${TIMESTAMP}_transfer.log"
+LISTFILE="${label}_${TIMESTAMP}_transfer.list"
+touch "$TEMP/$LOGFILE"
+touch "$TEMP/$LISTFILE"
+echo "Log file of transfer from Abacus to Beluga" > "$TEMP/$LOGFILE"
+
 echo "-> Checking for files in Run $Location"
 echo "Transfered From $Location" >> "$TEMP/$LOGFILE"
 
@@ -137,8 +142,6 @@ module load mugqic/globus-cli/3.24.0
 
 # Generate and store a UUID for the submission-id
 sub_id="$(globus task generate-submission-id)"
-label=${Location%?}
-label=${label##*/}
 
 # Start the batch transfer
 task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $BEL_EP)"

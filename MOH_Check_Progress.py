@@ -246,11 +246,10 @@ class Progress(SampleData):
             self.ts_run_proc_bam_dna_t = "NA"
             self.ts_run_proc_bam_dna_n = "NA"
         else:
-            path = TRANSFER_LOGS
             dna_n = False
             dna_t = False
             if self.run_proc_bam_dna_t == "NA" or self.run_proc_bam_dna_n == "NA":
-                for filename in glob.glob(path):
+                for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
                             if dna_n and dna_t:
@@ -276,11 +275,10 @@ class Progress(SampleData):
             self.ts_run_proc_fastq_1_rna = "NA"
             self.ts_run_proc_fastq_2_rna = "NA"
         else:
-            path = TRANSFER_LOGS
             fastq1 = False
             fastq2 = False
             if self.run_proc_fastq_1_rna == "NA" or self.run_proc_fastq_2_rna == "NA":
-                for filename in glob.glob(path):
+                for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
                             if fastq1 and fastq2:
@@ -308,11 +306,10 @@ class Progress(SampleData):
             self.ts_run_proc_bam_dna_t = "NA"
             self.ts_run_proc_bam_dna_n = "NA"
         else:
-            path = TRANSFER_LOGS
             dna_n = False
             dna_t = False
             if self.run_proc_bam_dna_t == "NA" or self.run_proc_bam_dna_n == "NA":
-                for filename in glob.glob(path):
+                for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
                             if dna_n and dna_t:
@@ -345,11 +342,10 @@ class Progress(SampleData):
             self.ts_run_proc_fastq_1_rna = "NA"
             self.ts_run_proc_fastq_2_rna = "NA"
         else:
-            path = TRANSFER_LOGS
             fastq1 = False
             fastq2 = False
             if self.run_proc_fastq_1_rna == "NA" or self.run_proc_fastq_2_rna == "NA":
-                for filename in glob.glob(path):
+                for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
                             if fastq1 and fastq2:
