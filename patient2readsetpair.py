@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import json
 import glob
-import sys
-import re
 import csv
 import os
-import hashlib
 import logging
-from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 def main():
-    parser = argparse.ArgumentParser(prog='tmp.py', description="Creates readset and pair files ")
+    parser = argparse.ArgumentParser(prog='tmp.py', description="Creates readset and pair files for DNA")
     parser.add_argument('--input', required=True, help="Input file with list of patients")
     parser.add_argument('--output', required=False, help="Output prefix (Default: <input_filename>)")
     args = parser.parse_args()
