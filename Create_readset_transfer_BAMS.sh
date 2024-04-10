@@ -1,19 +1,52 @@
 #!/usr/bin/env bash
 
-# Location of processing data: Input to the script
-Location="$1"
-if [[ $Location == */ ]]
+THIS_SCRIPT=$(basename "$0")
+
+usage() {
+  echo "script usage: $THIS_SCRIPT -h [-l location] [-s sample]"
+  echo "Usage:"
+  echo " -h                               Display this help message."
+  echo " -l <location>                    location of run to be transfered."
+  echo " -s <sample>                      Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: all)."
+  exit 1
+  }
+
+while getopts 'hl::s:' OPTION; do
+  case "$OPTION" in
+    l)
+      location="$OPTARG"
+      ;;
+    s)
+      sample+=("$OPTARG")
+      ;;
+    h)
+      usage
+      ;;
+    ?)
+      usage
+      ;;
+  esac
+done
+
+# mandatory arguments
+if [ ! "$location" ]; then
+  echo -e "ERROR: Missing mandatory arguments -l.\n"
+  usage
+fi
+
+# location of processing data: Input to the script
+if [[ $location == */ ]]
 then
-    echo "$Location"
+    echo "$location"
 else
-    Location=$Location"/"
+    location=$location"/"
 fi
 
 # The label is the run name based on the path given as argument
-label=${Location%?}
+label=${location%?}
 label=${label##*/}
 
-# Temporary File Location, you may want to change it to your scratch for easier clean up.
+# Temporary File location, you may want to change it to your scratch for easier clean up.
 TEMP='/lb/project/mugqic/projects/MOH/TEMP'
 TIMESTAMP=$(date +%FT%H.%M.%S)
 LOGFILE="${label}_${TIMESTAMP}_transfer.log"
@@ -22,10 +55,10 @@ touch "$TEMP/$LOGFILE"
 touch "$TEMP/$LISTFILE"
 echo "Log file of transfer from Abacus to Beluga" > "$TEMP/$LOGFILE"
 
-echo "-> Checking for files in Run $Location"
-echo "Transfered From $Location" >> "$TEMP/$LOGFILE"
+echo "-> Checking for files in Run $location"
+echo "Transfered From $location" >> "$TEMP/$LOGFILE"
 
-# Location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
+# location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
 # SERIOUSLY DON'T CHANGE IT.
 # PLEASE DONT.
 BEL_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads/"
@@ -40,19 +73,16 @@ ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 
 # Loop over BAMS
 # This is specific for MoHQ named Bams!
-if ls "$Location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
+if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
     echo "Bams Transfered" >> "$TEMP/$LOGFILE"
-    for i in "$Location"Aligned*/*/*/*/MoHQ*.bam; do
+    for i in "$location"Aligned*/*/*/*/MoHQ*.bam; do
         j=${i//.sorted.bam/.sorted.bai}
         # j=$(echo "$i" | sed 's/.sorted.bam/.sorted.bai/g')
-    	sample_name=$(echo "$i" | cut -d'/' -f11)
+        sample_name=$(echo "$i" | cut -d'/' -f11)
         readset_name="$(echo "$i" | cut -d'/' -f11).$(echo "$i" | cut -d'/' -f12)"
         readset_name="${readset_name/run/}"
         file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
-        # Make the oneliner readset file
-        touch "$TEMP/${readset_name}_readset.tsv";
-        echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv";
-        DETAILS=$(cat "$Location"*run.csv | grep "$sample_name")
+        DETAILS=$(cat "$location"*run.csv | grep "$sample_name")
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}')
         RUNID=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}')
@@ -63,20 +93,28 @@ if ls "$Location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
         BED=""
         BAM="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
         # BAI="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-    	FASTQ1=""
+        FASTQ1=""
         FASTQ2=""
-        echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
-        {
-            # Adding readset to be transferred in a list file
-            echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
-            # Adding bam and bai to be transferred in a list file
-            echo "$i $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-        	echo "$j $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-        } >> "$TEMP/$LISTFILE"
-        {
-            echo "$i,$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-            echo "$j,$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-        } >> "$TEMP/$LOGFILE"
+        if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+            :
+        else
+            # Make the oneliner readset file
+            touch "$TEMP/${readset_name}_readset.tsv";
+            echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv";
+            echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
+            {
+                # Adding readset to be transferred in a list file
+                echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
+                # Adding bam and bai to be transferred in a list file
+                echo "$i $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+                echo "$j $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+            } >> "$TEMP/$LISTFILE"
+            {
+                echo "$i,$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+                echo "$j,$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+            } >> "$TEMP/$LOGFILE"
+
+        fi
 
     done;
 else
@@ -84,9 +122,9 @@ else
 fi;
 
 # RNA now or possibly both
-if ls "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
+if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
     echo "fastq's Transfered" >> "$TEMP/$LOGFILE"
-    for i in "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
+    for i in "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         j="${i/_R1_/_R2_}"
         sample_name=$(echo "$i" | cut -d'/' -f11 | cut -d'_' -f2)
         lane=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
@@ -95,10 +133,7 @@ if ls "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
         readset_name="${sample_name}.${liba}_${libb}_${lane}"
         file_name1=$(echo "$i" | cut -d'/' -f12)
         file_name2="${file_name1/_R1_/_R2_}"
-        # Make the oneliner readset file
-        touch "$TEMP/${readset_name}_readset.tsv"
-        echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv"
-        DETAILS=$(cat "$Location"*run.csv | grep "$sample_name")
+        DETAILS=$(cat "$location"*run.csv | grep "$sample_name")
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}' )
         RUNID=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}' )
@@ -110,19 +145,26 @@ if ls "$Location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
         BAM=""
         FASTQ1="raw_reads/$sample_name/$file_name1"
         FASTQ2="raw_reads/$sample_name/$file_name2"
-        echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
+        if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+            :
+        else
+            # Make the oneliner readset file
+            touch "$TEMP/${readset_name}_readset.tsv"
+            echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv"
+            echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
 
-        {
-            # Adding readset to be transferred in a list file
-            echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
-            # Adding fastqs to be transferred in a list file
-            echo "$i $BEL_LOC$sample_name/$file_name1"
-            echo "$j $BEL_LOC$sample_name/$file_name2"
-        } >> "$TEMP/$LISTFILE"
-        {
-            echo "$i,$sample_name/$file_name1"
-            echo "$j,$sample_name/$file_name2"
-        } >> "$TEMP/$LOGFILE"
+            {
+                # Adding readset to be transferred in a list file
+                echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
+                # Adding fastqs to be transferred in a list file
+                echo "$i $BEL_LOC$sample_name/$file_name1"
+                echo "$j $BEL_LOC$sample_name/$file_name2"
+            } >> "$TEMP/$LISTFILE"
+            {
+                echo "$i,$sample_name/$file_name1"
+                echo "$j,$sample_name/$file_name2"
+            } >> "$TEMP/$LOGFILE"
+        fi
 
     done;
 else
@@ -132,7 +174,7 @@ fi;
 echo "$TEMP/$LOGFILE $BEL_LOG_LOC$LOGFILE" >> "$TEMP/$LISTFILE"
 
 # Transfer over the metrics
-MET_LOC=$(ls "$Location"/*-novaseq-run.align_bwa_mem.csv)
+MET_LOC=$(ls "$location"/*-novaseq-run.align_bwa_mem.csv)
 F_NAME=${MET_LOC##*/}
 
 echo "$MET_LOC /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/$F_NAME" >> "$TEMP/$LISTFILE"
