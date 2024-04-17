@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -l <location>                    location of run to be transfered."
-  echo " -s <sample>                      Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: all)."
+  echo " -s <sample>                      Path to file with Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (by default it will consider ALL samples from the given run)."
   exit 1
   }
 
@@ -17,7 +17,7 @@ while getopts 'hl::s:' OPTION; do
       location="$OPTARG"
       ;;
     s)
-      sample+=("$OPTARG")
+      sample_file="$OPTARG"
       ;;
     h)
       usage
@@ -33,6 +33,8 @@ if [ ! "$location" ]; then
   echo -e "ERROR: Missing mandatory arguments -l.\n"
   usage
 fi
+
+readarray -t sample < "$sample_file"
 
 # location of processing data: Input to the script
 if [[ $location == */ ]]
