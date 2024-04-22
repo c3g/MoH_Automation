@@ -18,6 +18,7 @@ while getopts 'hl::s:' OPTION; do
       ;;
     s)
       sample_file="$OPTARG"
+      readarray -t sample < "$sample_file"
       ;;
     h)
       usage
@@ -33,8 +34,6 @@ if [ ! "$location" ]; then
   echo -e "ERROR: Missing mandatory arguments -l.\n"
   usage
 fi
-
-readarray -t sample < "$sample_file"
 
 # location of processing data: Input to the script
 if [[ $location == */ ]]
