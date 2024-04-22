@@ -44,6 +44,10 @@ else
     location=$location"/"
 fi
 
+# Getting client password to avoid getting timed out
+echo -n Password: 
+read -r -s password
+
 # The label is the run name based on the path given as argument
 label=${location%?}
 label=${label##*/}
@@ -199,8 +203,10 @@ if [ $? -eq 0 ]; then
     source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
     # shellcheck disable=SC2086
     /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $BEL_EP"
+    echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
     # shellcheck disable=SC2086
     pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json}
+    sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
 else
     echo "$task_id failed!"
 fi
