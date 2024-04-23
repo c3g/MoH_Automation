@@ -44,9 +44,11 @@ else
 fi
 
 # Getting client password to avoid getting timed out
-echo -n Password: 
-read -r -s password
-echo
+if [[ -n "${password}" ]]; then
+    echo -n Password: 
+    read -r -s password
+    echo
+fi
 
 # The label is the run name based on the path given as argument
 label=${location%?}
