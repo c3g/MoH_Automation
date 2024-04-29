@@ -3,18 +3,22 @@
 THIS_SCRIPT=$(basename "$0")
 
 usage() {
-  echo "script usage: $THIS_SCRIPT -h [-l location] [-s sample]"
+  echo "script usage: $THIS_SCRIPT -h [-l location] [-d destination] [-s sample]"
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -l <location>                    location of run to be transfered."
+  echo " -d <destination>                 destination for the transfer (either Beluga or Cardinal)."
   echo " -s <sample>                      Path to file with Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (by default it will consider ALL samples from the given run)."
   exit 1
   }
 
-while getopts 'hl::s:' OPTION; do
+while getopts 'hl:d::s:' OPTION; do
   case "$OPTION" in
     l)
       location="$OPTARG"
+      ;;
+    d)
+      destination="$OPTARG"
       ;;
     s)
       sample_file="$OPTARG"
@@ -30,9 +34,14 @@ while getopts 'hl::s:' OPTION; do
 done
 
 # mandatory arguments
-if [ ! "$location" ]; then
-  echo -e "ERROR: Missing mandatory arguments -l.\n"
+if [ ! "$location" ] || [ ! "$destination" ]; then
+  echo -e "ERROR: Missing mandatory argument -l and/or -d.\n"
   usage
+fi
+
+if [[ $destination =~ Cardinal|Beluga ]]; then
+    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga or Cardinal.\n"
+    usage
 fi
 
 # location of processing data: Input to the script
@@ -54,6 +63,25 @@ fi
 label=${location%?}
 label=${label##*/}
 
+# location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
+# SERIOUSLY DON'T CHANGE IT.
+# PLEASE DONT.
+if [[ $destination = Beluga ]]; then
+    # Beluga main folder location
+    DEST_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
+    # Beluga log file location
+    DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
+    # Beluga Endpoint
+    DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
+elif [[ $destination = Cardinal ]]; then
+    # Cardinal main folder location
+    DEST_LOC="/project/def-c3g/MOH/MAIN/raw_reads"
+    # Cardinal log file location
+    DEST_LOG_LOC="/project/def-c3g/MOH/log_files/transfer"
+    # Cardinal Endpoint
+    DEST_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
+fi
+
 # Temporary File location, you may want to change it to your scratch for easier clean up.
 TEMP='/lb/project/mugqic/projects/MOH/TEMP'
 TIMESTAMP=$(date +%FT%H.%M.%S)
@@ -61,21 +89,11 @@ LOGFILE="${label}_${TIMESTAMP}_transfer.log"
 LISTFILE="${label}_${TIMESTAMP}_transfer.list"
 touch "$TEMP/$LOGFILE"
 touch "$TEMP/$LISTFILE"
-echo "Log file of transfer from Abacus to Beluga" > "$TEMP/$LOGFILE"
+echo "Log file of transfer from Abacus to $destination" > "$TEMP/$LOGFILE"
 
 echo "-> Checking for files in Run $location"
 echo "Transfered From $location" >> "$TEMP/$LOGFILE"
 
-# location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
-# SERIOUSLY DON'T CHANGE IT.
-# PLEASE DONT.
-BEL_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads/"
-# Beluga log file location
-BEL_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer/"
-# Beluga Endpoint
-BEL_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
-# Narval Endpoint #not used
-# NAR_EP='a1713da6-098f-40e6-b3aa-034efe8b6e5b'
 # abacus Endpoint
 ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 
@@ -112,10 +130,10 @@ if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
             echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
             {
                 # Adding readset to be transferred in a list file
-                echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
+                echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
                 # Adding bam and bai to be transferred in a list file
-                echo "$i $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-                echo "$j $BEL_LOC$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+                echo "$i $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+                echo "$j $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
             } >> "$TEMP/$LISTFILE"
             {
                 echo "$i,$sample_name/${file_name}_${RUNID}_${LANE}.bam"
@@ -163,10 +181,10 @@ if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
 
             {
                 # Adding readset to be transferred in a list file
-                echo "$TEMP/${readset_name}_readset.tsv $BEL_LOC$sample_name/${readset_name}_readset.tsv"
+                echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
                 # Adding fastqs to be transferred in a list file
-                echo "$i $BEL_LOC$sample_name/$file_name1"
-                echo "$j $BEL_LOC$sample_name/$file_name2"
+                echo "$i $DEST_LOC/$sample_name/$file_name1"
+                echo "$j $DEST_LOC/$sample_name/$file_name2"
             } >> "$TEMP/$LISTFILE"
             {
                 echo "$i,$sample_name/$file_name1"
@@ -179,7 +197,7 @@ else
         echo "No fastq files found";
 fi;
 
-echo "$TEMP/$LOGFILE $BEL_LOG_LOC$LOGFILE" >> "$TEMP/$LISTFILE"
+echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
 
 # Transfer over the metrics
 MET_LOC=$(ls "$location"/*-novaseq-run.align_bwa_mem.csv)
@@ -194,7 +212,7 @@ module load mugqic/globus-cli/3.24.0
 sub_id="$(globus task generate-submission-id)"
 
 # Start the batch transfer
-task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $BEL_EP)"
+task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $DEST_EP)"
 
 echo "Waiting on 'globus transfer' task '$task_id'"
 globus task wait "$task_id" --polling-interval 60 -H
@@ -204,7 +222,7 @@ if [ $? -eq 0 ]; then
     # shellcheck disable=SC1091
     source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
     # shellcheck disable=SC2086
-    /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $BEL_EP"
+    /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
     sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
     echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
     # shellcheck disable=SC2086
