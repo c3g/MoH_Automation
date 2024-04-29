@@ -77,7 +77,7 @@ cd "$path"
 
 while IFS=, read -r readset_file pair_file; do
   timestamp=$(date +%Y-%m-%dT%H.%M.%S)
-  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
+  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
   # sample=$(awk 'NR>1{print $1}' "$readset_file")
   # echo $sample
   echo "-> Running GenPipes for ${patient}..."

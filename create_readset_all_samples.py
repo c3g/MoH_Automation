@@ -13,7 +13,7 @@ class Sample():
     def __init__(self, sample):
         super(Sample, self).__init__()
         self.sample = sample
-        result = re.search(r"^((MoHQ-(JG|HM|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+        result = re.search(r"^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
         self.patient = result.group(1)
         self.cohort = result.group(2)
         self.institution = result.group(3)
