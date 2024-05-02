@@ -71,6 +71,8 @@ if [[ $destination = Beluga ]]; then
     DEST_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
     # Beluga log file location
     DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
+    # Beluga run metrics location
+    DEST_MET_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics"
     # Beluga Endpoint
     DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
 elif [[ $destination = Cardinal ]]; then
@@ -78,6 +80,8 @@ elif [[ $destination = Cardinal ]]; then
     DEST_LOC="/project/def-c3g/MOH/MAIN/raw_reads"
     # Cardinal log file location
     DEST_LOG_LOC="/project/def-c3g/MOH/log_files/transfer"
+    # Cardinal run metrics location
+    DEST_MET_LOC="/project/def-c3g/MOH/MAIN/metrics/run_metrics"
     # Cardinal Endpoint
     DEST_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
 fi
@@ -203,7 +207,7 @@ echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
 MET_LOC=$(ls "$location"/*-novaseq-run.align_bwa_mem.csv)
 F_NAME=${MET_LOC##*/}
 
-echo "$MET_LOC /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/run_metrics/$F_NAME" >> "$TEMP/$LISTFILE"
+echo "$MET_LOC $DEST_MET_LOC/$F_NAME" >> "$TEMP/$LISTFILE"
 
 # Load globus module
 module load mugqic/globus-cli/3.24.0
