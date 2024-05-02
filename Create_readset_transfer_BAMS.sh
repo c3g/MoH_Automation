@@ -39,7 +39,7 @@ if [ ! "$location" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if [[ $destination =~ Cardinal|Beluga ]]; then
+if ! [[ $destination =~ Cardinal|Beluga ]]; then
     echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga or Cardinal.\n"
     usage
 fi

@@ -51,6 +51,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
     """ Writing RUn Processing json based on csv"""
     readset_dict = {}
     sample_dict = {}
+    # change fms_id to ext_id and ext_src once Database is updated in prod
     json_output = {
             "operation_platform": "abacus",
             "project_fms_id": None,
@@ -68,6 +69,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             patient = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
+            # change fms_id to ext_id and ext_src once Database is updated in prod
             patient_json = {
                 "patient_fms_id": None,
                 "patient_name": patient,
@@ -80,6 +82,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             # else:
             #     sample_tumour = False
             sample_tumour = sample.endswith("T")
+            # change fms_id to ext_id and ext_src once Database is updated in prod
             sample_json = {
                 "sample_fms_id": None,
                 "sample_name": sample,
