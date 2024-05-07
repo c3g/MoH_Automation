@@ -191,7 +191,7 @@ for patient in "${!patients_associative_array[@]}"; do
     fi
   done
 done
-exit
+
 # Load globus module
 module load mugqic/globus-cli/3.24.0
 
