@@ -123,7 +123,12 @@ module load mugqic/python/3.10.4
     elif [ "$pipeline" = "rnaseq_light" ]; then
       pipeline_json="RnaSeqLight_*.json"
     fi
-    input_jsons=$(grep "\"readset_name\": \"$sample" "$ABA_MAIN/json/$pipeline_json" | tr '\n' ' ')
+    # shellcheck disable=SC2086
+    input_jsons=$(grep -l "\"readset_name\": \"$sample" $ABA_MAIN/json/$pipeline_json | tr '\n' ' ')
+    if [ -n "$pipeline_json" ]; then
+      echo "Nothing found in $ABA_MAIN/json/ for $pipeline and $protocol. Exiting."
+      exit 0
+    fi
     # shellcheck disable=SC2086
     $ABA_MOH/moh_automation/moh_automation_main/merge_GenPipes_jsons.py -i $input_jsons -o $ABA_MOH/Transfer_json/$merged_json
   done
