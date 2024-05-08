@@ -124,7 +124,7 @@ module load mugqic/python/3.10.4
       pipeline_json="RnaSeqLight_*.json"
     fi
     # shellcheck disable=SC2086
-    input_jsons=$(grep -l "\"readset_name\": \"$sample" $ABA_MAIN/json/$pipeline_json | tr '\n' ' ')
+    input_jsons=$(grep -m 1 -l "\"readset_name\": \"$sample" $ABA_MAIN/json/$pipeline_json | tr '\n' ' ')
     if [ -z "$input_jsons" ]; then
       echo "Nothing found in $ABA_MAIN/json/ for sample '$sample' and pipeline '$pipeline' and '$protocol'. Exiting."
       exit 0
