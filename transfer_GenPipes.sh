@@ -125,8 +125,8 @@ module load mugqic/python/3.10.4
     fi
     # shellcheck disable=SC2086
     input_jsons=$(grep -l "\"readset_name\": \"$sample" $ABA_MAIN/json/$pipeline_json | tr '\n' ' ')
-    if [ -n "$pipeline_json" ]; then
-      echo "Nothing found in $ABA_MAIN/json/ for $pipeline and $protocol. Exiting."
+    if [ -n "$input_jsons" ]; then
+      echo "Nothing found in $ABA_MAIN/json/ for sample '$sample' and pipeline '$pipeline' and '$protocol'. Exiting."
       exit 0
     fi
     # shellcheck disable=SC2086
