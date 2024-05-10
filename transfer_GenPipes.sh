@@ -113,7 +113,7 @@ module load mugqic/python/3.10.4
   while IFS=$'\t' read -r -a readset_fileArray; do
     sample=${readset_fileArray[0]}
     readset=${readset_fileArray[1]}
-    patient=$(echo "$sample" | sed -n 's/\(MoHQ-[JG|HM|CM|GC|MU|MR|XX]\{2\}-[0-9]\{1,\}-[0-9]\{1,\}\).*/\1/p')
+    patient=$(echo "$sample" | sed -n 's/\(MoHQ-[CM|GC|HM|IQ|JG|MR|MU|XX]\{2\}-[0-9]\{1,\}-[a-zA-Z0-9]\{1,\}\).*/\1/p')
     patients_associative_array["$patient"]+="$sample "
     samples_associative_array["$sample"]+="$readset "
     if [ "$pipeline" = "tumor_pair" ]; then
