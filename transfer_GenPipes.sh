@@ -140,7 +140,7 @@ for patient in "${!patients_associative_array[@]}"; do
     {
       echo "--recursive $ABA_MAIN/alignment/realign/${patient} $BEL_MAIN/alignment/realign/${patient}"
       echo "--recursive $ABA_MAIN/pairedVariants/${patient} $BEL_MAIN/pairedVariants/${patient}"
-      echo "--recursive $ABA_MAIN/pairedVariants/${patient} $BEL_MAIN/pairedVariants/ensemble/${patient}"
+      echo "--recursive $ABA_MAIN/pairedVariants/ensemble/${patient} $BEL_MAIN/pairedVariants/ensemble/${patient}"
       echo "--recursive $ABA_MAIN/SVariants/${patient} $BEL_MAIN/SVariants/${patient}"
       echo "$ABA_MAIN/metrics/dna/${patient}.multiqc.html $BEL_MAIN/metrics/dna/${patient}.multiqc.html"
       echo "--recursive $ABA_MAIN/metrics/dna/${patient}.multiqc_data $BEL_MAIN/metrics/dna/${patient}.multiqc_data"
