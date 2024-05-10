@@ -140,6 +140,7 @@ for patient in "${!patients_associative_array[@]}"; do
     {
       echo "--recursive $ABA_MAIN/alignment/realign/${patient} $BEL_MAIN/alignment/realign/${patient}"
       echo "--recursive $ABA_MAIN/pairedVariants/${patient} $BEL_MAIN/pairedVariants/${patient}"
+      echo "--recursive $ABA_MAIN/pairedVariants/${patient} $BEL_MAIN/pairedVariants/ensemble/${patient}"
       echo "--recursive $ABA_MAIN/SVariants/${patient} $BEL_MAIN/SVariants/${patient}"
       echo "$ABA_MAIN/metrics/dna/${patient}.multiqc.html $BEL_MAIN/metrics/dna/${patient}.multiqc.html"
       echo "--recursive $ABA_MAIN/metrics/dna/${patient}.multiqc_data $BEL_MAIN/metrics/dna/${patient}.multiqc_data"
@@ -199,7 +200,7 @@ module load mugqic/globus-cli/3.24.0
 sub_id="$(globus task generate-submission-id)"
 
 # Start the batch transfer
-task_id="$(globus transfer --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$ABA_LOG_LOC/$LISTFILE" $ABA_EP $BEL_EP)"
+task_id="$(globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$ABA_LOG_LOC/$LISTFILE" $ABA_EP $BEL_EP)"
 
 echo "Waiting on 'globus transfer' task '$task_id'"
 globus task wait "$task_id" --polling-interval 60 -H
@@ -209,7 +210,7 @@ if [ $? -eq 0 ]; then
   # shellcheck disable=SC1091
   source $ABA_MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  $ABA_MOH/moh_automation/moh_automation_main/transfer2json.py --input $ABA_LOG_LOC/$LISTFILE --output $ABA_MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --submission-id $sub_id --label $label --batch $ABA_LOG_LOC/$LISTFILE $ABA_EP $BEL_EP" --genpipes $ABA_MOH/Transfer_json/$merged_json
+  $ABA_MOH/moh_automation/moh_automation_main/transfer2json.py --input $ABA_LOG_LOC/$LISTFILE --output $ABA_MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $ABA_LOG_LOC/$LISTFILE $ABA_EP $BEL_EP" --genpipes $ABA_MOH/Transfer_json/$merged_json
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json $ABA_MOH/Transfer_json/${LISTFILE/.txt/.json}
 else
