@@ -67,7 +67,7 @@ while getopts 'hc:p::t:i:' OPTION; do
       esac
       ;;
     i)
-      input_file="$OPTARG"
+      input_file=$(realpath "$OPTARG")
       # echo "input_file: $input_file"
       ;;
     h)
