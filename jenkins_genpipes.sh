@@ -10,7 +10,7 @@ usage() {
   echo " -p <pipeline>                    Pipeline name to be used for the analysis."
   echo " -t <protocol>                    Protocol to be used for the analysis. (Optional)"
   echo " -i <input_file>                  Path to Input File to be used for the analysis. This file is a csv file with 1st
-                                          column being to the readset file and the 2nd (optional) column being the pair file."
+                                          column being the readset file and the 2nd (optional) column being the pair file."
   exit 1
   }
 
@@ -22,13 +22,20 @@ while getopts 'hc:p::t:r:i:' OPTION; do
         path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         # path="/scratch/stretenp/tmp/MoH_GenPipes"
         scheduler="slurm"
-        export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
-        
+        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
+        fi
+
       elif [[ $cluster == abacus ]]; then
-        path="/lb/project/mugqic/projects/MOH/MAIN"
+        # path="/lb/project/mugqic/projects/MOH/MAIN"
+        path="/lb/scratch/pstretenowich/MOH/MAIN"
         scheduler="pbs"
-        export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
-        export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
+        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
+        fi
+        if [ -z "$MUGQIC_INSTALL_HOME_PRIVATE" ]; then
+          export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
+        fi
       fi
       echo "cluster: $cluster"
       ;;
@@ -53,10 +60,22 @@ while getopts 'hc:p::t:r:i:' OPTION; do
   esac
 done
 
-export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
-export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
-module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
-export JOB_MAIL=c3g-processing@fakeemail.ca
+if [ -z "$MUGQIC_INSTALL_HOME" ]; then
+  export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
+fi
+
+if [ -z "$PORTAL_OUTPUT_DIR" ]; then
+  export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
+fi
+
+module avail 2>&1 | grep -m 1 -q "mugqic"; greprc=$?
+if ! [[ $greprc -eq 0 ]]; then
+  module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
+fi
+
+if [ -z "$JOB_MAIL" ]; then
+  export JOB_MAIL=c3g-processing@fakeemail.ca
+fi
 
 ##################################################
 # Initialization
@@ -76,13 +95,17 @@ fi
 cd "$path"
 
 while IFS=, read -r readset_file pair_file; do
-  timestamp=$(date +%Y-%m-%dT%H.%M.%S)
+  timestamp=$(date "+%Y-%m-%dT%H.%M.%S")
+  timestamp_find_format=$(date "+%Y-%m-%d %H:%M:%S")
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
   # sample=$(awk 'NR>1{print $1}' "$readset_file")
   # echo $sample
   echo "-> Running GenPipes for ${patient}..."
   # GenPipes call
   if test "$pipeline" == rnaseq_light; then
+    pipeline_name=RnaSeqLight
+    link_folder="${path}/${pipeline_name}.${timestamp}"
+    mkdir -p "$link_folder"
     # rnaseq_light
     genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
     # shellcheck disable=SC2086
@@ -96,7 +119,16 @@ RNA_light.custom.ini \
 -g $genpipes_file \
 --json-pt
     chunk_submit=true
+    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
+    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    echo "maybe_json: $maybe_json"
+    ln "$readset_file" "$link_folder"/.
+    ln "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == rnaseq; then
+    pipeline_name=RnaSeq
+    link_folder="${path}/${pipeline_name}.${protocol}.${timestamp}"
+    mkdir -p "$link_folder"
     # rnaseq
     genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
     # shellcheck disable=SC2086
@@ -111,7 +143,16 @@ RNA_cancer.custom.ini \
 -g $genpipes_file \
 --json-pt
     chunk_submit=true
+    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
+    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    echo "maybe_json: $maybe_json"
+    ln "$readset_file" "$link_folder"/.
+    ln "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == tumor_pair; then
+    pipeline_name=TumorPair
+    link_folder="${path}/${pipeline_name}.${protocol}.${timestamp}"
+    mkdir -p "$link_folder"
     # tumor_pair
     if test "$protocol" == ensemble; then
       steps="5-13,15-38"
@@ -136,10 +177,16 @@ $custom_ini \
 -g $genpipes_file \
 --json-pt
     chunk_submit=true
+    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
+    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    echo "maybe_json: $maybe_json"
+    ln "$readset_file" "$link_folder"/.
+    ln "$maybe_json" "$link_folder"/.
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
-    today=$(date +%Y-%m-%dT)
+    today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
     echo "-> Chunking for ${patient}..."
@@ -155,5 +202,10 @@ $custom_ini \
       echo "LOG: "
     } >> "${patient}_${timestamp}.txt"
     chmod 664 "${patient}_${timestamp}.txt"
+    after_genpipes_submission_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+    maybe_job_list=$(find json -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" \! -newermt "$after_genpipes_submission_timestamp" | sort | head -n 1)
+    echo "maybe_job_list: $maybe_job_list"
+    ln "$maybe_job_list" "$link_folder"/.
   fi
 done < "${path}/${input_file}"
