@@ -60,6 +60,21 @@ while getopts 'hc:p::t:r:i:' OPTION; do
   esac
 done
 
+# mandatory arguments
+if [ ! "$cluster" ] || [ ! "$pipeline" ] || [ ! "$input_file" ]; then
+  echo -e "ERROR: Missing mandatory arguments -c and -p and -i.\n"
+  usage
+fi
+
+# wrong protocol with wrong pipeline
+if [ "$pipeline" = "tumor_pair" ] && ! [[ "$protocol" == "ensemble" || "$protocol" == "sv" ]]; then
+  echo -e "ERROR: pipeline: '$pipeline' only accepts protocol: 'ensemble' or 'sv', '$protocol' provided.\n"
+  usage
+elif [ "$pipeline" = "rnaseq" ] && [ "$protocol" != "cancer" ]; then
+  echo -e "ERROR: pipeline: '$pipeline' only accepts protocol: 'cancer', '$protocol' provided.\n"
+  usage
+fi
+
 if [ -z "$MUGQIC_INSTALL_HOME" ]; then
   export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
 fi
