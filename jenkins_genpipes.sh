@@ -36,20 +36,39 @@ while getopts 'hc:p::t:r:i:' OPTION; do
         if [ -z "$MUGQIC_INSTALL_HOME_PRIVATE" ]; then
           export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
         fi
+      else
+        echo -e "ERROR: Invalid cluster: '$cluster'.\n"
+        usage
       fi
-      echo "cluster: $cluster"
+      # echo "cluster: $cluster"
       ;;
     p)
       pipeline="$OPTARG"
-      echo "pipeline: $pipeline"
+      case "$pipeline" in
+        tumor_pair | rnaseq | rnaseq_light)
+          # echo "pipeline: $pipeline"
+          ;;
+        *)
+          echo -e "ERROR: Invalid pipeline: '$pipeline'.\n"
+          usage
+          ;;
+      esac
       ;;
     t)
       protocol="$OPTARG"
-      echo "protocol: $protocol"
+      case "$protocol" in
+        ensemble | sv | cancer)
+          # echo "protocol: $protocol"
+          ;;
+        *)
+          echo -e "ERROR: Invalid protocol: '$protocol'.\n"
+          usage
+          ;;
+      esac
       ;;
     i)
       input_file="$OPTARG"
-      echo "input_file: $input_file"
+      # echo "input_file: $input_file"
       ;;
     h)
       usage
