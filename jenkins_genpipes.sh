@@ -138,7 +138,7 @@ while IFS=, read -r readset_file pair_file; do
   # GenPipes call
   if test "$pipeline" == rnaseq_light; then
     pipeline_name=RnaSeqLight
-    link_folder="${path}/${pipeline_name}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq_light
     genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
@@ -161,7 +161,7 @@ RNA_light.custom.ini \
     ln "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == rnaseq; then
     pipeline_name=RnaSeq
-    link_folder="${path}/${pipeline_name}.${protocol}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq
     genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
@@ -185,7 +185,7 @@ RNA_cancer.custom.ini \
     ln "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == tumor_pair; then
     pipeline_name=TumorPair
-    link_folder="${path}/${pipeline_name}.${protocol}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
     mkdir -p "$link_folder"
     # tumor_pair
     if test "$protocol" == ensemble; then
