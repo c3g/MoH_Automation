@@ -141,7 +141,7 @@ while IFS=, read -r readset_file pair_file; do
     link_folder="${path}/genpipes_submission/${pipeline_name}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq_light
-    genpipes_file=rnaseq_light_${patient}_${timestamp}.sh
+    genpipes_file=RnaSeqLight_${patient}_${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
@@ -157,14 +157,14 @@ RNA_light.custom.ini \
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
-    ln "$readset_file" "$link_folder"/.
-    ln "$maybe_json" "$link_folder"/.
+    ln -s "$readset_file" "$link_folder"/.
+    ln -s "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == rnaseq; then
     pipeline_name=RnaSeq
     link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq
-    genpipes_file=rnaseq_cancer_${patient}_${timestamp}.sh
+    genpipes_file=RnaSeq.${protocol}_${patient}_${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
@@ -181,8 +181,8 @@ RNA_cancer.custom.ini \
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
-    ln "$readset_file" "$link_folder"/.
-    ln "$maybe_json" "$link_folder"/.
+    ln -s "$readset_file" "$link_folder"/.
+    ln -s "$maybe_json" "$link_folder"/.
   elif test "$pipeline" == tumor_pair; then
     pipeline_name=TumorPair
     link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
@@ -191,12 +191,11 @@ RNA_cancer.custom.ini \
     if test "$protocol" == ensemble; then
       steps="5-13,15-38"
       custom_ini="TP_ensemble.custom.ini"
-      genpipes_file="tumor_pair_ensemble_${patient}_${timestamp}.sh"
     elif test "$protocol" == sv; then
       steps="12-16"
       custom_ini="TP_sv.custom.ini"
-      genpipes_file="tumor_pair_sv_${patient}_${timestamp}.sh"
     fi
+    genpipes_file="TumorPair.{$protocol}_${patient}_${timestamp}.sh"
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
@@ -215,8 +214,8 @@ $custom_ini \
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
-    ln "$readset_file" "$link_folder"/.
-    ln "$maybe_json" "$link_folder"/.
+    ln -s "$readset_file" "$link_folder"/.
+    ln -s "$maybe_json" "$link_folder"/.
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
@@ -240,6 +239,6 @@ $custom_ini \
     job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
     maybe_job_list=$(find json -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" \! -newermt "$after_genpipes_submission_timestamp" | sort | head -n 1)
     echo "maybe_job_list: $maybe_job_list"
-    ln "$maybe_job_list" "$link_folder"/.
+    ln -s "$maybe_job_list" "$link_folder"/.
   fi
 done < "${input_file}"
