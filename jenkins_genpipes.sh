@@ -155,7 +155,7 @@ RNA_light.custom.ini \
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
@@ -178,8 +178,8 @@ RNA_cancer.custom.ini \
 --json-pt
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
@@ -211,8 +211,8 @@ $custom_ini \
 --json-pt
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    maybe_json=$(find json -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
