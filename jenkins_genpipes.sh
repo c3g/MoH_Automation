@@ -14,7 +14,7 @@ usage() {
   exit 1
   }
 
-while getopts 'hc:p::t:r:i:' OPTION; do
+while getopts 'hc:p::t:i:' OPTION; do
   case "$OPTION" in
     c)
       cluster="$OPTARG"
@@ -80,7 +80,7 @@ while getopts 'hc:p::t:r:i:' OPTION; do
 done
 
 # mandatory arguments
-if [ ! "$cluster" ] || [ ! "$pipeline" ] || [ ! "$input_file" ]; then
+if [ -z "$cluster" ] || [ -z "$pipeline" ] || [ -z "$input_file" ]; then
   echo -e "ERROR: Missing mandatory arguments -c and -p and -i.\n"
   usage
 fi
@@ -242,4 +242,4 @@ $custom_ini \
     echo "maybe_job_list: $maybe_job_list"
     ln "$maybe_job_list" "$link_folder"/.
   fi
-done < "${path}/${input_file}"
+done < "${input_file}"
