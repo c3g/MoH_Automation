@@ -156,7 +156,7 @@ RNA_light.custom.ini \
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
@@ -181,7 +181,7 @@ RNA_cancer.custom.ini \
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
@@ -215,7 +215,7 @@ $custom_ini \
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" \! -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
     echo "maybe_json: $maybe_json"
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
@@ -239,7 +239,7 @@ $custom_ini \
     } >> "${patient}_${timestamp}.txt"
     chmod 664 "${patient}_${timestamp}.txt"
     after_genpipes_submission_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    maybe_job_list=$(find "${path}/job_output" -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" \! -newermt "$after_genpipes_submission_timestamp" | sort | head -n 1)
+    maybe_job_list=$(find "${path}/job_output" -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
     echo "maybe_job_list: $maybe_job_list"
     ln -s "$maybe_job_list" "$link_folder"/.
   fi
