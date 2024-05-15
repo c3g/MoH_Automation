@@ -141,7 +141,7 @@ while IFS=, read -r readset_file pair_file; do
     link_folder="${path}/genpipes_submission/${pipeline_name}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq_light
-    genpipes_file=RnaSeqLight_${patient}_${timestamp}.sh
+    genpipes_file=RnaSeqLight_${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
@@ -151,21 +151,18 @@ RNA_light.custom.ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
---json-pt
+--json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
-    echo "maybe_json: $maybe_json"
-    ln -s "$readset_file" "$link_folder"/.
-    ln -s "$maybe_json" "$link_folder"/.
+    trace_ini_regex="${path}/${pipeline_name}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == rnaseq; then
     pipeline_name=RnaSeq
     link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
     mkdir -p "$link_folder"
     # rnaseq
-    genpipes_file=RnaSeq.${protocol}_${patient}_${timestamp}.sh
+    genpipes_file=RnaSeq.${protocol}_${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
@@ -176,15 +173,12 @@ RNA_cancer.custom.ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
---json-pt
+--json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
-    echo "maybe_json: $maybe_json"
-    ln -s "$readset_file" "$link_folder"/.
-    ln -s "$maybe_json" "$link_folder"/.
+    trace_ini_regex="${path}/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == tumor_pair; then
     pipeline_name=TumorPair
     link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
@@ -197,7 +191,7 @@ RNA_cancer.custom.ini \
       steps="12-16"
       custom_ini="TP_sv.custom.ini"
     fi
-    genpipes_file=TumorPair.${protocol}_${patient}_${timestamp}.sh
+    genpipes_file=TumorPair.${protocol}_${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
@@ -210,37 +204,46 @@ $custom_ini \
 -r $readset_file \
 -p $pair_file \
 -g $genpipes_file \
---json-pt
+--json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
     job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | head -n 1)
-    echo "maybe_json: $maybe_json"
-    ln -s "$readset_file" "$link_folder"/.
-    ln -s "$maybe_json" "$link_folder"/.
+    trace_ini_regex="${path}/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
     today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
-    echo "-> Chunking for ${patient}..."
-    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "${patient}_${timestamp}_chunks"
-    chmod 775 "${patient}_${timestamp}_chunks"
-    chmod 664 "${patient}_${timestamp}_chunks"/*
-    echo "-> Submitting for ${patient}..."
-    cat /dev/null > "${patient}_${timestamp}.txt"
+    echo "-> Chunking GenPipes for ${patient}..."
+    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "${patient}.${timestamp}_chunks" &> "${path}/genpipes_logs/${patient}.${timestamp}_chunks.log"
+    chmod 775 "${patient}.${timestamp}_chunks"
+    chmod 664 "${patient}.${timestamp}_chunks"/*
+    echo "-> Submitting GenPipes for ${patient}..."
+    cat /dev/null > "${patient}.${timestamp}.txt"
     {
-      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}_${timestamp}_chunks" 2>&1) & echo -n "PID: "
+      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
       echo $!
       echo "PATIENT: ${patient}"
       echo "LOG: "
-    } >> "${patient}_${timestamp}.txt"
-    chmod 664 "${patient}_${timestamp}.txt"
-    after_genpipes_submission_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    maybe_job_list=$(find "${path}/job_output" -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" | sort | head -n 1)
-    echo "maybe_job_list: $maybe_job_list"
+    } >> "${patient}.${timestamp}.txt"
+    chmod 664 "${patient}.${timestamp}.txt"
+    # Finding GenPipes json and symklink into genpipes_submission along with the readset file
+    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+    ln -s "$readset_file" "$link_folder"/.
+    ln -s "$maybe_json" "$link_folder"/.
+    # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
+    echo "-> Waiting for job_list to be created for ${patient}..."
+    maybe_job_list=""
+    while [ -z "$maybe_job_list" ]; do
+      sleep 1
+      maybe_job_list=$(find "${path}/job_output" -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" | sort | tail -n 1)
+    done
     ln -s "$maybe_job_list" "$link_folder"/.
+    # Do some cleaning
+    mv "$genpipes_file" "${path}/genpipes_files"
+    maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+    mv "$maybe_trace_ini" "${path}/genpipes_inis"
   fi
 done < "${input_file}"
