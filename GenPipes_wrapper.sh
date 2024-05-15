@@ -25,7 +25,12 @@ while getopts 'hc:p::t:i:' OPTION; do
         if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
-
+      elif [[ $cluster == cardinal ]]; then
+        path=""
+        scheduler="slurm"
+        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=
+        fi
       elif [[ $cluster == abacus ]]; then
         path="/lb/project/mugqic/projects/MOH/MAIN"
         # path="/lb/scratch/pstretenowich/MOH/MAIN"
@@ -121,9 +126,11 @@ module load mugqic/python/3.10.2
 export MUGQIC_PIPELINES_HOME=${path}/genpipes_moh/genpipes
 
 if [[ $cluster == beluga ]]; then
-  beluga_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
+  cluster_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
 elif [[ $cluster == abacus ]]; then
-  beluga_ini=""
+  cluster_ini=""
+elif [[ $cluster == cardinal ]]; then
+  cluster_ini=""
 fi
 
 cd "$path"
@@ -143,7 +150,7 @@ while IFS=, read -r readset_file pair_file; do
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $beluga_ini \
+-c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 RNA_light.custom.ini \
 -j $scheduler \
@@ -165,7 +172,7 @@ RNA_light.custom.ini \
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
 -s 1-8,11-28 \
--c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $beluga_ini \
+-c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 RNA_cancer.custom.ini \
 -j $scheduler \
@@ -195,7 +202,7 @@ RNA_cancer.custom.ini \
 -t $protocol \
 -s $steps \
 -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
-$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $beluga_ini \
+$MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
 $custom_ini \
 -j $scheduler \
