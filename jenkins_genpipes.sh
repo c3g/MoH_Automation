@@ -221,7 +221,7 @@ $custom_ini \
     chmod 775 "${patient}.${timestamp}_chunks"
     chmod 664 "${patient}.${timestamp}_chunks"/*
     echo "-> Submitting GenPipes for ${patient}..."
-    cat /dev/null > "${patient}.${timestamp}.txt"
+    cat /dev/null > "${path}/genpipes_logs/${patient}.${timestamp}.txt"
     {
       (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
       echo $!
@@ -245,5 +245,6 @@ $custom_ini \
     mv "$genpipes_file" "${path}/genpipes_files"
     maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
     mv "$maybe_trace_ini" "${path}/genpipes_inis"
+    mv "${patient}.${timestamp}_chunks" "${path}/genpipes_logs"
   fi
 done < "${input_file}"
