@@ -213,6 +213,7 @@ $custom_ini \
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
+    submission_log="${path}/genpipes_logs/${patient}.${timestamp}_submission.log"
     today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
@@ -221,14 +222,14 @@ $custom_ini \
     chmod 775 "${patient}.${timestamp}_chunks"
     chmod 664 "${patient}.${timestamp}_chunks"/*
     echo "-> Submitting GenPipes for ${patient}..."
-    cat /dev/null > "${path}/genpipes_logs/${patient}.${timestamp}.txt"
+    cat /dev/null > "$submission_log"
     {
       (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
       echo $!
       echo "PATIENT: ${patient}"
       echo "LOG: "
-    } >> "${path}/genpipes_logs/${patient}.${timestamp}.txt"
-    chmod 664 "${patient}.${timestamp}.txt"
+    } >> "$submission_log"
+    chmod 664 "$submission_log"
     # Finding GenPipes json and symklink into genpipes_submission along with the readset file
     maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
     ln -s "$readset_file" "$link_folder"/.
