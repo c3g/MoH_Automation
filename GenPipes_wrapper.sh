@@ -27,8 +27,8 @@ while getopts 'hc:p::t:i:' OPTION; do
         fi
 
       elif [[ $cluster == abacus ]]; then
-        # path="/lb/project/mugqic/projects/MOH/MAIN"
-        path="/lb/scratch/pstretenowich/MOH/MAIN"
+        path="/lb/project/mugqic/projects/MOH/MAIN"
+        # path="/lb/scratch/pstretenowich/MOH/MAIN"
         scheduler="pbs"
         if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
@@ -132,8 +132,6 @@ while IFS=, read -r readset_file pair_file; do
   timestamp=$(date "+%Y-%m-%dT%H.%M.%S")
   timestamp_find_format=$(date "+%Y-%m-%d %H:%M:%S")
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
-  # sample=$(awk 'NR>1{print $1}' "$readset_file")
-  # echo $sample
   echo "-> Running GenPipes for ${patient}..."
   # GenPipes call
   if test "$pipeline" == rnaseq_light; then
