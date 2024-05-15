@@ -227,7 +227,7 @@ $custom_ini \
       echo $!
       echo "PATIENT: ${patient}"
       echo "LOG: "
-    } >> "${patient}.${timestamp}.txt"
+    } >> "${path}/genpipes_logs/${patient}.${timestamp}.txt"
     chmod 664 "${patient}.${timestamp}.txt"
     # Finding GenPipes json and symklink into genpipes_submission along with the readset file
     maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
