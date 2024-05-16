@@ -6,7 +6,7 @@ usage() {
   echo "script usage: jenkins_genpipes.sh -h [-c cluster] [-p pipeline] [-t protocol] [-i input_file]"
   echo "Usage:"
   echo " -h                               Display this help message."
-  echo " -c <cluster>                     Cluster name on which the analysis will be run."
+  echo " -c <cluster>                     Cluster name on which the analysis will be run: 'abacus', 'beluga' or 'cardinal'."
   echo " -p <pipeline>                    Pipeline name to be used for the analysis."
   echo " -t <protocol>                    Protocol to be used for the analysis. (Optional)"
   echo " -i <input_file>                  Path to Input File to be used for the analysis. This file is a csv file with 1st
@@ -26,7 +26,7 @@ while getopts 'hc:p::t:i:' OPTION; do
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == cardinal ]]; then
-        path=""
+        path="/project/def-c3g/MOH/MAIN"
         scheduler="slurm"
         if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
           export MUGQIC_INSTALL_HOME_DEV=
@@ -42,7 +42,7 @@ while getopts 'hc:p::t:i:' OPTION; do
           export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
         fi
       else
-        echo -e "ERROR: Invalid cluster: '$cluster'.\n"
+        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'beluga' or 'cardinal'\n"
         usage
       fi
       # echo "cluster: $cluster"
@@ -85,7 +85,7 @@ while getopts 'hc:p::t:i:' OPTION; do
 done
 
 # mandatory arguments
-if [ -z "$cluster" ] || [ -z "$pipeline" ] || [ -z "$input_file" ]; then
+if [ -z "${cluster:-}" ] || [ -z "${pipeline:-}" ] || [ -z "${input_file:-}" ]; then
   echo -e "ERROR: Missing mandatory arguments -c and -p and -i.\n"
   usage
 fi

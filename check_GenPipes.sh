@@ -42,7 +42,7 @@ while getopts 'hc:j:r:l:' OPTION; do
       elif [[ $cluster == abacus ]]; then
         MOH_path="/lb/project/mugqic/projects/MOH"
       elif [[ $cluster == cardinal ]]; then
-        MOH_path=""
+        MOH_path="/project/def-c3g/MOH"
       else
         echo -e "ERROR: Invalid cluster: '$cluster'.\n"
         usage

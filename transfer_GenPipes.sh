@@ -48,19 +48,12 @@ while getopts 'hj:r:p::t:' OPTION; do
   esac
 done
 
-# operation_cmd_line=$(jq '.operation_cmd_line' "$genpipes_json")
-# pipeline=$(echo "$operation_cmd_line" | cut -d' ' -f1 | rev | cut -d'/' -f2 | rev)
-# protocol=$(echo "$genpipes_json" | cut -d'.' -f2 |  cut -d'_' -f1)
 
 # mandatory arguments
 if [ ! "$readset_file" ]; then
   echo -e "ERROR: Missing mandatory arguments -r.\n"
   usage
 fi
-# if [ ! "$readset_file" ] || [ ! "$genpipes_json" ]; then
-#   echo -e "ERROR: Missing mandatory arguments -r and -j.\n"
-#   usage
-# fi
 
 # wrong protocol with wrong pipeline
 if [ "$pipeline" = "tumor_pair" ] && ! [[ "$protocol" == "ensemble" || "$protocol" == "sv" ]]; then
@@ -79,7 +72,7 @@ label=${label##*/}
 ## Beluga main folder location
 DEST_MAIN="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 ## Beluga log file location
-## BEL_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
+# DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
 ## Beluga Endpoint
 DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
 
@@ -95,7 +88,7 @@ if [[ $HOSTNAME == "abacus"* ]]; then
   SRC_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal MOH
-  SRC_MOH=""
+  SRC_MOH="/project/def-c3g/MOH"
   # Cardinal main folder location
   SRC_MAIN="$SRC_MOH/MAIN"
   # Cardinal log file location
