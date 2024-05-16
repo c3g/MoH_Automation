@@ -143,10 +143,12 @@ while IFS=, read -r readset_file pair_file; do
   # GenPipes call
   if test "$pipeline" == rnaseq_light; then
     pipeline_name=RnaSeqLight
-    link_folder="${path}/genpipes_submission/${pipeline_name}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${patient}.${timestamp}"
     mkdir -p "$link_folder"
+    patient_logs_folder="${path}/genpipes_logs/${pipeline_name}.${patient}.${timestamp}"
+    mkdir -p "$patient_logs_folder"
     # rnaseq_light
-    genpipes_file=RnaSeqLight_${patient}.${timestamp}.sh
+    genpipes_file=RnaSeqLight.${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.py \
 -s 1-4 \
@@ -156,7 +158,7 @@ RNA_light.custom.ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
---json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
+--json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
@@ -164,10 +166,12 @@ RNA_light.custom.ini \
     trace_ini_regex="${path}/${pipeline_name}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == rnaseq; then
     pipeline_name=RnaSeq
-    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${patient}.${timestamp}"
     mkdir -p "$link_folder"
+    patient_logs_folder="${path}/genpipes_logs/${pipeline_name}.${protocol}.${patient}.${timestamp}"
+    mkdir -p "$patient_logs_folder"
     # rnaseq
-    genpipes_file=RnaSeq.${protocol}_${patient}.${timestamp}.sh
+    genpipes_file=RnaSeq.${protocol}.${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.py \
 -t $protocol \
@@ -178,7 +182,7 @@ RNA_cancer.custom.ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
---json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
+--json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
@@ -186,8 +190,10 @@ RNA_cancer.custom.ini \
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == tumor_pair; then
     pipeline_name=TumorPair
-    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${timestamp}"
+    link_folder="${path}/genpipes_submission/${pipeline_name}.${protocol}.${patient}.${timestamp}"
     mkdir -p "$link_folder"
+    patient_logs_folder="${path}/genpipes_logs/${pipeline_name}.${protocol}.${patient}.${timestamp}"
+    mkdir -p "$patient_logs_folder"
     # tumor_pair
     if test "$protocol" == ensemble; then
       steps="5-13,15-38"
@@ -196,7 +202,7 @@ RNA_cancer.custom.ini \
       steps="12-16"
       custom_ini="TP_sv.custom.ini"
     fi
-    genpipes_file=TumorPair.${protocol}_${patient}.${timestamp}.sh
+    genpipes_file=TumorPair.${protocol}.${patient}.${timestamp}.sh
     # shellcheck disable=SC2086
     $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.py \
 -t $protocol \
@@ -209,7 +215,7 @@ $custom_ini \
 -r $readset_file \
 -p $pair_file \
 -g $genpipes_file \
---json-pt &> "${path}/genpipes_logs/${patient}.${timestamp}.log"
+--json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
@@ -218,18 +224,18 @@ $custom_ini \
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
-    submission_log="${path}/genpipes_logs/${patient}.${timestamp}_submission.log"
+    submission_log="$patient_logs_folder/${patient}.${timestamp}_submission.log"
     today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
     echo "-> Chunking GenPipes for ${patient}..."
-    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "${patient}.${timestamp}_chunks" &> "${path}/genpipes_logs/${patient}.${timestamp}_chunks.log"
+    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
     chmod 775 "${patient}.${timestamp}_chunks"
     chmod 664 "${patient}.${timestamp}_chunks"/*
     echo "-> Submitting GenPipes for ${patient}..."
     cat /dev/null > "$submission_log"
     {
-      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
+      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
       echo $!
       echo "PATIENT: ${patient}"
       echo "LOG: "
@@ -251,6 +257,5 @@ $custom_ini \
     mv "$genpipes_file" "${path}/genpipes_files"
     maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
     mv "$maybe_trace_ini" "${path}/genpipes_inis"
-    mv "${patient}.${timestamp}_chunks" "${path}/genpipes_logs"
   fi
 done < "${input_file}"
