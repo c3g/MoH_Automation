@@ -99,11 +99,11 @@ elif [ "$pipeline" = "rnaseq" ] && [ "$protocol" != "cancer" ]; then
   usage
 fi
 
-if [ -z "$MUGQIC_INSTALL_HOME" ]; then
+if [ -z "${MUGQIC_INSTALL_HOME:-}" ]; then
   export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
 fi
 
-if [ -z "$PORTAL_OUTPUT_DIR" ]; then
+if [ -z "${PORTAL_OUTPUT_DIR:-}" ]; then
   export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
 fi
 
@@ -112,7 +112,7 @@ if ! [[ $greprc -eq 0 ]]; then
   module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
 fi
 
-if [ -z "$JOB_MAIL" ]; then
+if [ -z "${JOB_MAIL:-}" ]; then
   export JOB_MAIL=c3g-processing@fakeemail.ca
 fi
 
