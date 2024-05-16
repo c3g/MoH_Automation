@@ -130,7 +130,7 @@ if [[ $cluster == beluga ]]; then
 elif [[ $cluster == abacus ]]; then
   cluster_ini=""
 elif [[ $cluster == cardinal ]]; then
-  cluster_ini=""
+  cluster_ini="Custom_MOH_topups.ini PO.ini"
 fi
 
 cd "$path"
