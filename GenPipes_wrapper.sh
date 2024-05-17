@@ -228,8 +228,8 @@ $custom_ini \
     chmod 774 "$genpipes_file"
     echo "-> Chunking GenPipes for ${patient}..."
     "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
-    chmod 775 "${patient}.${timestamp}_chunks"
-    chmod 664 "${patient}.${timestamp}_chunks"/*
+    chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
+    chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
     echo "-> Submitting GenPipes for ${patient}..."
     cat /dev/null > "$submission_log"
     {
