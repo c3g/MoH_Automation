@@ -1,6 +1,4 @@
 #!/bin/bash
-set -eu -o pipefail
-
 
 usage() {
   echo "script usage: jenkins_genpipes.sh -h [-c cluster] [-p pipeline] [-t protocol] [-i input_file]"
