@@ -22,23 +22,23 @@ while getopts 'hc:p::t:i:' OPTION; do
         path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         # path="/scratch/stretenp/tmp/MoH_GenPipes"
         scheduler="slurm"
-        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == cardinal ]]; then
         path="/project/def-c3g/MOH/MAIN"
         scheduler="slurm"
-        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
         fi
       elif [[ $cluster == abacus ]]; then
         path="/lb/project/mugqic/projects/MOH/MAIN"
         # path="/lb/scratch/pstretenowich/MOH/MAIN"
         scheduler="pbs"
-        if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
         fi
-        if [ -z "$MUGQIC_INSTALL_HOME_PRIVATE" ]; then
+        if [ -z "${MUGQIC_INSTALL_HOME_PRIVATE:-}" ]; then
           export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
         fi
       else
