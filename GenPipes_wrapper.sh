@@ -29,7 +29,7 @@ while getopts 'hc:p::t:i:' OPTION; do
         path="/project/def-c3g/MOH/MAIN"
         scheduler="slurm"
         if [ -z "$MUGQIC_INSTALL_HOME_DEV" ]; then
-          export MUGQIC_INSTALL_HOME_DEV=
+          export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
         fi
       elif [[ $cluster == abacus ]]; then
         path="/lb/project/mugqic/projects/MOH/MAIN"
