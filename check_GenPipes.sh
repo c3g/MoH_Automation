@@ -106,7 +106,7 @@ elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
-elif [[ $failure == *"ACTIVE"* ]]; then
+elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]]; then
   # Let's skip and wait
   echo "WARNING: Job(s) still running for $job_list"
 else
