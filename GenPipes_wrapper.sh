@@ -125,10 +125,19 @@ export MUGQIC_PIPELINES_HOME=${path}/genpipes_moh/genpipes
 
 if [[ $cluster == beluga ]]; then
   cluster_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini"
+  if [ -z "${RAP_ID:-}" ]; then
+    export RAP_ID=rrg-bourqueg-ad
+  fi
 elif [[ $cluster == abacus ]]; then
   cluster_ini=""
+  if [ -z "${RAP_ID:-}" ]; then
+    export RAP_ID=rrg-bourqueg-ad
+  fi
 elif [[ $cluster == cardinal ]]; then
   cluster_ini="cardinal.ini PO.ini"
+  if [ -z "${RAP_ID:-}" ]; then
+    export RAP_ID=def-c3g
+  fi
 fi
 
 cd "$path"
