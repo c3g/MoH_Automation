@@ -83,7 +83,7 @@ module load mugqic/genpipes
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2086
-  log_report_output=$(log_report.py $job_list --tsv $log_report_file)
+  log_report_output=$(log_report.py $job_list --tsv $log_report_file &> /dev/null)
   failure=$log_report_output
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
