@@ -108,7 +108,7 @@ elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
 elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]]; then
   # Let's skip and wait
-  echo "WARNING: Job(s) still running for $job_list"
+  echo "INFO: Job(s) still running for $job_list"
 else
   echo "ERROR: Unknown status in $job_list"
 fi
