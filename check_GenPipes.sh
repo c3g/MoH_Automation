@@ -14,14 +14,14 @@ usage() {
   }
 
 genpipes_tagging() {
-  echo "Tagging GenPipes json"
+  echo "-> Tagging GenPipes json..."
   module load mugqic/python/3.11.1
   echo "$MOH_path/moh_automation/moh_automation_main/genpipes_deliverables_metrics.py -i $1 -o ${1/.json/_tagged.json}"
   module unload mugqic/python/3.11.1
 }
 
 genpipes_ingesting() {
-  echo "Ingesting GenPipes json"
+  echo "-> Ingesting GenPipes json..."
   # shellcheck disable=SC1091,SC2086
   source $MOH_path/project_tracking_cli/venv/bin/activate
   echo "pt-cli ingest genpipes --input-json $1"
@@ -29,7 +29,7 @@ genpipes_ingesting() {
 }
 
 genpipes_transfer() {
-  echo "Transfering GenPipes"
+  echo "-> Transfering GenPipes..."
   echo "$MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3"
 }
 
@@ -105,10 +105,10 @@ elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  echo "Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
+  echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
 elif [[ $failure == *"ACTIVE"* ]]; then
   # Let's skip and wait
-  echo "Job(s) still running for $job_list"
+  echo "WARNING: Job(s) still running for $job_list"
 else
-  echo "Unknown status in $job_list"
+  echo "ERROR: Unknown status in $job_list"
 fi
