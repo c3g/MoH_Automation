@@ -267,8 +267,8 @@ $custom_ini \
     done
     ln -s "$maybe_job_list" "$link_folder"/.
     # Do some cleaning
-    mv "$genpipes_file" "${path}/genpipes_files"
+    mv "$genpipes_file" "${path}/genpipes_files/."
     maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
-    mv "$maybe_trace_ini" "${path}/genpipes_inis"
+    mv "$maybe_trace_ini" "${path}/genpipes_inis/."
   fi
 done < "${input_file}"
