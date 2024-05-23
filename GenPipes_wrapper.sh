@@ -222,12 +222,18 @@ $custom_ini \
   fi
   # Chunking & Submission
   if test $chunk_submit == true && test -f "$genpipes_file"; then
+    # GenPipes file empty
+    if ! [ -s "$genpipes_file" ]; then
+      echo "Error: file $genpipes_file is empty. Check $(realpath "$patient_logs_folder/${patient}.${timestamp}.log")"
+      exit 1
+    fi
     submission_log="$patient_logs_folder/${patient}.${timestamp}_submission.log"
     today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
     echo "-> Chunking GenPipes for ${patient}..."
     "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
+    # Add check on log previously created when a new error appears
     chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
     chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
     echo "-> Submitting GenPipes for ${patient}..."
