@@ -79,6 +79,8 @@ protocol=$(echo "$genpipes_json" | cut -d'.' -f2 |  cut -d'_' -f1)
 # MAIN folder location
 MOH_MAIN="$MOH_path/MAIN"
 
+genpipes_submission_folder=$(dirname "$readset_file")
+
 module load mugqic/genpipes
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
@@ -101,14 +103,16 @@ if [[ -z $failure ]]; then
   if ! [[ $cluster == beluga ]]; then
     genpipes_transfer "$readset_file" "$pipeline" "$protocol"
   fi
+  touch "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
+  touch "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]] || [[ $failure == *"PENDING"* ]]; then
   # Let's skip and wait
-  echo "INFO: Job(s) still running for $log_report_file"
+  echo "INFO: Job(s) still running Cf. $log_report_file"
 else
-  echo "ERROR: Unknown status in $log_report_file"
+  echo "ERROR: Unknown status Cf. $log_report_file"
 fi
