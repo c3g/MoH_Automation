@@ -37,14 +37,26 @@ while getopts 'hc:j:r:l:' OPTION; do
   case "$OPTION" in
   c)
     cluster="$OPTARG"
-    if [[ $cluster == beluga ]]; then
-        MOH_path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
-      elif [[ $cluster == abacus ]]; then
+      if [[ $cluster == abacus ]]; then
         MOH_path="/lb/project/mugqic/projects/MOH"
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
+        fi
+        if [ -z "${MUGQIC_INSTALL_HOME_PRIVATE:-}" ]; then
+          export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
+        fi
+      elif [[ $cluster == beluga ]]; then
+        MOH_path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
+        fi
       elif [[ $cluster == cardinal ]]; then
         MOH_path="/project/def-c3g/MOH"
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
+        fi
       else
-        echo -e "ERROR: Invalid cluster: '$cluster'.\n"
+        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'beluga' or 'cardinal'\n"
         usage
       fi
     ;;
@@ -70,6 +82,23 @@ done
 if [ ! "$cluster" ] || [ ! "$readset_file" ] || [ ! "$genpipes_json" ] || [ ! "$job_list" ]; then
   echo -e "ERROR: Missing mandatory arguments -c and/or -r and/or -j and/or -l.\n"
   usage
+fi
+
+if [ -z "${MUGQIC_INSTALL_HOME:-}" ]; then
+  export MUGQIC_INSTALL_HOME=/cvmfs/soft.mugqic/CentOS6
+fi
+
+if [ -z "${PORTAL_OUTPUT_DIR:-}" ]; then
+  export PORTAL_OUTPUT_DIR=$MUGQIC_INSTALL_HOME_DEV/portal_out_dir
+fi
+
+module avail 2>&1 | grep -m 1 -q "mugqic"; greprc=$?
+if ! [[ $greprc -eq 0 ]]; then
+  module use "$MUGQIC_INSTALL_HOME/modulefiles" "$MUGQIC_INSTALL_HOME_DEV/modulefiles"
+fi
+
+if [ -z "${JOB_MAIL:-}" ]; then
+  export JOB_MAIL=c3g-processing@fakeemail.ca
 fi
 
 operation_cmd_line=$(jq '.operation_cmd_line' "$genpipes_json")
