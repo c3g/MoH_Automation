@@ -104,6 +104,15 @@ if [ -z "${JOB_MAIL:-}" ]; then
   export JOB_MAIL=c3g-processing@fakeemail.ca
 fi
 
+# Load globus module
+module load mugqic/globus-cli/3.24.0
+globus_logged=$(globus whoami 2>&1)
+if [[ $globus_logged == *"MissingLoginError"* ]]; then
+  echo "ERROR: Globus not logged in. Please run 'globus login' in $cluster under robot user. Exiting..."
+  exit 1
+fi
+module unload mugqic/globus-cli/3.24.0
+
 operation_cmd_line=$(jq '.operation_cmd_line' "$genpipes_json")
 pipeline=$(echo "$operation_cmd_line" | cut -d' ' -f1 | rev | cut -d'/' -f2 | rev)
 protocol=$(echo "$genpipes_json" | cut -d'.' -f2 |  cut -d'_' -f1)
