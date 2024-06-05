@@ -16,7 +16,8 @@ usage() {
 genpipes_tagging() {
   echo "-> Tagging GenPipes json..."
   module load mugqic/python/3.11.1
-  echo "$MOH_path/moh_automation/moh_automation_main/genpipes_deliverables_metrics.py -i $1 -o ${1/.json/_tagged.json}"
+  # shellcheck disable=SC2086
+  $MOH_path/moh_automation/moh_automation_main/genpipes_deliverables_metrics.py -i $1 -o ${1/.json/_tagged.json}
   module unload mugqic/python/3.11.1
 }
 
@@ -24,13 +25,15 @@ genpipes_ingesting() {
   echo "-> Ingesting GenPipes json..."
   # shellcheck disable=SC1091,SC2086
   source $MOH_path/project_tracking_cli/venv/bin/activate
-  echo "pt-cli ingest genpipes --input-json $1"
+  # shellcheck disable=SC2086
+  pt-cli ingest genpipes --input-json $1
   deactivate
 }
 
 genpipes_transfer() {
   echo "-> Transfering GenPipes..."
-  echo "$MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3"
+  # shellcheck disable=SC2086
+  $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3
 }
 
 while getopts 'hc:j:r:l:' OPTION; do
@@ -115,16 +118,18 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2086
   log_report_output=$(log_report.py $job_list --tsv $log_report_file 2>&1)
-  failure=$log_report_output
+  failure=$(awk 'NR>1 {print $5"\t"$6"\t"$7}' "$log_report_file" | uniq)
+  chmod 660 "$MOH_MAIN/job_output/$log_report_file"
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
   log_report_output=$(log_report.pl -nos $job_list)
   failure=$(echo "$log_report_output" | grep -v "^#")
   echo "$log_report_output" > "$MOH_MAIN/job_output/${job_list}.txt"
+  chmod 660 "$MOH_MAIN/job_output/${job_list}.txt"
 fi
 # echo "failure: $failure"
-if [[ -z $failure ]]; then
+if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
@@ -133,12 +138,14 @@ if [[ -z $failure ]]; then
     genpipes_transfer "$readset_file" "$pipeline" "$protocol"
   fi
   touch "${genpipes_submission_folder}.checked"
+  chmod 660 "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
   touch "${genpipes_submission_folder}.checked"
+  chmod 660 "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]] || [[ $failure == *"PENDING"* ]]; then
   # Let's skip and wait
   echo "INFO: Job(s) still running Cf. $log_report_file"
