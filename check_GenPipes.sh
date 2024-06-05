@@ -119,7 +119,7 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   # shellcheck disable=SC2086
   log_report_output=$(log_report.py $job_list --tsv $log_report_file 2>&1)
   failure=$(awk 'NR>1 {print $5"\t"$6"\t"$7}' "$log_report_file" | uniq)
-  chmod 660 "$MOH_MAIN/job_output/$log_report_file"
+  chmod 660 "$log_report_file"
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
@@ -131,7 +131,7 @@ fi
 # echo "failure: $failure"
 if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
+  genpipes_tagging $(readlink -f "$genpipes_json")
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   # Let's transfer GenPipes only if NOT on beluga
   if ! [[ $cluster == beluga ]]; then
@@ -141,7 +141,7 @@ if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   chmod 660 "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
+  genpipes_tagging $(readlink -f "$genpipes_json")
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
   touch "${genpipes_submission_folder}.checked"
