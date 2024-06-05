@@ -64,7 +64,7 @@ while getopts 'hc:j:r:l:' OPTION; do
       fi
     ;;
   j)
-    genpipes_json="$OPTARG"
+    genpipes_json=$(readlink -f "$OPTARG")
     ;;
   r)
     readset_file="$OPTARG"
@@ -131,7 +131,7 @@ fi
 # echo "failure: $failure"
 if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging $(readlink -f "$genpipes_json")
+  genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   # Let's transfer GenPipes only if NOT on beluga
   if ! [[ $cluster == beluga ]]; then
@@ -141,7 +141,7 @@ if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   chmod 660 "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging $(readlink -f "$genpipes_json")
+  genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
   touch "${genpipes_submission_folder}.checked"
