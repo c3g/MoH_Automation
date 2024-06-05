@@ -31,7 +31,7 @@ genpipes_ingesting() {
 }
 
 genpipes_transfer() {
-  echo "-> Transfering GenPipes..."
+  echo "-> Transferring GenPipes..."
   # shellcheck disable=SC2086
   $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3
 }
