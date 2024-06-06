@@ -20,12 +20,14 @@ while getopts 'hc:p::t:i:' OPTION; do
         path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         # path="/scratch/stretenp/tmp/MoH_GenPipes"
         scheduler="slurm"
+        max_queue="500"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == cardinal ]]; then
         path="/project/def-c3g/MOH/MAIN"
         scheduler="slurm"
+        max_queue="10000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
         fi
@@ -33,6 +35,7 @@ while getopts 'hc:p::t:i:' OPTION; do
         path="/lb/project/mugqic/projects/MOH/MAIN"
         # path="/lb/scratch/pstretenowich/MOH/MAIN"
         scheduler="pbs"
+        max_queue="500"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
         fi
@@ -248,7 +251,8 @@ $custom_ini \
     echo "-> Submitting GenPipes for ${patient}..."
     cat /dev/null > "$submission_log"
     {
-      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
+      # shellcheck disable=SC2086
+      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes -n $max_queue "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
       echo $!
       echo "PATIENT: ${patient}"
       echo "LOG: "
