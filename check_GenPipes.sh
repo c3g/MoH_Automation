@@ -125,8 +125,8 @@ genpipes_submission_folder=$(dirname "$readset_file")
 module load mugqic/genpipes
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
-  # shellcheck disable=SC2086
-  log_report_output=$(log_report.py $job_list --tsv $log_report_file 2>&1)
+  # shellcheck disable=SC2046,SC2086
+  log_report_output=$(log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1)
   failure=$(awk 'NR>1 {print $5"\t"$6"\t"$7}' "$log_report_file" | uniq)
   chmod 660 "$log_report_file"
 elif [[ $cluster == abacus ]]; then
