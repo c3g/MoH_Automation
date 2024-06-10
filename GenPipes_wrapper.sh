@@ -171,8 +171,8 @@ RNA_light.custom.ini \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_regex="${path}/json/${pipeline_name}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    job_list_regex="${path}/job_output/${pipeline_name}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+    json_prefix_name="${pipeline_name}"
+    job_list_prefix_name="${pipeline_name}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == rnaseq; then
     pipeline_name=RnaSeq
@@ -195,8 +195,8 @@ RNA_cancer.custom.ini \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+    json_prefix_name="${path}/json/${pipeline_name}.${protocol}"
+    job_list_prefix_name="${pipeline_name}.${protocol}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == tumor_pair; then
     pipeline_name=TumorPair
@@ -228,8 +228,8 @@ $custom_ini \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_regex="${path}/json/${pipeline_name}.${protocol}_[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].json"
-    job_list_regex="${path}/job_output/${pipeline_name}.${protocol}.job_list.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+    json_prefix_name="${pipeline_name}.${protocol}"
+    job_list_prefix_name="${pipeline_name}.${protocol}.job_list."
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   fi
   # Chunking & Submission
@@ -258,8 +258,21 @@ $custom_ini \
       echo "LOG: "
     } >> "$submission_log"
     chmod 664 "$submission_log"
+    # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
+    maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+    # Getting standardized timestamp from trace.ini file
+    if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
+        trace_ini_timestamp="${BASH_REMATCH[1]}"
+    else
+        echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+        exit 1
+    fi
     # Finding GenPipes json and symklink into genpipes_submission along with the readset file
-    maybe_json=$(find "${path}/json" -type f -regex "$json_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+    maybe_json=$(find "${path}/json" -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
+    if [ -z "$maybe_json" ]; then
+      echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
+      exit 1
+    fi
     ln -s "$readset_file" "$link_folder"/.
     ln -s "$maybe_json" "$link_folder"/.
     # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
@@ -267,12 +280,11 @@ $custom_ini \
     maybe_job_list=""
     while [ -z "$maybe_job_list" ]; do
       sleep 1
-      maybe_job_list=$(find "${path}/job_output" -type f -regex "$job_list_regex" -newermt "$after_genpipes_call_timestamp" | sort | tail -n 1)
+      maybe_job_list=$(find "${path}/job_output" -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
     done
     ln -s "$maybe_job_list" "$link_folder"/.
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
-    maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
     mv "$maybe_trace_ini" "${path}/genpipes_inis/."
   fi
 done < "${input_file}"
