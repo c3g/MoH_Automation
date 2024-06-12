@@ -170,7 +170,7 @@ RNA_light.custom.ini \
 -g $genpipes_file \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
-    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    # after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_prefix_name="${pipeline_name}"
     job_list_prefix_name="${pipeline_name}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
@@ -194,7 +194,7 @@ RNA_cancer.custom.ini \
 -g $genpipes_file \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
-    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    # after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_prefix_name="${path}/json/${pipeline_name}.${protocol}"
     job_list_prefix_name="${pipeline_name}.${protocol}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
@@ -227,7 +227,7 @@ $custom_ini \
 -g $genpipes_file \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
-    after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
+    # after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_prefix_name="${pipeline_name}.${protocol}"
     job_list_prefix_name="${pipeline_name}.${protocol}.job_list."
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
@@ -243,21 +243,26 @@ $custom_ini \
     today=$(date "+%Y-%m-%dT")
     chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
-    echo "-> Chunking GenPipes for ${patient}..."
-    "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
-    # Add check on log previously created when a new error appears
-    chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
-    chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
-    echo "-> Submitting GenPipes for ${patient}..."
-    cat /dev/null > "$submission_log"
-    {
-      # shellcheck disable=SC2086
-      (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes -n $max_queue "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
-      echo $!
-      echo "PATIENT: ${patient}"
-      echo "LOG: "
-    } >> "$submission_log"
-    chmod 664 "$submission_log"
+    if [[ $cluster == cardinal ]]; then
+      echo "-> Submitting GenPipes for ${patient}..."
+      bash "$genpipes_file"
+    else
+      echo "-> Chunking GenPipes for ${patient}..."
+      "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
+      # Add check on log previously created when a new error appears
+      chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
+      chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
+      echo "-> Submitting GenPipes for ${patient}..."
+      cat /dev/null > "$submission_log"
+      {
+        # shellcheck disable=SC2086
+        (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes -n $max_queue "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
+        echo $!
+        echo "PATIENT: ${patient}"
+        echo "LOG: "
+      } >> "$submission_log"
+      chmod 664 "$submission_log"
+    fi
     # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
     maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
     # Getting standardized timestamp from trace.ini file
