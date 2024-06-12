@@ -245,7 +245,7 @@ $custom_ini \
     chmod 774 "$genpipes_file"
     if [[ $cluster == cardinal ]]; then
       echo "-> Submitting GenPipes for ${patient}..."
-      bash "$genpipes_file"
+      bash "$genpipes_file" &> "$submission_log"
     else
       echo "-> Chunking GenPipes for ${patient}..."
       "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
@@ -264,30 +264,35 @@ $custom_ini \
       chmod 664 "$submission_log"
     fi
     # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
-    maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
-    # Getting standardized timestamp from trace.ini file
-    if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
-        trace_ini_timestamp="${BASH_REMATCH[1]}"
-    else
-        echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+      maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+      # Getting standardized timestamp from trace.ini file
+      if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
+          trace_ini_timestamp="${BASH_REMATCH[1]}"
+      else
+          echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+          exit 1
+      fi
+    # Making sure submission log is not empty otherwise skipping
+    if [ -s "$submission_log" ]; then
+      # Finding GenPipes json and symklink into genpipes_submission along with the readset file
+      maybe_json=$(find "${path}/json" -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
+      if [ -z "$maybe_json" ]; then
+        echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
         exit 1
+      fi
+      ln -s "$readset_file" "$link_folder"/.
+      ln -s "$maybe_json" "$link_folder"/.
+      # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
+      echo "-> Waiting for job_list to be created for ${patient}..."
+      maybe_job_list=""
+      while [ -z "$maybe_job_list" ]; do
+        sleep 1
+        maybe_job_list=$(find "${path}/job_output" -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
+      done
+      ln -s "$maybe_job_list" "$link_folder"/.
+    else
+      echo "Warning: file $submission_log is empty. Skipping..."
     fi
-    # Finding GenPipes json and symklink into genpipes_submission along with the readset file
-    maybe_json=$(find "${path}/json" -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
-    if [ -z "$maybe_json" ]; then
-      echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
-      exit 1
-    fi
-    ln -s "$readset_file" "$link_folder"/.
-    ln -s "$maybe_json" "$link_folder"/.
-    # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
-    echo "-> Waiting for job_list to be created for ${patient}..."
-    maybe_job_list=""
-    while [ -z "$maybe_job_list" ]; do
-      sleep 1
-      maybe_job_list=$(find "${path}/job_output" -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
-    done
-    ln -s "$maybe_job_list" "$link_folder"/.
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
     mv "$maybe_trace_ini" "${path}/genpipes_inis/."
