@@ -229,7 +229,7 @@ $custom_ini \
     chunk_submit=true
     # after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
     json_prefix_name="${pipeline_name}.${protocol}"
-    job_list_prefix_name="${pipeline_name}.${protocol}.job_list."
+    job_list_prefix_name="${pipeline_name}.${protocol}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   fi
   # Chunking & Submission
