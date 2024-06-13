@@ -92,7 +92,7 @@ elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal main folder location
   SRC_MAIN="$SRC_MOH/MAIN"
   # Cardinal log file location
-  SRC_LOG_LOC="$SRC_MOH/TEMP"
+  SRC_LOG_LOC="$SRC_MOH/log_files/transfer"
   # Cardinal Endpoint
   SRC_EP=''
 else
