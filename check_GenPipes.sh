@@ -122,33 +122,25 @@ MOH_MAIN="$MOH_path/MAIN"
 
 genpipes_submission_folder=$(dirname "$readset_file")
 
+echo "-> Checking $genpipes_submission_folder..."
+
 module load mugqic/genpipes
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
   log_report_output=$(log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1)
-  failure=$(awk 'NR>1 {print $5"\t"$6"\t"$7}' "$log_report_file" | uniq)
+  failure=$(awk -F'\t' 'NR>1 {print $5"\n"$6"\n"$7}' "$log_report_file" | sort | uniq)
   chmod 660 "$log_report_file"
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
   log_report_output=$(log_report.pl -nos $job_list)
-  failure=$(echo "$log_report_output" | grep -v "^#")
+  failure=$(echo "$log_report_output" | grep -v "^#" | awk -F'\t' '{print $5}' | sort | uniq)
   echo "$log_report_output" > "$MOH_MAIN/job_output/${job_list}.txt"
   chmod 660 "$MOH_MAIN/job_output/${job_list}.txt"
 fi
 # echo "failure: $failure"
-if [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
-  # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
-  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  # Let's transfer GenPipes only if NOT on beluga
-  if ! [[ $cluster == beluga ]]; then
-    genpipes_transfer "$readset_file" "$pipeline" "$protocol"
-  fi
-  touch "${genpipes_submission_folder}.checked"
-  chmod 660 "${genpipes_submission_folder}.checked"
-elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
+if [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
@@ -158,6 +150,16 @@ elif [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
 elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]] || [[ $failure == *"PENDING"* ]]; then
   # Let's skip and wait
   echo "INFO: Job(s) still running Cf. $log_report_file"
+elif [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
+  # Let's tag GenPipes + Ingest GenPipes
+  genpipes_tagging "$genpipes_json"
+  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+  # Let's transfer GenPipes only if NOT on beluga
+  if ! [[ $cluster == beluga ]]; then
+    genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+  fi
+  touch "${genpipes_submission_folder}.checked"
+  chmod 660 "${genpipes_submission_folder}.checked"
 else
   echo "ERROR: Unknown status Cf. $log_report_file"
 fi
