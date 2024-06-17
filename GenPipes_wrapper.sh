@@ -8,7 +8,7 @@ usage() {
   echo " -p <pipeline>                    Pipeline name to be used for the analysis."
   echo " -t <protocol>                    Protocol to be used for the analysis. (Optional)"
   echo " -i <input_file>                  Path to Input File to be used for the analysis. This file is a csv file with 1st
-                                          column being the readset file and the 2nd (optional) column being the pair file."
+                                          column being the readset file and the 2nd column being the pair file and 3rd column being an extra ini. When 2nd or 3rd column are not desired to be used just set it as an empty string."
   exit 1
   }
 
@@ -145,7 +145,7 @@ fi
 
 cd "$path"
 
-while IFS=, read -r readset_file pair_file; do
+while IFS=, read -r readset_file pair_file extra_ini; do
   timestamp=$(date "+%Y-%m-%dT%H.%M.%S")
   timestamp_find_format=$(date "+%Y-%m-%d %H:%M:%S")
   patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
@@ -164,7 +164,7 @@ while IFS=, read -r readset_file pair_file; do
 -s 1-4 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-RNA_light.custom.ini \
+RNA_light.custom.ini $extra_ini\
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
@@ -188,7 +188,7 @@ RNA_light.custom.ini \
 -s 1-8,11-28 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-RNA_cancer.custom.ini \
+RNA_cancer.custom.ini $extra_ini\
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
@@ -220,7 +220,7 @@ RNA_cancer.custom.ini \
 -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
 $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-$custom_ini \
+$custom_ini $extra_ini\
 -j $scheduler \
 -r $readset_file \
 -p $pair_file \
