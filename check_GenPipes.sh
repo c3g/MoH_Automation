@@ -141,10 +141,10 @@ elif [[ $cluster == abacus ]]; then
 fi
 # echo "failure: $failure"
 if [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
+  echo "WARNING: Failure found in $job_list Cf. $log_report_file"
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  echo "WARNING: Failure found in $job_list Cf. $MOH_MAIN/job_output/$log_report_file"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
 elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]] || [[ $failure == *"PENDING"* ]]; then
