@@ -67,6 +67,7 @@ fi
 # The label is the readset file name
 label=${readset_file%.*}
 label=${label##*/}
+label="${label}.${pipeline}.${protocol}"
 
 # Destination cluster
 ## Beluga main folder location
