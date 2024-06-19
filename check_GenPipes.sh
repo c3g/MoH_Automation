@@ -32,9 +32,15 @@ genpipes_ingesting() {
 
 genpipes_transfer() {
   genpipes_run=$(dirname "$readset_file" | cut -d "/" -f7)
+  transfer_log=$(dirname "$readset_file")/transfer.log
   echo "-> Transferring GenPipes run $genpipes_run..."
-  # shellcheck disable=SC2086
-  $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3
+  {
+    # shellcheck disable=SC2086
+    (sleep 1 && $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1) & echo -n "PID: "
+    echo $!
+    echo "LOG: "
+  } >> "$transfer_log"
+  echo "-> To follow transfer status see $transfer_log"
 }
 
 while getopts 'hc:j:r:l:' OPTION; do
