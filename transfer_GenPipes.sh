@@ -216,7 +216,7 @@ if [ $? -eq 0 ]; then
   # shellcheck disable=SC1091
   source $SRC_MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $SRC_MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
+  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $SRC_MOH/Transfer_json/${LISTFILE/.txt/.json} --destination beluga --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json $SRC_MOH/Transfer_json/${LISTFILE/.txt/.json}
 else
