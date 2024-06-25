@@ -95,7 +95,7 @@ elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal log file location
   SRC_LOG_LOC="$SRC_MOH/log_files/transfer"
   # Cardinal Endpoint
-  SRC_EP=''
+  SRC_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
 else
   echo "ERROR: Unknown cluster. Exiting."
   exit 1
