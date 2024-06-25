@@ -264,7 +264,7 @@ $custom_ini $extra_ini\
       chmod 664 "$submission_log"
     fi
     # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
-      maybe_trace_ini=$(find "${path}" -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+      maybe_trace_ini=$(find "${path}" -maxdepth 1 -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
       # Getting standardized timestamp from trace.ini file
       if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
           trace_ini_timestamp="${BASH_REMATCH[1]}"
@@ -275,7 +275,7 @@ $custom_ini $extra_ini\
     # Making sure submission log is not empty otherwise skipping
     if [ -s "$submission_log" ]; then
       # Finding GenPipes json and symklink into genpipes_submission along with the readset file
-      maybe_json=$(find "${path}/json" -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
+      maybe_json=$(find "${path}/json" -maxdepth 1 -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
       if [ -z "$maybe_json" ]; then
         echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
         exit 1
@@ -287,7 +287,7 @@ $custom_ini $extra_ini\
       maybe_job_list=""
       while [ -z "$maybe_job_list" ]; do
         sleep 1
-        maybe_job_list=$(find "${path}/job_output" -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
+        maybe_job_list=$(find "${path}/job_output" -maxdepth 1 -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
       done
       ln -s "$maybe_job_list" "$link_folder"/.
     else
