@@ -283,7 +283,7 @@ $custom_ini $extra_ini\
       ln -s "$readset_file" "$link_folder"/.
       ln -s "$maybe_json" "$link_folder"/.
       # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
-      echo "-> Waiting for job_list to be created for ${patient}..."
+      echo "-> Waiting for ${job_list_prefix_name}.${trace_ini_timestamp} to be created for ${patient}..."
       maybe_job_list=""
       while [ -z "$maybe_job_list" ]; do
         sleep 1
