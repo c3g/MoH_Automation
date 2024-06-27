@@ -164,7 +164,7 @@ while IFS=, read -r readset_file pair_file extra_ini; do
 -s 1-4 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-RNA_light.custom.ini $extra_ini\
+RNA_light.custom.ini $extra_ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
@@ -188,7 +188,7 @@ RNA_light.custom.ini $extra_ini\
 -s 1-8,11-28 \
 -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-RNA_cancer.custom.ini $extra_ini\
+RNA_cancer.custom.ini $extra_ini \
 -j $scheduler \
 -r $readset_file \
 -g $genpipes_file \
@@ -220,7 +220,7 @@ RNA_cancer.custom.ini $extra_ini\
 -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini \
 $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $cluster_ini \
 $MUGQIC_PIPELINES_HOME/pipelines/common_ini/Homo_sapiens.GRCh38.ini \
-$custom_ini $extra_ini\
+$custom_ini $extra_ini \
 -j $scheduler \
 -r $readset_file \
 -p $pair_file \
