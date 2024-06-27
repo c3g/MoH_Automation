@@ -3,7 +3,7 @@
 THIS_SCRIPT=$(basename "$0")
 
 usage() {
-  echo "script usage: $THIS_SCRIPT -h [-j genpipes_json] [-r readset_file]"
+  echo "script usage: $THIS_SCRIPT -h [-r readset_file] [-p pipeline] [-t protocol]"
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <readset_file>                Readset File used to submit GenPipes /!\ MANDATORY /!\."

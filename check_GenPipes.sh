@@ -36,7 +36,7 @@ genpipes_transfer() {
   echo "-> Transferring GenPipes run $genpipes_run..."
   {
     # shellcheck disable=SC2086
-    (sleep 1 && $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1) &
+    nohup (sleep 1 && $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1) &
     echo -n "PID: "
     echo $!
     echo "LOG: "
@@ -166,6 +166,10 @@ elif [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   if ! [[ $cluster == beluga ]]; then
     genpipes_transfer "$readset_file" "$pipeline" "$protocol"
   fi
+  touch "${genpipes_submission_folder}.checked"
+  chmod 660 "${genpipes_submission_folder}.checked"
+elif [[ $failure == *"CANCELLED"* ]]; then
+  echo "INFO: All jobs cancelled Cf. $log_report_file"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
 else
