@@ -36,7 +36,7 @@ genpipes_transfer() {
   echo "-> Transferring GenPipes run $genpipes_run..."
   {
     # shellcheck disable=SC2086
-    nohup (sleep 1 && $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1) &
+    nohup $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1 &
     echo -n "PID: "
     echo $!
     echo "LOG: "
