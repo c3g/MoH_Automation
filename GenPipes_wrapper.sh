@@ -195,7 +195,7 @@ RNA_cancer.custom.ini $extra_ini \
 --json-pt &> "$patient_logs_folder/${patient}.${timestamp}.log"
     chunk_submit=true
     # after_genpipes_call_timestamp=$(date "+%Y-%m-%d %H:%M:%S")
-    json_prefix_name="${path}/json/${pipeline_name}.${protocol}"
+    json_prefix_name="${pipeline_name}.${protocol}"
     job_list_prefix_name="${pipeline_name}.${protocol}.job_list"
     trace_ini_regex="${path}/${pipeline_name}.${protocol}.[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9].config.trace.ini"
   elif test "$pipeline" == tumor_pair; then
