@@ -115,7 +115,7 @@ fi
 # Load globus module
 module load mugqic/globus-cli/3.24.0
 globus_logged=$(globus whoami 2>&1)
-if [[ $globus_logged == *"MissingLoginError"* ]]; then
+if [[ $globus_logged == *"MissingLoginError"* ]] && ! [[ $cluster == beluga ]]; then
   echo "ERROR: Globus not logged in. Please run 'globus login' in $cluster under robot user. Exiting..."
   exit 1
 fi
