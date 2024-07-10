@@ -240,8 +240,6 @@ $custom_ini $extra_ini \
       exit 1
     fi
     submission_log="$patient_logs_folder/${patient}.${timestamp}_submission.log"
-    today=$(date "+%Y-%m-%dT")
-    chmod 664 -- *."$protocol"."$today"*.config.trace.ini
     chmod 774 "$genpipes_file"
     if [[ $cluster == cardinal ]]; then
       echo "-> Submitting GenPipes for ${patient}..."
@@ -295,6 +293,7 @@ $custom_ini $extra_ini \
     fi
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
+    chmod 664 -- "$maybe_trace_ini"
     mv "$maybe_trace_ini" "${path}/genpipes_inis/."
   fi
 done < "${input_file}"
