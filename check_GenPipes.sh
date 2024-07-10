@@ -131,18 +131,16 @@ MOH_MAIN="$MOH_path/MAIN"
 genpipes_submission_folder=$(dirname "$readset_file")
 
 echo "-> Checking $genpipes_submission_folder..."
-
-module load mugqic/genpipes
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
-  log_report_output=$(log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1)
+  log_report_output=$($MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1)
   failure=$(awk -F'\t' 'NR>1 {print $5"\n"$6"\n"$7}' "$log_report_file" | sort | uniq)
   chmod 660 "$log_report_file"
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
-  log_report_output=$(log_report.pl -nos $job_list)
+  log_report_output=$($MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl -nos $job_list)
   failure=$(echo "$log_report_output" | grep -v "^#" | awk -F'\t' '{print $5}' | sort | uniq)
   echo "$log_report_output" > "${job_list}.txt"
   chmod 660 "${job_list}.txt"
