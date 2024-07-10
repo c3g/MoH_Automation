@@ -144,8 +144,8 @@ elif [[ $cluster == abacus ]]; then
   # shellcheck disable=SC2086
   log_report_output=$(log_report.pl -nos $job_list)
   failure=$(echo "$log_report_output" | grep -v "^#" | awk -F'\t' '{print $5}' | sort | uniq)
-  echo "$log_report_output" > "$MOH_MAIN/job_output/${job_list}.txt"
-  chmod 660 "$MOH_MAIN/job_output/${job_list}.txt"
+  echo "$log_report_output" > "${job_list}.txt"
+  chmod 660 "${job_list}.txt"
 fi
 # echo "failure: $failure"
 if [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
