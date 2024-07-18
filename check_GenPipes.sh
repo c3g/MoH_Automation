@@ -31,7 +31,7 @@ genpipes_ingesting() {
 }
 
 genpipes_transfer() {
-  genpipes_run=$(dirname "$readset_file" | cut -d "/" -f7)
+  genpipes_run=$(basename $(dirname "$readset_file"))
   transfer_log=$(dirname "$readset_file")/transfer.log
   echo "-> Transferring GenPipes run $genpipes_run..."
   {
