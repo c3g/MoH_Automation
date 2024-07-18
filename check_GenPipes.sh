@@ -134,29 +134,30 @@ echo "-> Checking $genpipes_submission_folder..."
 if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
-  log_report_output=$($MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1)
-  failure=$(awk -F'\t' 'NR>1 {print $5"\n"$6"\n"$7}' "$log_report_file" | sort | uniq)
+  $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1
+  status=$(awk -F'\t' 'NR>1 {print $5"\n"$6"\n"$7}' "$log_report_file" | sort | uniq)
   chmod 660 "$log_report_file"
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
-  log_report_output=$($MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl $job_list)
-  failure=$(echo "$log_report_output" | grep -v "^#" | awk -F'\t' '{print $5}' | sort | uniq)
-  echo "$log_report_output" > "${job_list}.txt"
+  $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl $job_list > log_report_file
+  status=$(grep -v "^#" "$log_report_file" | awk -F'\t' '{print $5}' | sort | uniq)
   chmod 660 "${job_list}.txt"
 fi
-# echo "failure: $failure"
-if [[ $failure == *"FAILED"* ]] || [[ $failure == *"TIMEOUT"* ]]; then
-  echo "WARNING: Failure found in $job_list Cf. $log_report_file"
+# FIRST check if still running and skipping
+if [[ $status == *"ACTIVE"* ]] || [[ $status == *"RUNNING"* ]]; then
+  # Let's skip and wait
+  echo "INFO: Job(s) still running Cf. $log_report_file"
+# SECOND check if failed or timeout
+elif [[ $status == *"FAILED"* ]] || [[ $status == *"TIMEOUT"* ]]; then
+  echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
-elif [[ $failure == *"ACTIVE"* ]] || [[ $failure == *"RUNNING"* ]] || [[ $failure == *"PENDING"* ]]; then
-  # Let's skip and wait
-  echo "INFO: Job(s) still running Cf. $log_report_file"
-elif [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
+# THIRD check if success or completed
+elif [[ $status == *"SUCCESS"* ]] || [[ $status == *"COMPLETED"* ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
@@ -166,10 +167,12 @@ elif [[ -z $failure ]] || [[ $failure == *"COMPLETED"* ]]; then
   fi
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
-elif [[ $failure == *"CANCELLED"* ]]; then
+# FOURTH check if cancelled
+elif [[ $status == *"CANCELLED"* ]]; then
   echo "INFO: All jobs cancelled Cf. $log_report_file"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
+# FIFTH check if unknown status
 else
   echo "ERROR: Unknown status Cf. $log_report_file"
 fi
