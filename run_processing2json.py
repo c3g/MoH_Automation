@@ -6,7 +6,6 @@ import re
 import csv
 import os
 import logging
-import pandas as pd 
 from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
