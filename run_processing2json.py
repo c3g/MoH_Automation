@@ -6,6 +6,7 @@ import re
 import csv
 import os
 import logging
+import pandas as pd 
 from datetime import datetime
 
 logging.basicConfig(format='%(levelname)s: %(asctime)s - %(message)s', level=logging.INFO)
@@ -128,7 +129,10 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                     }
                                 ]
                                 break
-            raw_reads_count_flag = "PASS"
+            if run_row['Clusters'] == "0":
+                raw_reads_count_flag = "MISSING"
+            else:
+                raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
                 raw_reads_count_flag = rna_raw_reads_count_check(sample, run_row['Clusters'])
             raw_duplication_rate_flag = "PASS"
@@ -198,6 +202,8 @@ def dna_raw_mean_coverage_check(sample, value, tumour):
     """ Mean Coverage DNA metric check """
     if not value:
         raise Exception(f"Missing 'Mean Coverage' value for {sample}")
+    if float(value) == -1:
+        ret = "MISSING"
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -210,6 +216,8 @@ def rna_raw_reads_count_check(sample, value):
     """ Clusters RNA metric check """
     if not value:
         raise Exception(f"Missing 'Clusters' value for {sample}")
+    if float(value) == -1:
+        ret = "MISSING"
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -224,6 +232,8 @@ def dna_raw_duplication_rate_check(sample, value):
         raise Exception(f"Missing 'Dup. Rate (%)' value for {sample}")
     if not value:
         ret = "FAILED"
+    if float(value) == -1:
+        ret = "MISSING"
     elif float(value)>50:
         ret = "FAILED"
     elif float(value)>20:
@@ -236,6 +246,8 @@ def median_insert_size_check(sample, value):
     """ Mapped Insert Size (median) metric check """
     if not value:
         raise Exception(f"Missing 'Mapped Insert Size (median)' value for {sample}")
+    if float(value) == -1:
+        ret = "MISSING"
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:

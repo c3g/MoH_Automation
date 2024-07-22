@@ -37,7 +37,7 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
             if line.startswith("/lb/robot/research/processing/novaseq/20"):
                 fields = line.split(" ")
                 if ".bam" in line:
-                    readset_name = f"{fields[0].split('/')[10]}_{fields[0].split('/')[11]}"
+                    readset_name = f"{fields[0].split('/')[10]}.{fields[0].split('/')[11].replace("run","")}"
                     src_location_uri = f"abacus://{fields[0]}"
                     dest_location_uri = f"beluga://{fields[1].strip()}"
                     if "bam.bai" in line:
@@ -59,6 +59,9 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
 
                 elif ".fastq" in line:
                     readset_name = fields[0].split('/')[10].replace("Sample_", "")
+                    if "_" in readset_name:
+                        tmp=fields[0].split("/")[7].split("_")
+                        readset_name=f"{readset_name.split('_')[0]}.{tmp[1]}_{tmp[2]}_{fields[0].split('/')[8].split('.')[1]}"
                     src_location_uri = f"abacus://{fields[0]}"
                     dest_location_uri = f"beluga://{fields[1].strip()}"
                     if "_R1_" in line:
@@ -80,15 +83,23 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
 
     for readset, file in transfer_dict.items():
         if "bam_src_location_uri" in file:
-            file_json = [
+            if "bai_src_location_uri" in file:
+                file_json = [
+                    {
+                        "src_location_uri": file["bam_src_location_uri"],
+                        "dest_location_uri": file["bam_dest_location_uri"]
+                    },
+                    {
+                        "src_location_uri": file["bai_src_location_uri"],
+                        "dest_location_uri": file["bai_dest_location_uri"],
+
+                    }
+                ]
+            else:
+                file_json = [
                 {
                     "src_location_uri": file["bam_src_location_uri"],
                     "dest_location_uri": file["bam_dest_location_uri"]
-                },
-                {
-                    "src_location_uri": file["bai_src_location_uri"],
-                    "dest_location_uri": file["bai_dest_location_uri"],
-
                 }
             ]
         if "fastq1_src_location_uri" in file:
