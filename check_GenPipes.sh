@@ -145,7 +145,7 @@ elif [[ $cluster == abacus ]]; then
   chmod 660 "${job_list}.txt"
 fi
 # FIRST check if still running and skipping
-if [[ $status == *"ACTIVE"* ]] || [[ $status == *"RUNNING"* ]]; then
+if [[ $status == *"ACTIVE"* ]] || [[ $status == *"RUNNING"* ]] || [[ $status == *"PENDING"* ]]; then
   # Let's skip and wait
   echo "INFO: Job(s) still running Cf. $log_report_file"
 # SECOND check if failed or timeout
