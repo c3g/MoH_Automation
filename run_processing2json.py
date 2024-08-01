@@ -128,8 +128,10 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                     }
                                 ]
                                 break
-            if run_row['Clusters'] == "0":
+            if not run_row['Clusters']:
                 raw_reads_count_flag = "MISSING"
+            if run_row['Clusters'] =='0':
+                raw_reads_count_flag = "FAILED"
             else:
                 raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
@@ -200,9 +202,8 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
 def dna_raw_mean_coverage_check(sample, value, tumour):
     """ Mean Coverage DNA metric check """
     if not value:
-        raise Exception(f"Missing 'Mean Coverage' value for {sample}")
-    if float(value) == -1:
         ret = "MISSING"
+        logger.warning(f"Missing 'Mean Coverage' value for {sample}")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -214,9 +215,8 @@ def dna_raw_mean_coverage_check(sample, value, tumour):
 def rna_raw_reads_count_check(sample, value):
     """ Clusters RNA metric check """
     if not value:
-        raise Exception(f"Missing 'Clusters' value for {sample}")
-    if float(value) == -1:
         ret = "MISSING"
+        logger.warning(f"Missing 'RNA Cluster' value for {sample}")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -228,11 +228,8 @@ def rna_raw_reads_count_check(sample, value):
 def dna_raw_duplication_rate_check(sample, value):
     """ Dup. Rate (%) DNA metric check """
     if not value:
-        raise Exception(f"Missing 'Dup. Rate (%)' value for {sample}")
-    if not value:
-        ret = "FAILED"
-    if float(value) == -1:
         ret = "MISSING"
+        logger.warning(f"Missing 'Dup. Rate (%)' value for {sample}")
     elif float(value)>50:
         ret = "FAILED"
     elif float(value)>20:
@@ -244,9 +241,8 @@ def dna_raw_duplication_rate_check(sample, value):
 def median_insert_size_check(sample, value):
     """ Mapped Insert Size (median) metric check """
     if not value:
-        raise Exception(f"Missing 'Mapped Insert Size (median)' value for {sample}")
-    if float(value) == -1:
         ret = "MISSING"
+        logger.warning(f"Missing 'Median Insert Size' value for {sample}")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
