@@ -130,7 +130,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                 break
             if not run_row['Clusters']:
                 raw_reads_count_flag = "MISSING"
-            if run_row['Clusters'] =='0':
+            elif run_row['Clusters'] =='0':
                 raw_reads_count_flag = "FAILED"
             else:
                 raw_reads_count_flag = "PASS"
