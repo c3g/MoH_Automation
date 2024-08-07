@@ -87,6 +87,8 @@ if [[ $HOSTNAME == "abacus"* ]]; then
   SRC_LOG_LOC="$SRC_MOH/TEMP"
   # Abacus Endpoint
   SRC_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
+  # Abacus name for json creation
+  SRC='abacus'
 elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal MOH
   SRC_MOH="/project/def-c3g/MOH"
@@ -96,6 +98,8 @@ elif [[ $HOSTNAME == "cardinal"* ]]; then
   SRC_LOG_LOC="$SRC_MOH/log_files/transfer"
   # Cardinal Endpoint
   SRC_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
+  # Cardinal name for json creation
+  SRC='cardinal'
 else
   echo "ERROR: Unknown cluster. Exiting."
   exit 1
@@ -217,7 +221,7 @@ if [ $? -eq 0 ]; then
   # shellcheck disable=SC1091
   source $SRC_MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --destination beluga --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
+  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --source $SRC --destination beluga --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json $transfer_json
 else

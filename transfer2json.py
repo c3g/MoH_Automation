@@ -13,6 +13,7 @@ def main():
     """ Main """
     parser = argparse.ArgumentParser(prog='transfer2json.py', description="Creates json file for project tracking database for a given transfer of data.")
     parser.add_argument('-i', '--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
+    parser.add_argument('-s', '--source', required=True, help="Source cluster of the transfer.")
     parser.add_argument('-d', '--destination', required=True, help="Cluster of destination for the transfer.")
     parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
     parser.add_argument('-j', '--genpipes', required=False, help="GenPipes json file when creating json for a GenPipes transfer.")
@@ -26,7 +27,7 @@ def main():
         output = args.output
 
     if args.genpipes:
-        jsonify_genpipes_transfer(args.input, args.destination.lower(), args.genpipes, output, args.operation_cmd_line)
+        jsonify_genpipes_transfer(args.input, args.source, args.destination.lower(), args.genpipes, output, args.operation_cmd_line)
     else:
         jsonify_run_processing_transfer(args.input, args.destination.lower(), output, args.operation_cmd_line)
 
@@ -104,7 +105,7 @@ def jsonify_run_processing_transfer(batch_file, destination, output, operation_c
         json.dump(json_output, file, ensure_ascii=False, indent=4)
 
 
-def jsonify_genpipes_transfer(batch_file, destination, genpipes_json, output, operation_cmd_line):
+def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, output, operation_cmd_line):
     """Writing transfer json based on batch file"""
     with open(genpipes_json, 'r') as json_file:
         genpipes_json = json.load(json_file)
@@ -118,7 +119,7 @@ def jsonify_genpipes_transfer(batch_file, destination, genpipes_json, output, op
                     else:
                         genpipes_file[file['file_name']] = [readset['readset_name']]
     json_output = {
-        "operation_platform": "abacus",
+        "operation_platform": source,
         "operation_cmd_line": operation_cmd_line,
         "readset": []
         }
@@ -126,7 +127,7 @@ def jsonify_genpipes_transfer(batch_file, destination, genpipes_json, output, op
         for line in file:
             fields = line.split(" ")
             if line.startswith("--recursive"):
-                src_location_uri = f"abacus://{fields[1]}"
+                src_location_uri = f"{source}://{fields[1]}"
                 dest_location_uri = f"{destination}://{fields[2].strip()}"
                 filename = glob.glob(os.path.join(fields[1], '**'), recursive=True)
                 for current_file in filename:
@@ -157,7 +158,7 @@ def jsonify_genpipes_transfer(batch_file, destination, genpipes_json, output, op
                                     }
                                 )
             else:
-                src_location_uri = f"abacus://{fields[0]}"
+                src_location_uri = f"{source}://{fields[0]}"
                 dest_location_uri = f"{destination}://{fields[1].strip()}"
                 current_file = os.path.basename(fields[0])
                 if current_file in genpipes_file:
