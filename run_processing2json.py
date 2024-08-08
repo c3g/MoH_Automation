@@ -23,7 +23,7 @@ def main():
     args = parser.parse_args()
 
     if not args.output:
-        output = f"{os.path.basename(args.input).split('.')[0]}.json"
+        output = f"{os.path.basename(args.input).split('.')[0]}_d1dc98f61aee.json"
     else:
         output = args.output
     if args.lane:
@@ -53,13 +53,15 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
     sample_dict = {}
     json_output = {
             "operation_platform": "abacus",
-            "project_fms_id": None,
+            "project_ext_id": None,
+            "project_ext_src": None,
             "project_name": "MOH-Q",
-            "run_fms_id": None,
+            "run_ext_id": None,
+            "run_ext_src": None,
             "run_name": f"{run_list[0]['Processing Folder Name']}",
             "run_instrument": "novaseq",
             "run_date": f"{datetime.strptime(run_list[0]['Processing Folder Name'][0:6], '%y%m%d')}",
-            "patient": []
+            "specimen": []
             }
     for run_row in run_list:
         sample = run_row['Sample Name']
@@ -68,11 +70,12 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             patient = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
-            patient_json = {
-                "patient_fms_id": None,
-                "patient_name": patient,
-                "patient_cohort": cohort,
-                "patient_institution": institution,
+            specimen_json = {
+                "specimen_ext_id": None,
+                "specimen_ext_src": None,
+                "specimen_name": patient,
+                "specimen_cohort": cohort,
+                "specimen_institution": institution,
                 "sample": []
                 }
             # if sample.endswith("T"):
@@ -81,7 +84,8 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             #     sample_tumour = False
             sample_tumour = sample.endswith("T")
             sample_json = {
-                "sample_fms_id": None,
+                "sample_ext_id": None,
+                "sample_ext_src": None,
                 "sample_name": sample,
                 "sample_tumour": sample_tumour,
                 "readset": []
@@ -130,7 +134,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                 break
             if not run_row['Clusters']:
                 raw_reads_count_flag = "MISSING"
-            elif run_row['Clusters'] =='0':
+            if run_row['Clusters'] =='0':
                 raw_reads_count_flag = "FAILED"
             else:
                 raw_reads_count_flag = "PASS"
@@ -190,8 +194,8 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                 "metric": metric_json
                 }
             sample_json["readset"].append(readset_json)
-            patient_json["sample"].append(sample_json)
-            json_output["patient"].append(patient_json)
+            specimen_json["sample"].append(sample_json)
+            json_output["specimen"].append(specimen_json)
 
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
