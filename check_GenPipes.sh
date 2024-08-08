@@ -140,7 +140,7 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
-  $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl $job_list > log_report_file
+  $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl $job_list > $log_report_file
   status=$(grep -v "^#" "$log_report_file" | awk -F'\t' '{print $5}' | sort | uniq)
   chmod 660 "${job_list}.txt"
 fi
