@@ -19,11 +19,16 @@ def main():
     # prefix_path = "/Users/pstretenowich/Mount_points/beluga"
     prefix_path = "/lustre03/project/6007512"
     main_raw_reads_folder = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/raw_reads")
+    #patient_dict = get_patient_dict("CheckBeluga.txt") #For the recraft of only the missing runs 08/2024
     patient_dict = get_patient_dict(main_raw_reads_folder)
     readset_dict, sample_dict = jsonify_run_processing(patient_dict, prefix_path)
     jsonify_transfer(sample_dict, prefix_path)
     jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path)
     jsonify_genpipes_rnaseqlight(sample_dict, prefix_path)
+    jsonify_genpipes_tumourpair_ensemble(sample_dict,prefix_path)
+    jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path)
+    jsonify_genpipes_rnaseqlight(sample_dict, prefix_path)
+    jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path)
 
 
 def jsonify_run_processing(patient_dict, prefix_path):
@@ -37,7 +42,7 @@ def jsonify_run_processing(patient_dict, prefix_path):
             reader = csv.DictReader(run_file_in)
             for row in reader:
                 run_list.append(row)
-        json_output = {
+                json_output = {
                 "operation_platform": "abacus",
                 "project_fms_id": None,
                 "project_name": "MOH-Q",
@@ -50,7 +55,7 @@ def jsonify_run_processing(patient_dict, prefix_path):
         for run_row in run_list:
             sample = run_row['Sample Name']
             if sample.startswith("MoHQ"):
-                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+                result = re.search(r"^((MoHQ-(JG|CM|GC|IQ|HM|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
                 patient = result.group(1)
                 try:
                     existing_patient = None
@@ -131,7 +136,12 @@ def jsonify_run_processing(patient_dict, prefix_path):
                                                 }
                                             ]
                                             break
-                    raw_reads_count_flag = "PASS"
+                    if not run_row['Clusters']:
+                        raw_reads_count_flag = "MISSING"
+                    if run_row['Clusters'] =='0':
+                        raw_reads_count_flag = "FAILED"
+                    else:
+                        raw_reads_count_flag = "PASS"
                     if run_row['Library Type'] == "RNASeq":
                         raw_reads_count_flag = rna_raw_reads_count_check(run_row['Clusters'])
                     raw_duplication_rate_flag = "PASS"
@@ -300,8 +310,8 @@ def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            if "base.ini" in line:
-                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            #if "base.ini" in line:
+             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -315,7 +325,7 @@ def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
         "operation_cmd_line": "tumor_pair.py -s 1-13,15-38 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini Custom_ini/Custom_MOH_topups.ini -g TP_run.sh",
-        "operation_name": "genpipes_rnaseq_light",
+        "operation_name": "GenPipes_TumorPair.sv",
         "sample": []
         }
     sample_dict_dna = {}
@@ -329,7 +339,7 @@ def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
     for sample in sample_dict_dna:
         i += 1
         eta = round(float(100*i/length), 2)
-        logger.info(f"jsonify_genpipes_tumourpair - {eta}%")
+        logger.info(f"jsonify_genpipes_tumourpair_sv - {eta}%")
         patient = sample_dict_dna[sample][0][0]
         if sample.endswith("DT"):
             tumour = True
@@ -340,37 +350,21 @@ def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
             "readset": []
         }
         job_jsons = []
+        job_jsons.append(gridss_paired_somatic(patient,sample,prefix_path))
+        job_jsons.append(gripss_filter_somatic(patient,sample,prefix_path))
+        job_jsons.append(gripss_filter_germline(patient,sample,prefix_path))
+        job_jsons.append(purple_purity_sv(patient,sample,prefix_path))
 
-        job_jsons.append(sym_link_final_bam_tumourpair(patient, sample, tumour, prefix_path))
-        job_jsons.append(gatk_variant_annotator_germline_tumourpair(patient, prefix_path))
-        job_jsons.append(gatk_variant_annotator_somatic_tumourpair(patient, prefix_path))
-        job_jsons.append(paired_mutect2_tumourpair(patient, prefix_path))
-        job_jsons.append(vardict_paired_tumourpair(patient, prefix_path))
-        job_jsons.append(paired_varscan2_tumourpair(patient, prefix_path))
-        job_jsons.append(cnvkit_batch_tumourpair(patient, prefix_path))
-        job_jsons.append(recalibration_tumourpair(sample, prefix_path))
-        job_jsons.append(strelka2_paired_germline_tumourpair(patient, prefix_path))
-        job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
-        job_jsons.append(tumour_pair_multiqc(patient, prefix_path))
+        if tumour:
+            job_jsons.append(linx_annotations_germline(patient,sample,prefix_path))
+            job_jsons.append(linx_annotations_somatic(patient,sample,prefix_path))
+            job_jsons.append(linx_plot(patient,sample,prefix_path))
 
-        # Conpair
-        job_jsons.append(extract_conpair(patient, sample, tumour, prefix_path))
-        # Purple
-        job_jsons.append(extract_purple(sample, patient, prefix_path))
-        # Qualimap
-        job_jsons.append(extract_qualimap(sample, prefix_path))
-        # Picard
-        job_jsons.append(extract_picard_tumourpair(sample, prefix_path))
         for (_, readset) in sample_dict_dna[sample]:
             readset_json = {
                 "readset_name": f"{readset}",
                 "job": []
             }
-            # readset_json["job"].append(job_json_conpair)
-            # readset_json["job"].append(job_json_purple)
-            # readset_json["job"].append(job_json_qualimap)
-            # readset_json["job"].append(job_json_multiqc)
-            # readset_json["job"].append(job_json_picard)
             job_jsons = list(filter(lambda job_json: job_json is not None, job_jsons))
             for job_json in job_jsons:
                 readset_json["job"].append(job_json)
@@ -378,9 +372,9 @@ def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
                 sample_json["readset"].append(readset_json)
         if sample_json["readset"]:
             json_output["sample"].append(sample_json)
-    # print(json.dumps(json_output, indent=4))
+
     if json_output["sample"]:
-        with open("jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
+        with open("jsons/genpipes_tumourpair_sv.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
@@ -389,8 +383,8 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            if "base.ini" in line:
-                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            #if "base.ini" in line:
+            #    genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -399,12 +393,12 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": f"{genpipes_version}",
+        "operation_config_version": "4.2.2 (pos)",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
         "operation_cmd_line": "tumor_pair.py -s 1-13,15-38 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/pipelines/tumor_pair/tumor_pair.extras.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini Custom_ini/Custom_MOH_topups.ini -g TP_run.sh",
-        "operation_name": "genpipes_rnaseq_light",
+        "operation_name": "GenPipes_TumorPair.ensemble",
         "sample": []
         }
     sample_dict_dna = {}
@@ -437,7 +431,7 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
         job_jsons.append(vardict_paired_tumourpair(patient, prefix_path))
         job_jsons.append(paired_varscan2_tumourpair(patient, prefix_path))
         job_jsons.append(cnvkit_batch_tumourpair(patient, prefix_path))
-        job_jsons.append(recalibration_tumourpair(sample, prefix_path))
+        job_jsons.append(recalibration_tumourpair(patient,sample, prefix_path))
         job_jsons.append(strelka2_paired_germline_tumourpair(patient, prefix_path))
         job_jsons.append(report_pcgr_tumourpair(patient, prefix_path))
         job_jsons.append(tumour_pair_multiqc(patient, prefix_path))
@@ -447,9 +441,9 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
         # Purple
         job_jsons.append(extract_purple(sample, patient, prefix_path))
         # Qualimap
-        job_jsons.append(extract_qualimap(sample, prefix_path))
+        job_jsons.append(extract_qualimap(patient,sample, prefix_path))
         # Picard
-        job_jsons.append(extract_picard_tumourpair(sample, prefix_path))
+        job_jsons.append(extract_picard_tumourpair(patient,sample, prefix_path))
         for (_, readset) in sample_dict_dna[sample]:
             readset_json = {
                 "readset_name": f"{readset}",
@@ -469,7 +463,7 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
             json_output["sample"].append(sample_json)
     # print(json.dumps(json_output, indent=4))
     if json_output["sample"]:
-        with open("jsons/genpipes_tumourpair.json", 'w', encoding='utf-8') as f:
+        with open("jsons/genpipes_tumourpair_en.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
 
 
@@ -479,8 +473,8 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            if "base.ini" in line:
-                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            #if "base.ini" in line:
+             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -489,12 +483,12 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": f"{genpipes_version}",
+        "operation_config_version": "4.2.2 (pos)",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
         "operation_cmd_line": "rnaseq_light.py -s 1-4 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq_light/rnaseq_light.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini RNA_light.custom.ini -g RNASeq_light_run.sh",
-        "operation_name": "genpipes_rnaseq_light",
+        "operation_name": "GenPipes_RnaSeqLight",
         "sample": []
         }
     sample_dict_rna = {}
@@ -540,8 +534,8 @@ def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            if "base.ini" in line:
-                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            #if "base.ini" in line:
+             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -550,12 +544,12 @@ def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": f"{genpipes_version}",
+        "operation_config_version": "4.2.2 (pos)",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
         "operation_cmd_line": "rnaseq.py -s 1-7,10-23 -j slurm -r readset.txt -c $MUGQIC_PIPELINES_HOME/pipelines/rnaseq/rnaseq.base.ini $MUGQIC_PIPELINES_HOME/pipelines/common_ini/beluga.ini /lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/Custom_ini/tumor_rna.moh.ini $MUGQIC_PIPELINES_HOME/resources/genomes/config/Homo_sapiens.GRCh38.ini -g RNASeq_run.sh -t cancer",
-        "operation_name": "genpipes_rnaseq_light",
+        "operation_name": "GenPipes_RnaSeq.cancer",
         "sample": []
         }
     sample_dict_rna = {}
@@ -573,6 +567,10 @@ def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
 
         # Rnaseqc2
         job_jsons.append(extract_rnaseqc2_rna(sample, prefix_path))
+        job_jsons.append(filter_gatk_rnaseqc2(sample, prefix_path))
+        job_jsons.append(recalibration_rnaseqc2(sample, prefix_path))
+        job_jsons.append(rnaseqc2_multiqc(sample, prefix_path))
+        job_jsons.append(report_pcgr_rnaseqc2(sample, prefix_path))
         for (_, readset) in sample_dict_rna[sample]:
             readset_json = {
                 "readset_name": f"{readset}",
@@ -589,7 +587,6 @@ def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
     if json_output["sample"]:
         with open("jsons/genpipes_rnaseqcancer.json", 'w', encoding='utf-8') as f:
             json.dump(json_output, f, ensure_ascii=False, indent=4)
-
 
 def md5(fname):
     hash_md5 = hashlib.md5()
@@ -613,7 +610,6 @@ def get_patient_dict(main_raw_reads_folder):
                 patient_dict[patient] = {sample: (patient, sample, sample_type, cohort, institution)}
     return patient_dict
 
-
 def extract_conpair(patient, sample, tumour, prefix_path):
     job_status = None
     job_start = None
@@ -624,7 +620,7 @@ def extract_conpair(patient, sample, tumour, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/conpair_concordance_contamination/conpair_concordance_contamination.pileup.*{sample}*.o file found")
     job_json_conpair = {
-        "job_name": "conpair",
+        "job_name": f"conpair.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -722,7 +718,7 @@ def extract_purple(sample, patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/purple/purple.purity.*{patient}*.o file found")
     job_json = {
-        "job_name": "purple",
+        "job_name": f"purple.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -777,7 +773,7 @@ def extract_rnaseqc2_rna(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/rnaseqc2/rnaseqc2.*{sample}*.o file found")
     job_json = {
-        "job_name": "rnaseqc2",
+        "job_name": f"rnaseqc2.{sample}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -804,6 +800,8 @@ def extract_rnaseqc2_rna(sample, prefix_path):
                         flag = "FAILED"
                     elif float(value)>0.1:
                         flag = "WARNING"
+                    else:
+                        flag = "PASS"
                     job_json["metric"].append({
                         "metric_name": "ribosomal_contamination_count",
                         "metric_value": f"{value}",
@@ -832,7 +830,7 @@ def extract_picard_rna(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/picard_rna_metrics/picard_rna_metrics.*{sample}*.o file found")
     job_json = {
-        "job_name": "picard",
+        "job_name": f"picard.{sample}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -922,11 +920,12 @@ def extract_kallisto_rnaseqlight(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/kallisto/kallisto.*{sample}*.o file found")
     job_json = {
-        "job_name": "kallisto",
+        "job_name": f"kallisto.{sample}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
-        "file": []
+        "file": [],
+        "metric": []
     }
 
     filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/kallisto', sample, 'abundance_transcripts.tsv')
@@ -970,7 +969,7 @@ def extract_kallisto_rnaseqlight(sample, prefix_path):
 
     return job_json
 
-def run_annofuse_rnaseqlight(sample, prefix_path):
+def run_annofuse_rnaseqlight(patient,sample, prefix_path):
     job_status = None
     job_start = None
     job_stop = None
@@ -980,7 +979,7 @@ def run_annofuse_rnaseqlight(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/run_annofuse/run_annoFuse.*{sample}*.o file found")
     job_json = {
-        "job_name": "run_annofuse",
+        "job_name": f"run_annofuse.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1012,7 +1011,7 @@ def tumour_pair_multiqc(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
     job_json = {
-        "job_name": "multiqc",
+        "job_name": f"multiqc.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1032,7 +1031,7 @@ def tumour_pair_multiqc(patient, prefix_path):
 
     return job_json
 
-def extract_qualimap(sample, prefix_path):
+def extract_qualimap(patient,sample, prefix_path):
     job_status = None
     job_start = None
     job_stop = None
@@ -1048,7 +1047,7 @@ def extract_qualimap(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/metrics_dna_sample_qualimap/dna_sample_qualimap.*{sample}*.o file found")
     job_json = {
-        "job_name": "qualimap",
+        "job_name": f"qualimap.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1142,7 +1141,7 @@ def extract_qualimap(sample, prefix_path):
 
     return job_json
 
-def extract_picard_tumourpair(sample, prefix_path):
+def extract_picard_tumourpair(patient,sample, prefix_path):
     job_status = None
     job_start = None
     job_stop = None
@@ -1184,7 +1183,7 @@ def extract_picard_tumourpair(sample, prefix_path):
                 "file_name": f"{os.path.basename(filename)}"
                 }
             job_json = {
-                "job_name": "picard",
+                "job_name": f"picard.{patient}",
                 "job_start": job_start,
                 "job_stop": job_stop,
                 "job_status": "COMPLETED",
@@ -1206,7 +1205,7 @@ def gatk_variant_annotator_germline_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_germline.others.*{patient}*.o file found")
     job_json = {
-        "job_name": "gatk_variant_annotator_germline",
+        "job_name": f"gatk_variant_annotator_germline.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1230,7 +1229,7 @@ def gatk_variant_annotator_somatic_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/gatk_variant_annotator_germline/gatk_variant_annotator_somatic.others.*{patient}*.o file found")
     job_json = {
-        "job_name": "gatk_variant_annotator_somatic",
+        "job_name": f"gatk_variant_annotator_somatic.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1254,7 +1253,7 @@ def paired_mutect2_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
-        "job_name": "paired_mutect2",
+        "job_name": f"paired_mutect2.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1280,7 +1279,7 @@ def strelka2_paired_germline_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/strelka2_paired_germline/strelka2_paired_germline.filter.*{patient}*.o file found")
     job_json = {
-        "job_name": "strelka2_paired_germline",
+        "job_name": f"strelka2_paired_germline.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1306,7 +1305,7 @@ def vardict_paired_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/vardict_paired/vardict_paired.*{patient}*.o file found")
     job_json = {
-        "job_name": "vardict_paired",
+        "job_name": f"vardict_paired.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1332,7 +1331,7 @@ def paired_varscan2_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/paired_varscan2/varscan2_somatic.*{patient}*.o file found")
     job_json = {
-        "job_name": "paired_varscan2",
+        "job_name": f"paired_varscan2.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1358,7 +1357,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/paired_mutect2/gatk_mutect2.*{patient}*.o file found")
     job_json = {
-        "job_name": "cnvkit_batch",
+        "job_name": f"cnvkit_batch.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1372,7 +1371,7 @@ def cnvkit_batch_tumourpair(patient, prefix_path):
 
     return job_json
 
-def recalibration_tumourpair(sample, prefix_path):
+def recalibration_tumourpair(patient,sample, prefix_path):
     job_status = None
     job_start = None
     job_stop = None
@@ -1382,7 +1381,7 @@ def recalibration_tumourpair(sample, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/recalibration/gatk_print_reads.*{sample}*.o file found")
     job_json = {
-        "job_name": "recalibration",
+        "job_name": f"recalibration.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1412,7 +1411,7 @@ def sym_link_final_bam_tumourpair(patient, sample, tumor, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/sym_link_final_bam/sym_link_final_bam.pairs.*{patient}.{t_name}*.o file found")
     job_json = {
-        "job_name": "sym_link_final_bam",
+        "job_name": f"sym_link_final_bam.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1436,7 +1435,7 @@ def run_pair_multiqc_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/run_pair_multiqc/multiqc.*{patient}*.o file found")
     job_json = {
-        "job_name": "run_pair_multiqc",
+        "job_name": f"run_pair_multiqc.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1460,7 +1459,7 @@ def report_pcgr_tumourpair(patient, prefix_path):
     except IndexError:
         logger.warning(f"No job_output/report_pcgr/report_pcgr.*{patient}*.o file found")
     job_json = {
-        "job_name": "report_pcgr",
+        "job_name": f"report_pcgr.{patient}",
         "job_start": job_start,
         "job_stop": job_stop,
         "job_status": job_status,
@@ -1528,7 +1527,10 @@ def dna_aligned_reads_count_check(value, tumour):
     return ret
 
 def dna_raw_mean_coverage_check(value, tumour):
-    if float(value)<30 and not tumour:
+    """ Mean Coverage DNA metric check """
+    if not value:
+        ret = "MISSING"
+    elif float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
         ret = "FAILED"
@@ -1537,7 +1539,10 @@ def dna_raw_mean_coverage_check(value, tumour):
     return ret
 
 def rna_raw_reads_count_check(value):
-    if int(value)<80000000:
+    """ Clusters RNA metric check """
+    if not value:
+        ret = "MISSING"
+    elif int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
         ret = "WARNING"
@@ -1545,9 +1550,10 @@ def rna_raw_reads_count_check(value):
         ret = "PASS"
     return ret
 
-def dna_raw_duplication_rate_check(value):
+def dna_raw_duplication_rate_check( value):
+    """ Dup. Rate (%) DNA metric check """
     if not value:
-        ret = "FAILED"
+        ret = "MISSING"
     elif float(value)>50:
         ret = "FAILED"
     elif float(value)>20:
@@ -1557,7 +1563,10 @@ def dna_raw_duplication_rate_check(value):
     return ret
 
 def median_insert_size_check(value):
-    if float(value)<300:
+    """ Mapped Insert Size (median) metric check """
+    if not value:
+        ret = "MISSING"
+    elif float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
         ret = "FAILED"
@@ -1606,6 +1615,342 @@ def rna_ribosomal_contamination_count_check(value):
 
 def rna_ribosomal_contamination_count_compute(rrna_count, rna_aligned_reads_count):
     return int(rrna_count)/int(rna_aligned_reads_count)
+
+def filter_gatk_rnaseqc2(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/filter_gatk/filter_gatk.*{sample}*.o")), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/filter_gatk/filter_gatk.*{sample}*.o file found")
+    job_json = {
+        "job_name": f"filter_gatk_.{sample}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment',sample,f'{sample}.hc.vt.annot.vcf.gz')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment',sample,f'{sample}.hc.vt.annot.flt.vcf.gz')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment',sample,f'{sample}.hc.vt.annot.flt.vcf.gz.tbi')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment',sample,f'{sample}.hc.vt.annot.flt.vcf.gz.md5')
+    job_json = add_output_file(filename, job_json, True)
+
+    
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def recalibration_rnaseqc2(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/recalibration/gatk_print_reads.*{sample}*.o")), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/recalibration/gatk_print_reads.*{sample}*.o file found")
+    job_json = {
+        "job_name": f"gatk_print_reads.{sample}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/',sample ,f'{sample}.sorted.mdup.split.recal.bam')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/',sample,f'{sample}.sorted.mdup.split.recal.bam.bai')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/',sample,f'{sample}.sorted.mdup.split.recal.bam.md5')
+    job_json = add_output_file(filename, job_json, True)
+
+    
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def report_pcgr_rnaseqc2(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/report_pcgr/report_pcgr.*{sample}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/report_pcgr/report_pcgr.*{sample}*.o file found")
+    job_json = {
+        "job_name": f"report_pcgr.{sample}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/', sample, 'pcgr', f'{sample}.pcgr_acmg.grch38.flexdb.html')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/', sample, 'pcgr', f'{sample}.pcgr_acmg.grch38.maf')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/alignment/', sample, 'pcgr', f'{sample}.pcgr_acmg.grch38.snvs_indels.tiers.tsv')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+
+def rnaseqc2_multiqc(sample, prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/run_pair_multiqc/multiqc.*{sample}*.o")), key=os.path.getmtime)[-1]
+        with open(latest, 'r', encoding="utf-8") as file:
+            job_status = "COMPLETED"
+            for line in file:
+                if "AccrueTime" in line:
+                    job_start = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[0].replace("T", " ")
+                elif "EndTime" in line:
+                    job_stop = re.findall("\d\d\d\d-\d\d-\d\dT\d\d:\d\d:\d\d", line)[-1].replace("T", " ")
+    except IndexError:
+        logger.warning(f"No job_output/multiqc/multiqc.*{sample}*.o file found")
+    job_json = {
+        "job_name": f"multiqc.{sample}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/metrics/multiqc_by_sample', sample, f'{sample}.multiqc.html')
+    if os.path.exists(filename):
+        job_json["job_status"] = "COMPLETED"
+        job_json["file"].append({
+            "location_uri": f"beluga://{filename}",
+            "file_name": f"{os.path.basename(filename)}",
+            "file_deliverable": True
+            })
+    else:
+        logger.warning(f"No {filename} file found")
+        job_json = None
+
+    return job_json
+
+def gridss_paired_somatic(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gridss_paired_somatic/gridss_paired_somatic.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/gridss_paired_somatic/gridss_paired_somatic.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"gridss_paired.somatic.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'gridss', f'{sample}.gridss.vcf.gz')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def gripss_filter_somatic(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gridss_paired_somatic/gripss_filter.somatic.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/gridss_paired_somatic/gripss_filter.somatic.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"gripss_filter.somatic.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'gridss', f'{sample}.gripss.filtered.somatic.vcf.gz')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def purple_purity_sv(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/purple_sv/purple.purity.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/purple_sv/purple.purity.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"purple.purity.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'purple/plot', f'{sample}.circos.png')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def gripss_filter_germline(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/gridss_paired_somatic/gripss_filter.germline.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/gridss_paired_somatic/gripss_filter.germline.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"gripss_filter.germline.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'gridss', f'{sample}.gripss.filtered.germline.vcf.gz')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def linx_annotations_somatic(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/linx_annotations_somatic/linx_annotations_somatic.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/linx_annotations_somatic/linx_annotations_somatic.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"linx_annotations_somatic.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.breakend.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.clusters.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.driver.catalog.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.drivers.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.fusion.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.links.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.svs.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_copy_number.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_fusion.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_gene_exon.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_protein_domain.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_segments.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.vis_sv_data.tsv')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def linx_annotations_germline(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/linx_annotations_germline/linx_annotations_germline.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/linx_annotations_germline/linx_annotations_germline.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"linx_annotations_germline.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.germline.clusters.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.germline.disruption.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.germline.driver.catalog.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.germline.links.tsv')
+    job_json = add_output_file(filename, job_json, True)
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx', f'{sample}.linx.germline.svs.tsv')
+    job_json = add_output_file(filename, job_json, True)
+
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
+
+def linx_plot(patient,sample,prefix_path):
+    job_status = None
+    job_start = None
+    job_stop = None
+    try:
+        latest = sorted(glob.glob(os.path.join(prefix_path, f"C3G/projects/MOH_PROCESSING/MAIN/job_output/linx_plot/linx_plot.*{patient}*.o" )), key=os.path.getmtime)[-1]
+        job_status, job_start, job_stop = parse_o_file(latest)
+    except IndexError:
+        logger.warning(f"No job_output/linx_plot/plinx_plot.*{patient}*.o file found")
+    job_json = {
+        "job_name": f"linx.plot.{patient}",
+        "job_start": job_start,
+        "job_stop": job_stop,
+        "job_status": job_status,
+        "file": []
+    }
+
+    filename = os.path.join(prefix_path, 'C3G/projects/MOH_PROCESSING/MAIN/SVariants/', patient, 'linx/plot')
+    job_json = add_output_file(filename, job_json, True)
+
+    if not job_json["file"]:
+        job_json = None
+
+    return job_json
 
 if __name__ == '__main__':
     main()
