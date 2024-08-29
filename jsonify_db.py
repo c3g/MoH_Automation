@@ -19,7 +19,7 @@ def main():
     # prefix_path = "/Users/pstretenowich/Mount_points/beluga"
     prefix_path = "/lustre03/project/6007512"
     main_raw_reads_folder = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/raw_reads")
-    #patient_dict = get_patient_dict("CheckBeluga.txt") #For the recraft of only the missing runs 08/2024
+    #patient_dict = get_patient_dict("CheckBeluga.txt") #For the recraft of only the missing runs 08/2024 . Adapt acordg to the input
     patient_dict = get_patient_dict(main_raw_reads_folder)
     readset_dict, sample_dict = jsonify_run_processing(patient_dict, prefix_path)
     jsonify_transfer(sample_dict, prefix_path)
@@ -393,7 +393,7 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": "4.2.2 (pos)",
+        "operation_config_version": f"{genpipes_version}",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
@@ -483,7 +483,7 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": "4.2.2 (pos)",
+        "operation_config_version": f"{genpipes_version}",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
@@ -544,7 +544,7 @@ def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
     json_output = {
         "project_name": "MOH-Q",
         "operation_config_name": "genpipes_ini",
-        "operation_config_version": "4.2.2 (pos)",
+        "operation_config_version": f"{genpipes_version}",
         "operation_config_md5sum": f"{md5(ini_file)}",
         "operation_config_data": f"{''.join(ini_content)}",
         "operation_platform": "beluga",
