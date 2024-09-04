@@ -67,13 +67,13 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
         sample = run_row['Sample Name']
         if sample.startswith("MoHQ") and run_row['Lane'] in lanes and sample in samples:
             result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
-            patient = result.group(1)
+            specimen = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
             specimen_json = {
                 "specimen_ext_id": None,
                 "specimen_ext_src": None,
-                "specimen_name": patient,
+                "specimen_name": specimen,
                 "specimen_cohort": cohort,
                 "specimen_institution": institution,
                 "sample": []
@@ -177,7 +177,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     }
                 ]
             readset_name = f"{run_row['Sample Name']}.{run_row['Run ID']}_{run_row['Lane']}"
-            readset_dict[readset_name] = (patient, sample)
+            readset_dict[readset_name] = (specimen, sample)
             readset_json = {
                 "experiment_sequencing_technology": None,
                 "experiment_type": f"{run_row['Library Type']}",
