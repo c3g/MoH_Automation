@@ -306,15 +306,17 @@ def jsonify_transfer(sample_dict, prefix_path):
 
 def jsonify_genpipes_tumourpair_sv(sample_dict, prefix_path):
     """
-    TODO: Add all files belonging to this protocol
+    Create a json file for each patient in the sample_dict for the TumorPair SV pipeline.
     """
     ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/TumorPair.config.trace.ini")
     to_parse = False
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            #if "base.ini" in line:
-             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            else:
+                genpipes_version = "unknown"
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -384,8 +386,10 @@ def jsonify_genpipes_tumourpair_ensemble(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            #if "base.ini" in line:
-            #    genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            else:
+                genpipes_version = "unknown"
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -466,8 +470,10 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            #if "base.ini" in line:
-             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            else:
+                genpipes_version = "unknown"
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
@@ -517,15 +523,17 @@ def jsonify_genpipes_rnaseqlight(sample_dict, prefix_path):
 
 def jsonify_genpipes_rnaseq_cancer(sample_dict, prefix_path):
     """
-    TODO: Add all files belonging to this protocol
+    Create a json file for each patient in the sample_dict for the RnaSeqCancer pipeline.
     """
     ini_file = os.path.join(prefix_path, "C3G/projects/MOH_PROCESSING/MAIN/RnaSeq.config.trace.ini")
     to_parse = False
     ini_content = []
     with open(ini_file, 'r') as file:
         for line in file:
-            #if "base.ini" in line:
-             #   genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            if "base.ini" in line:
+                genpipes_version = re.findall(r"/genpipes-.+?/", line)[0].split("-")[-1][:-1]
+            else:
+                genpipes_version = "unknown"
             if "[DEFAULT]" in line:
                 to_parse = True
             if to_parse:
