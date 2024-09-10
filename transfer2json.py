@@ -31,9 +31,8 @@ def main():
     else:
         jsonify_run_processing_transfer(args.input, args.destination.lower(), output, args.operation_cmd_line)
 
-def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
+def jsonify_run_processing_transfer(batch_file, destination, output, operation_cmd_line):
     """Writing transfer json based on batch file"""
-    transfer_dict = {}
     json_output = {
         "operation_platform": "abacus",
         "operation_cmd_line": operation_cmd_line,
@@ -44,92 +43,64 @@ def jsonify_run_processing_transfer(batch_file, output, operation_cmd_line):
             if line.startswith("/lb/robot/research/processing/novaseq/20"):
                 fields = line.split(" ")
                 if ".bam" in line:
-                    readset_name = f"{fields[0].split('/')[10]}.{fields[0].split('/')[11].replace("run","")}"
+                    path_l = fields[0].split('/')
+                    readset_name = f"{path_l[10]}.{path_l[11].replace('run', '')}"
                     src_location_uri = f"abacus://{fields[0]}"
-                    dest_location_uri = f"beluga://{fields[1].strip()}"
-                    if "bam.bai" in line:
-                        if readset_name in transfer_dict:
-                            transfer_dict[readset_name]["bai_dest_location_uri"] = dest_location_uri
-                        else:
-                            transfer_dict[readset_name] = {
-                                "bai_dest_location_uri": dest_location_uri
-                            }
-                        transfer_dict[readset_name]["bai_src_location_uri"] = src_location_uri
+                    dest_location_uri = f"{destination}://{fields[1].strip()}"
+                    if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
+                        for readset in json_output["readset"]:
+                            if readset_name == readset["readset_name"]:
+                                readset["file"].append(
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                )
                     else:
-                        if readset_name in transfer_dict:
-                            transfer_dict[readset_name]["bam_dest_location_uri"] = dest_location_uri
-                        else:
-                            transfer_dict[readset_name] = {
-                                "bam_dest_location_uri": dest_location_uri
+                        json_output["readset"].append(
+                            {
+                                "readset_name": readset_name,
+                                "file": [
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                ]
                             }
-                        transfer_dict[readset_name]["bam_src_location_uri"] = src_location_uri
+                        )
 
                 elif ".fastq" in line:
-                    readset_name = fields[0].split('/')[10].replace("Sample_", "")
-                    if "_" in readset_name:
-                        tmp=fields[0].split("/")[7].split("_")
-                        readset_name=f"{readset_name.split('_')[0]}.{tmp[1]}_{tmp[2]}_{fields[0].split('/')[8].split('.')[1]}"
+                    path_l = fields[0].split('/')
+                    run_name_l = path_l[7].split('_')
+                    sample_name = path_l[10].split('_')[1]
+                    lane = path_l[8].split('.')[1]
+                    readset_name = f"{sample_name}.{run_name_l[1]}_{run_name_l[2]}_{lane}"
                     src_location_uri = f"abacus://{fields[0]}"
-                    dest_location_uri = f"beluga://{fields[1].strip()}"
-                    if "_R1_" in line:
-                        if readset_name in transfer_dict:
-                            transfer_dict[readset_name]["fastq1_dest_location_uri"] = dest_location_uri
-                        else:
-                            transfer_dict[readset_name] = {
-                                "fastq1_dest_location_uri": dest_location_uri
+                    dest_location_uri = f"{destination}://{fields[1].strip()}"
+                    if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
+                        for readset in json_output["readset"]:
+                            if readset_name == readset["readset_name"]:
+                                readset["file"].append(
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                )
+                    else:
+                        json_output["readset"].append(
+                            {
+                                "readset_name": readset_name,
+                                "file": [
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                ]
                             }
-                        transfer_dict[readset_name]["fastq1_src_location_uri"] = src_location_uri
-                    elif "_R2_" in line:
-                        if readset_name in transfer_dict:
-                            transfer_dict[readset_name]["fastq2_dest_location_uri"] = dest_location_uri
-                        else:
-                            transfer_dict[readset_name] = {
-                                "fastq2_dest_location_uri": dest_location_uri
-                            }
-                        transfer_dict[readset_name]["fastq2_src_location_uri"] = src_location_uri
+                        )
 
-    for readset, file in transfer_dict.items():
-        if "bam_src_location_uri" in file:
-            if "bai_src_location_uri" in file:
-                file_json = [
-                    {
-                        "src_location_uri": file["bam_src_location_uri"],
-                        "dest_location_uri": file["bam_dest_location_uri"]
-                    },
-                    {
-                        "src_location_uri": file["bai_src_location_uri"],
-                        "dest_location_uri": file["bai_dest_location_uri"],
-
-                    }
-                ]
-            else:
-                file_json = [
-                {
-                    "src_location_uri": file["bam_src_location_uri"],
-                    "dest_location_uri": file["bam_dest_location_uri"]
-                }
-            ]
-        if "fastq1_src_location_uri" in file:
-            file_json = [
-                {
-                    "src_location_uri": file["fastq1_src_location_uri"],
-                    "dest_location_uri": file["fastq1_dest_location_uri"]
-
-                },
-                {
-                    "src_location_uri": file["fastq2_src_location_uri"],
-                    "dest_location_uri": file["fastq2_dest_location_uri"],
-
-                }
-            ]
-        readset_json = {
-            "readset_name": readset,
-            "file": file_json,
-            }
-        json_output["readset"].append(readset_json)
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
-
 
 def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, output, operation_cmd_line):
     """Writing transfer json based on batch file"""
