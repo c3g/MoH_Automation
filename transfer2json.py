@@ -99,11 +99,8 @@ def jsonify_run_processing_transfer(batch_file, destination, output, operation_c
                             }
                         )
 
-    # print(json.dumps(json_output, ensure_ascii=False, indent=4))
-
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
-
 
 def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, output, operation_cmd_line):
     """Writing transfer json based on batch file"""
@@ -187,8 +184,6 @@ def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, ou
                                     ]
                                 }
                             )
-
-    # print(json.dumps(json_output, ensure_ascii=False, indent=4))
 
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
