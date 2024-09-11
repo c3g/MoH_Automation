@@ -51,40 +51,37 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
     """ Writing RUn Processing json based on csv"""
     readset_dict = {}
     sample_dict = {}
-    # change fms_id to ext_id and ext_src once Database is updated in prod
     json_output = {
             "operation_platform": "abacus",
-            "project_fms_id": None,
+            "project_ext_id": None,
+            "project_ext_src": None,
             "project_name": "MOH-Q",
-            "run_fms_id": None,
+            "run_ext_id": None,
+            "run_ext_src": None,
             "run_name": f"{run_list[0]['Processing Folder Name']}",
             "run_instrument": "novaseq",
             "run_date": f"{datetime.strptime(run_list[0]['Processing Folder Name'][0:6], '%y%m%d')}",
-            "patient": []
+            "specimen": []
             }
     for run_row in run_list:
         sample = run_row['Sample Name']
         if sample.startswith("MoHQ") and run_row['Lane'] in lanes and sample in samples:
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|IQ|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
-            patient = result.group(1)
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+            specimen = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
-            # change fms_id to ext_id and ext_src once Database is updated in prod
-            patient_json = {
-                "patient_fms_id": None,
-                "patient_name": patient,
-                "patient_cohort": cohort,
-                "patient_institution": institution,
+            specimen_json = {
+                "specimen_ext_id": None,
+                "specimen_ext_src": None,
+                "specimen_name": specimen,
+                "specimen_cohort": cohort,
+                "specimen_institution": institution,
                 "sample": []
                 }
-            # if sample.endswith("T"):
-            #     sample_tumour = True
-            # else:
-            #     sample_tumour = False
             sample_tumour = sample.endswith("T")
-            # change fms_id to ext_id and ext_src once Database is updated in prod
             sample_json = {
-                "sample_fms_id": None,
+                "sample_ext_id": None,
+                "sample_ext_src": None,
                 "sample_name": sample,
                 "sample_tumour": sample_tumour,
                 "readset": []
@@ -143,7 +140,12 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                     }
                                 ]
                                 break
-            raw_reads_count_flag = "PASS"
+            if not run_row['Clusters']:
+                raw_reads_count_flag = "MISSING"
+            if run_row['Clusters'] =='0':
+                raw_reads_count_flag = "FAILED"
+            else:
+                raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
                 raw_reads_count_flag = rna_raw_reads_count_check(sample, run_row['Clusters'])
             raw_duplication_rate_flag = "PASS"
@@ -183,7 +185,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     }
                 ]
             readset_name = f"{run_row['Sample Name']}.{run_row['Run ID']}_{run_row['Lane']}"
-            readset_dict[readset_name] = (patient, sample)
+            readset_dict[readset_name] = (specimen, sample)
             readset_json = {
                 "experiment_sequencing_technology": None,
                 "experiment_type": f"{run_row['Library Type']}",
@@ -200,8 +202,8 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                 "metric": metric_json
                 }
             sample_json["readset"].append(readset_json)
-            patient_json["sample"].append(sample_json)
-            json_output["patient"].append(patient_json)
+            specimen_json["sample"].append(sample_json)
+            json_output["specimen"].append(specimen_json)
 
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
@@ -212,7 +214,8 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
 def dna_raw_mean_coverage_check(sample, value, tumour):
     """ Mean Coverage DNA metric check """
     if not value:
-        raise Exception(f"Missing 'Mean Coverage' value for {sample}")
+        ret = "MISSING"
+        logger.warning(f"Missing 'Mean Coverage' value for {sample}")
     if float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
@@ -224,7 +227,8 @@ def dna_raw_mean_coverage_check(sample, value, tumour):
 def rna_raw_reads_count_check(sample, value):
     """ Clusters RNA metric check """
     if not value:
-        raise Exception(f"Missing 'Clusters' value for {sample}")
+        ret = "MISSING"
+        logger.warning(f"Missing 'RNA Cluster' value for {sample}")
     if int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
@@ -236,9 +240,8 @@ def rna_raw_reads_count_check(sample, value):
 def dna_raw_duplication_rate_check(sample, value):
     """ Dup. Rate (%) DNA metric check """
     if not value:
-        raise Exception(f"Missing 'Dup. Rate (%)' value for {sample}")
-    if not value:
-        ret = "FAILED"
+        ret = "MISSING"
+        logger.warning(f"Missing 'Dup. Rate (%)' value for {sample}")
     elif float(value)>50:
         ret = "FAILED"
     elif float(value)>20:
@@ -250,7 +253,8 @@ def dna_raw_duplication_rate_check(sample, value):
 def median_insert_size_check(sample, value):
     """ Mapped Insert Size (median) metric check """
     if not value:
-        raise Exception(f"Missing 'Mapped Insert Size (median)' value for {sample}")
+        ret = "MISSING"
+        logger.warning(f"Missing 'Median Insert Size' value for {sample}")
     if float(value)<300:
         ret = "WARNING"
     elif float(value)<150:
