@@ -112,11 +112,11 @@ if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
         readset_name="$(echo "$i" | cut -d'/' -f11).$(echo "$i" | cut -d'/' -f12)"
         readset_name="${readset_name/run/}"
         file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
-        DETAILS=$(cat "$location"*run.csv | grep "$sample_name")
+        LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
+        DETAILS=$(awk -F "," '{ if ($3=="$LANE" && $7=="$sample_name") {print $0}}' "$location"*run.csv)
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}')
         RUNID=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}')
-        LANE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $3}')
         ADAP1=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}')
         ADAP2=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}')
         QUAL_OF=33
@@ -157,17 +157,16 @@ if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
     for i in "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
         j="${i/_R1_/_R2_}"
         sample_name=$(echo "$i" | cut -d'/' -f11 | cut -d'_' -f2)
-        lane=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
+        LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
         liba=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f2)
         libb=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f3)
-        readset_name="${sample_name}.${liba}_${libb}_${lane}"
+        readset_name="${sample_name}.${liba}_${libb}_${LANE}"
         file_name1=$(echo "$i" | cut -d'/' -f12)
         file_name2="${file_name1/_R1_/_R2_}"
-        DETAILS=$(cat "$location"*run.csv | grep "$sample_name")
+        DETAILS=$(awk -F "," '{ if ($3=="$LANE" && $7=="$sample_name") {print $0}}' "$location"*run.csv)
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}' )
         RUNID=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}' )
-        LANE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $3}' )
         ADAP1=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}' )
         ADAP2=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}' )
         QUAL_OF=33
@@ -204,7 +203,7 @@ fi;
 echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
 
 # Transfer over the metrics
-MET_LOC=$(ls "$location"/*-novaseq-run.align_bwa_mem.csv)
+MET_LOC=$(ls "$location"/*-novaseq*-run.align_bwa_mem.csv)
 F_NAME=${MET_LOC##*/}
 
 echo "$MET_LOC $DEST_MET_LOC/$F_NAME" >> "$TEMP/$LISTFILE"
