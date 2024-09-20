@@ -113,7 +113,7 @@ if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
         readset_name="${readset_name/run/}"
         file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
         LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
-        DETAILS=$(awk -F "," '{ if ($3=="$LANE" && $7=="$sample_name") {print $0}}' "$location"*run.csv)
+        DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}')
         RUNID=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}')
@@ -163,7 +163,7 @@ if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
         readset_name="${sample_name}.${liba}_${libb}_${LANE}"
         file_name1=$(echo "$i" | cut -d'/' -f12)
         file_name2="${file_name1/_R1_/_R2_}"
-        DETAILS=$(awk -F "," '{ if ($3=="$LANE" && $7=="$sample_name") {print $0}}' "$location"*run.csv)
+        DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
         RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
         RUNTYPE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}' )
         RUNID=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}' )
