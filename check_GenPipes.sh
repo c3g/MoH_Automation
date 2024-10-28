@@ -62,9 +62,9 @@ while getopts 'hc:j:r:l:' OPTION; do
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == cardinal ]]; then
-        MOH_path="/project/def-c3g/MOH"
+        MOH_path="/project/60007/MOH"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
-          export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
+          export MUGQIC_INSTALL_HOME_DEV=/project/60007/analyste_dev
         fi
       else
         echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'beluga' or 'cardinal'\n"
