@@ -77,11 +77,11 @@ if [[ $destination = Beluga ]]; then
     DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
 elif [[ $destination = Cardinal ]]; then
     # Cardinal main folder location
-    DEST_LOC="/project/def-c3g/MOH/MAIN/raw_reads"
+    DEST_LOC="/project/60007/MOH/MAIN/raw_reads"
     # Cardinal log file location
-    DEST_LOG_LOC="/project/def-c3g/MOH/log_files/transfer"
+    DEST_LOG_LOC="/project/60007/MOH/log_files/transfer"
     # Cardinal run metrics location
-    DEST_MET_LOC="/project/def-c3g/MOH/MAIN/metrics/run_metrics"
+    DEST_MET_LOC="/project/60007/MOH/MAIN/metrics/run_metrics"
     # Cardinal Endpoint
     DEST_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
 fi
