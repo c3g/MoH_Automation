@@ -25,17 +25,17 @@ while getopts 'hc:p::t:i:' OPTION; do
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == cardinal ]]; then
-        path="/project/def-c3g/MOH/MAIN"
+        path="/project/60007/MOH/MAIN"
         scheduler="slurm"
         max_queue="10000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
-          export MUGQIC_INSTALL_HOME_DEV=/project/def-c3g/analyste_dev
+          export MUGQIC_INSTALL_HOME_DEV=/project/60007/analyste_dev
         fi
       elif [[ $cluster == abacus ]]; then
         path="/lb/project/mugqic/projects/MOH/MAIN"
         # path="/lb/scratch/pstretenowich/MOH/MAIN"
         scheduler="pbs"
-        max_queue="500"
+        max_queue="20000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/lb/project/mugqic/analyste_dev
         fi
