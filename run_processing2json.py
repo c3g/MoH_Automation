@@ -70,22 +70,41 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             specimen = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
-            specimen_json = {
-                "specimen_ext_id": None,
-                "specimen_ext_src": None,
-                "specimen_name": specimen,
-                "specimen_cohort": cohort,
-                "specimen_institution": institution,
-                "sample": []
-                }
+            # Check if the specimen is already in json_output["specimen"]
+            specimen_names = [spec["specimen_name"] for spec in json_output["specimen"]]
+            if specimen in specimen_names:
+                # Specimen is present, find its position
+                position = specimen_names.index(specimen)
+                specimen_json = json_output["specimen"][position]
+            else:
+                # Specimen is not present, add it to json_output["specimen"]
+                specimen_json = {
+                    "specimen_ext_id": None,
+                    "specimen_ext_src": None,
+                    "specimen_name": specimen,
+                    "specimen_cohort": cohort,
+                    "specimen_institution": institution,
+                    "sample": []
+                    }
+                json_output["specimen"].append(specimen_json)
+
             sample_tumour = sample.endswith("T")
-            sample_json = {
-                "sample_ext_id": None,
-                "sample_ext_src": None,
-                "sample_name": sample,
-                "sample_tumour": sample_tumour,
-                "readset": []
-                }
+            # Check if the sample is already in specimen_json["sample"]
+            sample_names = [spec["sample_name"] for spec in specimen_json["sample"]]
+            if sample in sample_names:
+                # sample is present, find its position
+                position = sample_names.index(sample)
+                sample_json = specimen_json["sample"][position]
+            else:
+                # sample is not present, add it to specimen_json["sample"]
+                sample_json = {
+                    "sample_ext_id": None,
+                    "sample_ext_src": None,
+                    "sample_name": sample,
+                    "sample_tumour": sample_tumour,
+                    "readset": []
+                    }
+                specimen_json["sample"].append(sample_json)
 
             copylist = os.path.join(os.path.dirname(input_csv), f"{os.path.basename(input_csv).split('.')[0]}.copylist.txt")
             if not os.path.isfile(copylist):
@@ -93,7 +112,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             fastq1 = fastq2 = bam = bai = ""
             with open(copylist, 'r') as file:
                 for line in file:
-                    if sample in line:
+                    if f"{sample}/run{run_row['Run ID']}_{run_row['Lane']}" in line:
                         fields = line.split(",")
                         file_path = fields[3].strip()
                         if re.search(r'ba.$', file_path):
@@ -184,26 +203,34 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     "metric_flag": raw_mean_coverage_flag
                     }
                 ]
-            readset_name = f"{run_row['Sample Name']}.{run_row['Run ID']}_{run_row['Lane']}"
+            readset_name = f"{sample}.{run_row['Run ID']}_{run_row['Lane']}"
             readset_dict[readset_name] = (specimen, sample)
-            readset_json = {
-                "experiment_sequencing_technology": None,
-                "experiment_type": f"{run_row['Library Type']}",
-                "experiment_nucleic_acid_type": "RNA" if run_row['Library Type'] == "RNASeq" else "DNA",
-                "experiment_library_kit": None,
-                "experiment_kit_expiration_date": None,
-                "readset_name": readset_name,
-                "readset_lane": f"{run_row['Lane']}",
-                "readset_adapter1": f"{run_row['i7 Adapter Sequence']}",
-                "readset_adapter2": f"{run_row['i5 Adapter Sequence']}",
-                "readset_sequencing_type": f"{run_row['Run Type']}",
-                "readset_quality_offset": "33",
-                "file": file_json,
-                "metric": metric_json
-                }
-            sample_json["readset"].append(readset_json)
-            specimen_json["sample"].append(sample_json)
-            json_output["specimen"].append(specimen_json)
+            # Check if the readset is already in sample_json["readset"]
+            readset_names = [spec["readset_name"] for spec in sample_json["readset"]]
+            if readset_name in readset_names:
+                print(f"Duplicate readset: {readset_name}")
+            else:
+                # readset is not present, add it to specimen_json["readset"]
+                readset_json = {
+                    "experiment_sequencing_technology": None,
+                    "experiment_type": f"{run_row['Library Type']}",
+                    "experiment_nucleic_acid_type": "RNA" if run_row['Library Type'] == "RNASeq" else "DNA",
+                    "experiment_library_kit": None,
+                    "experiment_kit_expiration_date": None,
+                    "readset_name": readset_name,
+                    "readset_lane": f"{run_row['Lane']}",
+                    "readset_adapter1": f"{run_row['i7 Adapter Sequence']}",
+                    "readset_adapter2": f"{run_row['i5 Adapter Sequence']}",
+                    "readset_sequencing_type": f"{run_row['Run Type']}",
+                    "readset_quality_offset": "33",
+                    "file": file_json,
+                    "metric": metric_json
+                    }
+                sample_json["readset"].append(readset_json)
+
+            # sample_json["readset"].append(readset_json)
+            # specimen_json["sample"].append(sample_json)
+            # json_output["specimen"].append(specimen_json)
 
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
