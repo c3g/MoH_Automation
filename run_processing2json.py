@@ -112,53 +112,54 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             fastq1 = fastq2 = bam = bai = ""
             with open(copylist, 'r') as file:
                 for line in file:
-                    if f"{sample}/run{run_row['Run ID']}_{run_row['Lane']}" in line:
+                    if re.search(fr"{sample}/run{run_row['Run ID']}_{run_row['Lane']}.*\.ba(m|i)$", line):
                         fields = line.split(",")
                         file_path = fields[3].strip()
-                        if re.search(r'ba.$', file_path):
-                            if file_path.endswith(".bam"):
-                                bam = os.path.basename(file_path)
-                                bam_location_uri = file_path
-                            elif file_path.endswith(".bai"):
-                                bai = os.path.basename(file_path)
-                                bai_location_uri = file_path
-                            if bam and bai:
-                                file_json = [
-                                    {
-                                        "location_uri": f"abacus://{bam_location_uri}",
-                                        "file_name": f"{bam}",
-                                        "file_deliverable": True
-                                        },
-                                    {
-                                        "location_uri": f"abacus://{bai_location_uri}",
-                                        "file_name": f"{bai}",
-                                        "file_deliverable": True
-                                        }
-                                    ]
-                                break
-                        elif file_path.endswith(".fastq.gz"):
-                            if "_R1_" in file_path:
-                                fastq1 = os.path.basename(file_path)
-                                fastq1_location_uri = file_path
-                            elif "_R2_" in file_path:
-                                fastq2 = os.path.basename(file_path)
-                                fastq2_location_uri = file_path
-                            if fastq1 and fastq2:
-                                file_json = [
+                        if file_path.endswith(".bam"):
+                            bam = os.path.basename(file_path)
+                            bam_location_uri = file_path
+                        elif file_path.endswith(".bai"):
+                            bai = os.path.basename(file_path)
+                            bai_location_uri = file_path
+                        if bam and bai:
+                            file_json = [
                                 {
-                                    "location_uri": f"abacus://{fastq1_location_uri}",
-                                    "file_name": f"{fastq1}",
-                                    "file_extra_metadata": {"read_type": "R1"},
+                                    "location_uri": f"abacus://{bam_location_uri}",
+                                    "file_name": f"{bam}",
                                     "file_deliverable": True
                                     },
                                 {
-                                    "location_uri": f"abacus://{fastq2_location_uri}",
-                                    "file_name": f"{fastq2}",
-                                    "file_extra_metadata": {"read_type": "R2"},
+                                    "location_uri": f"abacus://{bai_location_uri}",
+                                    "file_name": f"{bai}",
                                     "file_deliverable": True
                                     }
                                 ]
-                                break
+                            break
+                    elif re.search(fr"Unaligned\.{run_row['Lane']}/.*/Sample_{sample}.*\.fastq\.gz$", line):
+                        fields = line.split(",")
+                        file_path = fields[3].strip()
+                        if "_R1_" in file_path:
+                            fastq1 = os.path.basename(file_path)
+                            fastq1_location_uri = file_path
+                        elif "_R2_" in file_path:
+                            fastq2 = os.path.basename(file_path)
+                            fastq2_location_uri = file_path
+                        if fastq1 and fastq2:
+                            file_json = [
+                            {
+                                "location_uri": f"abacus://{fastq1_location_uri}",
+                                "file_name": f"{fastq1}",
+                                "file_extra_metadata": {"read_type": "R1"},
+                                "file_deliverable": True
+                                },
+                            {
+                                "location_uri": f"abacus://{fastq2_location_uri}",
+                                "file_name": f"{fastq2}",
+                                "file_extra_metadata": {"read_type": "R2"},
+                                "file_deliverable": True
+                                }
+                            ]
+                            break
             if not run_row['Clusters']:
                 raw_reads_count_flag = "MISSING"
             if run_row['Clusters'] =='0':
