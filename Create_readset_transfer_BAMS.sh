@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -l <location>                    location of run to be transfered."
-  echo " -d <destination>                 destination for the transfer (either Beluga or Cardinal)."
+  echo " -d <destination>                 destination for the transfer (either Beluga or Cardinal or Abacus)."
   echo " -s <sample>                      Path to file with Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (by default it will consider ALL samples from the given run)."
   exit 1
   }
@@ -39,7 +39,7 @@ if [ ! "$location" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if ! [[ $destination =~ Cardinal|Beluga ]]; then
+if ! [[ $destination =~ Cardinal|Beluga|Abacus ]]; then
     echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga or Cardinal.\n"
     usage
 fi
@@ -84,6 +84,15 @@ elif [[ $destination = Cardinal ]]; then
     DEST_MET_LOC="/project/60007/MOH/MAIN/metrics/run_metrics"
     # Cardinal Endpoint
     DEST_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
+elif [[ $destination = Abacus ]]; then
+    # Abacus main folder location
+    DEST_LOC="/lb/project/mugqic/projects/MOH/MAIN/raw_reads"
+    # Abacus log file location
+    DEST_LOG_LOC="/lb/project/mugqic/projects/MOH/log_files/transfer"
+    # Abacus run metrics location
+    DEST_MET_LOC="/lb/project/mugqic/projects/MOH/MAIN/metrics/run_metrics"
+    # Abacus Endpoint
+    DEST_EP=''
 fi
 
 # Temporary File location, you may want to change it to your scratch for easier clean up.
@@ -208,29 +217,35 @@ F_NAME=${MET_LOC##*/}
 
 echo "$MET_LOC $DEST_MET_LOC/$F_NAME" >> "$TEMP/$LISTFILE"
 
-# Load globus module
-module load mugqic/globus-cli/3.24.0
+if [[ $destination != Abacus ]]; then
+    # Load globus module
+    module load mugqic/globus-cli/3.24.0
 
-# Generate and store a UUID for the submission-id
-sub_id="$(globus task generate-submission-id)"
+    # Generate and store a UUID for the submission-id
+    sub_id="$(globus task generate-submission-id)"
 
-# Start the batch transfer
-task_id="$(globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $DEST_EP)"
+    # Start the batch transfer
+    task_id="$(globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$label" --batch "$TEMP/$LISTFILE" $ABA_EP $DEST_EP)"
 
-echo "Waiting on 'globus transfer' task '$task_id'"
-globus task wait "$task_id" --polling-interval 60 -H
-# shellcheck disable=SC2181
-if [ $? -eq 0 ]; then
-    module unload mugqic/globus-cli/3.24.0
-    # shellcheck disable=SC1091
-    source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
-    # shellcheck disable=SC2086
-    /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
-    sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
-    echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
-    # shellcheck disable=SC2086
-    pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json}
-    sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
+    echo "Waiting on 'globus transfer' task '$task_id'"
+    globus task wait "$task_id" --polling-interval 60 -H
+    # shellcheck disable=SC2181
+    if [ $? -eq 0 ]; then
+        module unload mugqic/globus-cli/3.24.0
+        # shellcheck disable=SC1091
+        source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
+        # shellcheck disable=SC2086
+        /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
+        sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
+        echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
+        # shellcheck disable=SC2086
+        pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json}
+        sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
+    else
+        echo "$task_id failed!"
+    fi
 else
-    echo "$task_id failed!"
+    while IFS= read -r line; do
+      echo "ln -s $line"
+    done < "$TEMP/$LISTFILE"
 fi
