@@ -40,7 +40,7 @@ if [ ! "$location" ] || [ ! "$destination" ]; then
 fi
 
 if ! [[ $destination =~ Cardinal|Beluga|Abacus ]]; then
-    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga or Cardinal.\n"
+    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga, Cardinal or Abacus.\n"
     usage
 fi
 
@@ -235,7 +235,7 @@ if [[ $destination != Abacus ]]; then
         # shellcheck disable=SC1091
         source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
         # shellcheck disable=SC2086
-        /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
+        /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --source "abacus" --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.txt/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
         sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
         echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
         # shellcheck disable=SC2086
@@ -246,6 +246,6 @@ if [[ $destination != Abacus ]]; then
     fi
 else
     while IFS= read -r line; do
-      echo "ln -s $line"
+      ln -s $line
     done < "$TEMP/$LISTFILE"
 fi
