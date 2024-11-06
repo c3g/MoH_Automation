@@ -64,6 +64,7 @@ def main():
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--black_list', required=False, help="path/to file for patients to be ignored.")
     group.add_argument('--white_list', required=False, help="path/to file for patients to be delivered no matter thresholds.")
+    parser.add_argument('--ignore_alignment', required=False, help="Ignores alignment folder for delivery; aka doesn't delivers it.", action='store_true')
     parser.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.", action='store_true')
     parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.", action='store_true')
     parser.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.", action='store_true')
@@ -155,7 +156,7 @@ def main():
             # Contains raw cnv
             raw_cnv_folder = os.path.join(out_folder, "raw_cnv")
             # Contains the analysis bams
-            align_folder = os.path.join(out_folder, "alignment")
+            alignment_folder = os.path.join(out_folder, "alignment")
             # Contains the ini files
             param_folder = os.path.join(out_folder, "parameters")
             # Contains the reports
@@ -194,13 +195,14 @@ def main():
             # Populates dna data
             if dna:
                 updated = deliver_dna(
+                    args,
                     raw_folder,
                     var_folder,
                     svar_folder,
                     linx_folder,
                     cal_folder,
                     raw_cnv_folder,
-                    align_folder,
+                    alignment_folder,
                     reports_folder,
                     pcgr_folder,
                     param_folder,
@@ -214,10 +216,11 @@ def main():
             # Populates rna data
             if rna:
                 updated = deliver_rna(
+                    args,
                     raw_folder,
                     expression_folder,
                     var_folder,
-                    align_folder,
+                    alignment_folder,
                     reports_folder,
                     pcgr_folder,
                     param_folder,
@@ -260,13 +263,14 @@ def main():
 
 
 def deliver_dna(
+    args,
     raw_folder,
     var_folder,
     svar_folder,
     linx_folder,
     cal_folder,
     raw_cnv_folder,
-    align_folder,
+    alignment_folder,
     reports_folder,
     pcgr_folder,
     param_folder,
@@ -276,8 +280,8 @@ def deliver_dna(
     updated,
     old_log,
     ):
+
     os.makedirs(raw_folder, exist_ok=True)
-    # beluga_bam_dna_n = extract_fileloc_field(connection, patient.sample, "Beluga_BAM_DNA_N")
     # DNA_N
     if len(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))) == 1 and glob.glob(os.path.join(raw_folder, f"{patient.dna_n}.bam")):
         raw_dna_n_bam = os.path.basename(glob.glob(os.path.join(RAW_READS_FOLDER, f"{patient.sample}-*DN", "*.bam"))[0])
@@ -347,25 +351,26 @@ def deliver_dna(
         if os.path.exists(cnvkit_vcf_index):
             updated = get_link_log(cnvkit_vcf_index, raw_cnv_folder, f"{patient.sample_true}.cnvkit.vcf.gz.tbi", log, updated, old_log)
 
-    os.makedirs(align_folder, exist_ok=True)
-    final_dna_bam_n = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_N")
-    updated = get_link_log(final_dna_bam_n, align_folder, f"{patient.dna_n}.bam", log, updated, old_log)
-    if final_dna_bam_n != "NA":
-        final_dna_bam_n_index = final_dna_bam_n + ".bai"
-        if os.path.exists(final_dna_bam_n_index):
-            updated = get_link_log(final_dna_bam_n_index, align_folder, f"{patient.dna_n}.bam.bai", log, updated, old_log)
-        final_dna_bam_n_md5 = final_dna_bam_n + ".md5"
-        if os.path.exists(final_dna_bam_n_md5):
-            updated = get_link_log(final_dna_bam_n_md5, align_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
-    final_dna_bam_t = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_T")
-    updated = get_link_log(final_dna_bam_t, align_folder, f"{patient.dna_t}.bam", log, updated, old_log)
-    if final_dna_bam_t != "NA":
-        final_dna_bam_t_index = final_dna_bam_t + ".bai"
-        if os.path.exists(final_dna_bam_t_index):
-            updated = get_link_log(final_dna_bam_t_index, align_folder, f"{patient.dna_t}.bam.bai", log, updated, old_log)
-        final_dna_bam_t_md5 = final_dna_bam_t + ".md5"
-        if os.path.exists(final_dna_bam_t_md5):
-            updated = get_link_log(final_dna_bam_t_md5, align_folder, f"{patient.dna_t}.bam.md5", log, updated, old_log)
+    if not args.ignore_alignment:
+        os.makedirs(alignment_folder, exist_ok=True)
+        final_dna_bam_n = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_N")
+        updated = get_link_log(final_dna_bam_n, alignment_folder, f"{patient.dna_n}.bam", log, updated, old_log)
+        if final_dna_bam_n != "NA":
+            final_dna_bam_n_index = final_dna_bam_n + ".bai"
+            if os.path.exists(final_dna_bam_n_index):
+                updated = get_link_log(final_dna_bam_n_index, alignment_folder, f"{patient.dna_n}.bam.bai", log, updated, old_log)
+            final_dna_bam_n_md5 = final_dna_bam_n + ".md5"
+            if os.path.exists(final_dna_bam_n_md5):
+                updated = get_link_log(final_dna_bam_n_md5, alignment_folder, f"{patient.dna_n}.bam.md5", log, updated, old_log)
+        final_dna_bam_t = extract_fileloc_field(connection, patient.sample, "Final_DNA_BAM_T")
+        updated = get_link_log(final_dna_bam_t, alignment_folder, f"{patient.dna_t}.bam", log, updated, old_log)
+        if final_dna_bam_t != "NA":
+            final_dna_bam_t_index = final_dna_bam_t + ".bai"
+            if os.path.exists(final_dna_bam_t_index):
+                updated = get_link_log(final_dna_bam_t_index, alignment_folder, f"{patient.dna_t}.bam.bai", log, updated, old_log)
+            final_dna_bam_t_md5 = final_dna_bam_t + ".md5"
+            if os.path.exists(final_dna_bam_t_md5):
+                updated = get_link_log(final_dna_bam_t_md5, alignment_folder, f"{patient.dna_t}.bam.md5", log, updated, old_log)
 
     os.makedirs(reports_folder, exist_ok=True)
     dna_multiqc = extract_fileloc_field(connection, patient.sample, "DNA_MultiQC")
@@ -410,10 +415,11 @@ def deliver_dna(
 
 
 def deliver_rna(
+    args,
     raw_folder,
     expression_folder,
     var_folder,
-    align_folder,
+    alignment_folder,
     reports_folder,
     pcgr_folder,
     param_folder,
@@ -460,16 +466,17 @@ def deliver_rna(
         if os.path.exists(rna_vcf_filt_md5):
             updated = get_link_log(rna_vcf_filt_md5, var_folder, f"{patient.rna}.hc.vt.annot.filt.vcf.gz.md5", log, updated, old_log)
 
-    os.makedirs(align_folder, exist_ok=True)
-    final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM")
-    updated = get_link_log(final_rna_bam_variants, align_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
-    if final_rna_bam_variants != "NA":
-        final_rna_bam_index = final_rna_bam_variants + ".bai"
-        if os.path.exists(final_rna_bam_index):
-            updated = get_link_log(final_rna_bam_index, align_folder, f"{patient.rna}.variants.bam.bai", log, updated, old_log)
-        final_rna_bam_md5 = final_rna_bam_variants + ".md5"
-        if os.path.exists(final_rna_bam_md5):
-            updated = get_link_log(final_rna_bam_md5, align_folder, f"{patient.rna}.variants.bam.md5", log, updated, old_log)
+    if not args.ignore_alignment:
+        os.makedirs(alignment_folder, exist_ok=True)
+        final_rna_bam_variants = extract_fileloc_field(connection, patient.sample, "Final_RNA_BAM")
+        updated = get_link_log(final_rna_bam_variants, alignment_folder, f"{patient.rna}.variants.bam", log, updated, old_log)
+        if final_rna_bam_variants != "NA":
+            final_rna_bam_index = final_rna_bam_variants + ".bai"
+            if os.path.exists(final_rna_bam_index):
+                updated = get_link_log(final_rna_bam_index, alignment_folder, f"{patient.rna}.variants.bam.bai", log, updated, old_log)
+            final_rna_bam_md5 = final_rna_bam_variants + ".md5"
+            if os.path.exists(final_rna_bam_md5):
+                updated = get_link_log(final_rna_bam_md5, alignment_folder, f"{patient.rna}.variants.bam.md5", log, updated, old_log)
 
     os.makedirs(reports_folder, exist_ok=True)
     rna_multiqc = extract_fileloc_field(connection, patient.sample, "RNA_MultiQC")
