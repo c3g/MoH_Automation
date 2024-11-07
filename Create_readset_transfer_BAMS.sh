@@ -247,6 +247,6 @@ if [[ $destination != Abacus ]]; then
 else
     while IFS= read -r line; do
         mkdir -p $(dirname $(echo $line | awk '{print $2}'))
-        ln -s $line
+        ln -sf $line
     done < "$TEMP/$LISTFILE"
 fi
