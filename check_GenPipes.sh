@@ -17,7 +17,7 @@ genpipes_tagging() {
   echo "-> Tagging GenPipes json..."
   module load mugqic/python/3.11.1
   # shellcheck disable=SC2086
-  $MOH_path/moh_automation/moh_automation_main/genpipes_deliverables_metrics.py -i $1 -o ${1/.json/_tagged.json}
+  $MOH_path/moh_automation/moh_automation_main/genpipes_deliverables_metrics_tagging.py -i $1 -o ${1/.json/_tagged.json}
   module unload mugqic/python/3.11.1
 }
 
