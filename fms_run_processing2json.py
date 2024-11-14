@@ -238,7 +238,7 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                             library_kit = fms_s["library_kit"]
                     readset_json = {
                         "experiment_sequencing_technology": None,
-                        "experiment_type": f"{readset["library_type"]}",
+                        "experiment_type": f"{readset['library_type']}",
                         "experiment_nucleic_acid_type": "RNA" if readset["library_type"] == "RNASeq" else "DNA",
                         "experiment_library_kit": library_kit,
                         "experiment_kit_expiration_date": None,
