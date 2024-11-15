@@ -74,7 +74,7 @@ echo "-> Processing $runfolder..."
 if [ -s "$input" ]; then
   # Json creation from run csv file
   # shellcheck disable=SC2086
-  ~/moh_automation/run_processing2json.py $run_processing2json_args --input $input --output $path/$runfolder.json
+  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $path/$runfolder.json
   chmod 664 "$path/$runfolder.json"
   # Using client to add new runs to database
   # shellcheck disable=SC2086
