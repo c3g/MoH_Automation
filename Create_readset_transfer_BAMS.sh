@@ -8,17 +8,21 @@ usage() {
   echo " -h                               Display this help message."
   echo " -l <location>                    location of run to be transfered."
   echo " -d <destination>                 destination for the transfer (either Beluga or Cardinal or Abacus)."
+  echo " -n <nucleic_acid_type>           nucleic_acid_type to be considered for the transfer (either DNA or RNA, Default: both)."
   echo " -s <sample>                      Path to file with Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (by default it will consider ALL samples from the given run)."
   exit 1
   }
 
-while getopts 'hl:d::s:' OPTION; do
+while getopts 'hl:d::n::s:' OPTION; do
   case "$OPTION" in
     l)
       location="$OPTARG"
       ;;
     d)
       destination="$OPTARG"
+      ;;
+      n)
+      nucleic_acid_type="$OPTARG"
       ;;
     s)
       sample_file="$OPTARG"
@@ -110,103 +114,105 @@ echo "Transfered From $location" >> "$TEMP/$LOGFILE"
 # abacus Endpoint
 ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
 
-# Loop over BAMS
-# This is specific for MoHQ named Bams!
-if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
-    echo "Bams Transfered" >> "$TEMP/$LOGFILE"
-    for i in "$location"Aligned*/*/*/*/MoHQ*.bam; do
-        j=${i//.sorted.bam/.sorted.bai}
-        # j=$(echo "$i" | sed 's/.sorted.bam/.sorted.bai/g')
-        sample_name=$(echo "$i" | cut -d'/' -f11)
-        readset_name="$(echo "$i" | cut -d'/' -f11).$(echo "$i" | cut -d'/' -f12)"
-        readset_name="${readset_name/run/}"
-        file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
-        LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
-        DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
-        RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
-        RUNTYPE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}')
-        RUNID=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}')
-        ADAP1=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}')
-        ADAP2=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}')
-        QUAL_OF=33
-        BED=""
-        BAM="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-        # BAI="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-        FASTQ1=""
-        FASTQ2=""
-        if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
-            :
-        else
-            # Make the oneliner readset file
-            touch "$TEMP/${readset_name}_readset.tsv";
-            echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv";
-            echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
-            {
-                # Adding readset to be transferred in a list file
-                echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
-                # Adding bam and bai to be transferred in a list file
-                echo "$i $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-                echo "$j $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-            } >> "$TEMP/$LISTFILE"
-            {
-                echo "$i,$sample_name/${file_name}_${RUNID}_${LANE}.bam"
-                echo "$j,$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
-            } >> "$TEMP/$LOGFILE"
+# Loop over BAMS: DNA
+if [ "$nucleic_acid_type" = "DNA" ] || [ -z "$nucleic_acid_type" ]; then
+    if ls "$location"Aligned*/*/*/*/MoHQ*.bam 1> /dev/null 2>&1; then
+        echo "Bams Transfered" >> "$TEMP/$LOGFILE"
+        for i in "$location"Aligned*/*/*/*/MoHQ*.bam; do
+            j=${i//.sorted.bam/.sorted.bai}
+            sample_name=$(echo "$i" | cut -d'/' -f11)
+            readset_name="$(echo "$i" | cut -d'/' -f11).$(echo "$i" | cut -d'/' -f12)"
+            readset_name="${readset_name/run/}"
+            file_name=$(echo "$i" | cut -d'/' -f13 | sed 's/.sorted.bam//g')
+            LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
+            DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
+            RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
+            RUNTYPE=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}')
+            RUNID=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}')
+            ADAP1=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}')
+            ADAP2=$(echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}')
+            QUAL_OF=33
+            BED=""
+            BAM="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+            # BAI="raw_reads/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+            FASTQ1=""
+            FASTQ2=""
+            if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+                :
+            else
+                # Make the oneliner readset file
+                touch "$TEMP/${readset_name}_readset.tsv";
+                echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv";
+                echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
+                {
+                    # Adding readset to be transferred in a list file
+                    echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
+                    # Adding bam and bai to be transferred in a list file
+                    echo "$i $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+                    echo "$j $DEST_LOC/$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+                } >> "$TEMP/$LISTFILE"
+                {
+                    echo "$i,$sample_name/${file_name}_${RUNID}_${LANE}.bam"
+                    echo "$j,$sample_name/${file_name}_${RUNID}_${LANE}.bam.bai"
+                } >> "$TEMP/$LOGFILE"
 
-        fi
+            fi
 
-    done;
-else
-    echo "No BAM files found";
+        done;
+    else
+        echo "No BAM files found";
+    fi;
 fi;
 
-# RNA now or possibly both
-if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
-    echo "fastq's Transfered" >> "$TEMP/$LOGFILE"
-    for i in "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
-        j="${i/_R1_/_R2_}"
-        sample_name=$(echo "$i" | cut -d'/' -f11 | cut -d'_' -f2)
-        LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
-        liba=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f2)
-        libb=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f3)
-        readset_name="${sample_name}.${liba}_${libb}_${LANE}"
-        file_name1=$(echo "$i" | cut -d'/' -f12)
-        file_name2="${file_name1/_R1_/_R2_}"
-        DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
-        RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
-        RUNTYPE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}' )
-        RUNID=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}' )
-        ADAP1=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}' )
-        ADAP2=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}' )
-        QUAL_OF=33
-        BED=""
-        BAM=""
-        FASTQ1="raw_reads/$sample_name/$file_name1"
-        FASTQ2="raw_reads/$sample_name/$file_name2"
-        if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
-            :
-        else
-            # Make the oneliner readset file
-            touch "$TEMP/${readset_name}_readset.tsv"
-            echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv"
-            echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
+# Loop over fastqs: DNA
+if [ "$nucleic_acid_type" = "RNA" ] || [ -z "$nucleic_acid_type" ]; then
+    if ls "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz 1> /dev/null 2>&1; then
+        echo "fastq's Transfered" >> "$TEMP/$LOGFILE"
+        for i in "$location"Unaligned*/*/*/MoHQ*_R1_001.fastq.gz; do
+            j="${i/_R1_/_R2_}"
+            sample_name=$(echo "$i" | cut -d'/' -f11 | cut -d'_' -f2)
+            LANE=$(echo "$i" | cut -d'/' -f9 | cut -d'.' -f2)
+            liba=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f2)
+            libb=$(echo "$i" | cut -d'/' -f8 | cut -d'_' -f3)
+            readset_name="${sample_name}.${liba}_${libb}_${LANE}"
+            file_name1=$(echo "$i" | cut -d'/' -f12)
+            file_name2="${file_name1/_R1_/_R2_}"
+            DETAILS=$(awk -F "," -v LANE="$LANE" -v sample_name="$sample_name" '{ if ($3==LANE && $7==sample_name) {print $0}}' "$location"*run.csv)
+            RUN_NAME=$(echo "$DETAILS" | awk -F "\"*,\"*" '{split($1, a, "_"); split(a[5], b, "-"); print b[1]}')
+            RUNTYPE=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $4}' )
+            RUNID=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $2}' )
+            ADAP1=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $28}' )
+            ADAP2=$( echo "$DETAILS" | awk -F "\"*,\"*" '{print $29}' )
+            QUAL_OF=33
+            BED=""
+            BAM=""
+            FASTQ1="raw_reads/$sample_name/$file_name1"
+            FASTQ2="raw_reads/$sample_name/$file_name2"
+            if [[ ${#sample[@]} != 0 ]] && [[ ! " ${sample[*]} " =~ [[:space:]]${sample_name}[[:space:]] ]]; then
+                :
+            else
+                # Make the oneliner readset file
+                touch "$TEMP/${readset_name}_readset.tsv"
+                echo -e 'Sample\tReadset\tLibraryType\tRunType\tRun\tLane\tAdapter1\tAdapter2\tQualityOffset\tBED\tFASTQ1\tFASTQ2\tBAM' > "$TEMP/${readset_name}_readset.tsv"
+                echo -e "$sample_name\t${sample_name}.${RUNID}_${LANE}\t${RUNID}_${LANE}\t${RUNTYPE}\t${RUN_NAME}\t${LANE}\t${ADAP1}\t${ADAP2}\t${QUAL_OF}\t${BED}\t${FASTQ1}\t${FASTQ2}\t${BAM}" >> "$TEMP/${readset_name}_readset.tsv"
 
-            {
-                # Adding readset to be transferred in a list file
-                echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
-                # Adding fastqs to be transferred in a list file
-                echo "$i $DEST_LOC/$sample_name/$file_name1"
-                echo "$j $DEST_LOC/$sample_name/$file_name2"
-            } >> "$TEMP/$LISTFILE"
-            {
-                echo "$i,$sample_name/$file_name1"
-                echo "$j,$sample_name/$file_name2"
-            } >> "$TEMP/$LOGFILE"
-        fi
+                {
+                    # Adding readset to be transferred in a list file
+                    echo "$TEMP/${readset_name}_readset.tsv $DEST_LOC/$sample_name/${readset_name}_readset.tsv"
+                    # Adding fastqs to be transferred in a list file
+                    echo "$i $DEST_LOC/$sample_name/$file_name1"
+                    echo "$j $DEST_LOC/$sample_name/$file_name2"
+                } >> "$TEMP/$LISTFILE"
+                {
+                    echo "$i,$sample_name/$file_name1"
+                    echo "$j,$sample_name/$file_name2"
+                } >> "$TEMP/$LOGFILE"
+            fi
 
-    done;
-else
-        echo "No fastq files found";
+        done;
+    else
+            echo "No fastq files found";
+    fi;
 fi;
 
 echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
