@@ -239,57 +239,62 @@ $custom_ini $extra_ini \
       echo "Error: file $genpipes_file is empty. Check $(realpath "$patient_logs_folder/${patient}.${timestamp}.log")"
       exit 1
     fi
-    submission_log="$patient_logs_folder/${patient}.${timestamp}_submission.log"
-    chmod 774 "$genpipes_file"
-    if [[ $cluster == cardinal ]]; then
-      echo "-> Submitting GenPipes for ${patient}..."
-      bash "$genpipes_file" &> "$submission_log"
+    # GenPipes file has no job to be submitted
+    if grep -q "TOTAL: 0 job... skipping" "$genpipes_file"; then
+      echo "No job created in $genpipes_file. Skipping..."
     else
-      echo "-> Chunking GenPipes for ${patient}..."
-      "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
-      # Add check on log previously created when a new error appears
-      chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
-      chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
-      echo "-> Submitting GenPipes for ${patient}..."
-      cat /dev/null > "$submission_log"
-      {
-        # shellcheck disable=SC2086
-        (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes -n $max_queue "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
-        echo $!
-        echo "PATIENT: ${patient}"
-        echo "LOG: "
-      } >> "$submission_log"
-      chmod 664 "$submission_log"
-    fi
-    # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
-      maybe_trace_ini=$(find "${path}" -maxdepth 1 -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
-      # Getting standardized timestamp from trace.ini file
-      if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
-          trace_ini_timestamp="${BASH_REMATCH[1]}"
+      submission_log="$patient_logs_folder/${patient}.${timestamp}_submission.log"
+      chmod 774 "$genpipes_file"
+      if [[ $cluster == cardinal ]]; then
+        echo "-> Submitting GenPipes for ${patient}..."
+        bash "$genpipes_file" &> "$submission_log"
       else
-          echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+        echo "-> Chunking GenPipes for ${patient}..."
+        "$MUGQIC_PIPELINES_HOME"/utils/chunk_genpipes.sh "$genpipes_file" "$patient_logs_folder/${patient}.${timestamp}_chunks" &> "$patient_logs_folder/${patient}.${timestamp}_chunks.log"
+        # Add check on log previously created when a new error appears
+        chmod 775 "$patient_logs_folder/${patient}.${timestamp}_chunks"
+        chmod 664 "$patient_logs_folder/${patient}.${timestamp}_chunks"/*
+        echo "-> Submitting GenPipes for ${patient}..."
+        cat /dev/null > "$submission_log"
+        {
+          # shellcheck disable=SC2086
+          (sleep 1 && "$MUGQIC_PIPELINES_HOME"/utils/submit_genpipes -n $max_queue "$patient_logs_folder/${patient}.${timestamp}_chunks" 2>&1) & echo -n "PID: "
+          echo $!
+          echo "PATIENT: ${patient}"
+          echo "LOG: "
+        } >> "$submission_log"
+        chmod 664 "$submission_log"
+      fi
+      # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
+        maybe_trace_ini=$(find "${path}" -maxdepth 1 -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+        # Getting standardized timestamp from trace.ini file
+        if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
+            trace_ini_timestamp="${BASH_REMATCH[1]}"
+        else
+            echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+            exit 1
+        fi
+      # Making sure submission log is not empty otherwise skipping
+      if [ -s "$submission_log" ]; then
+        # Finding GenPipes json and symklink into genpipes_submission along with the readset file
+        maybe_json=$(find "${path}/json" -maxdepth 1 -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
+        if [ -z "$maybe_json" ]; then
+          echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
           exit 1
+        fi
+        ln -s "$readset_file" "$link_folder"/.
+        ln -s "$maybe_json" "$link_folder"/.
+        # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
+        echo "-> Waiting for ${job_list_prefix_name}.${trace_ini_timestamp} to be created for ${patient}..."
+        maybe_job_list=""
+        while [ -z "$maybe_job_list" ]; do
+          sleep 1
+          maybe_job_list=$(find "${path}/job_output" -maxdepth 1 -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
+        done
+        ln -s "$maybe_job_list" "$link_folder"/.
+      else
+        echo "Warning: file $submission_log is empty. Skipping..."
       fi
-    # Making sure submission log is not empty otherwise skipping
-    if [ -s "$submission_log" ]; then
-      # Finding GenPipes json and symklink into genpipes_submission along with the readset file
-      maybe_json=$(find "${path}/json" -maxdepth 1 -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
-      if [ -z "$maybe_json" ]; then
-        echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
-        exit 1
-      fi
-      ln -s "$readset_file" "$link_folder"/.
-      ln -s "$maybe_json" "$link_folder"/.
-      # Need to wait for the scheduler to return the job IDs and so have the job_list file generated
-      echo "-> Waiting for ${job_list_prefix_name}.${trace_ini_timestamp} to be created for ${patient}..."
-      maybe_job_list=""
-      while [ -z "$maybe_job_list" ]; do
-        sleep 1
-        maybe_job_list=$(find "${path}/job_output" -maxdepth 1 -type f -name "${job_list_prefix_name}.${trace_ini_timestamp}")
-      done
-      ln -s "$maybe_job_list" "$link_folder"/.
-    else
-      echo "Warning: file $submission_log is empty. Skipping..."
     fi
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
