@@ -143,8 +143,8 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                             "file_deliverable": True
                             },
                         {
-                            "location_uri": f"abacus://{fastq1}",
-                            "file_name": f"{os.path.basename(fastq1)}",
+                            "location_uri": f"abacus://{fastq2}",
+                            "file_name": f"{os.path.basename(fastq2)}",
                             "file_extra_metadata": {"read_type": "R2"},
                             "file_deliverable": True
                             }
@@ -188,7 +188,10 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                             raw_median_insert_size = None
                             raw_median_insert_size_flag = "MISSING"
                         raw_mean_insert_size = run_v["alignment"]["average_aligned_insert_size"]
-                        raw_mean_insert_size_flag = "PASS"
+                        if not raw_mean_insert_size:
+                            raw_mean_insert_size_flag = "MISSING"
+                        else:
+                            raw_mean_insert_size_flag = "PASS"
                         raw_mean_coverage = run_v["alignment"]["mean_coverage"]
                         if not raw_mean_coverage:
                             raw_mean_coverage_flag = "MISSING"
