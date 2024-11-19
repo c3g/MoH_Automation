@@ -295,10 +295,11 @@ $custom_ini $extra_ini \
       else
         echo "Warning: file $submission_log is empty. Skipping..."
       fi
+      # Do some cleaning
+      chmod 664 -- "$maybe_trace_ini"
+      mv "$maybe_trace_ini" "${path}/genpipes_inis/."
     fi
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
-    chmod 664 -- "$maybe_trace_ini"
-    mv "$maybe_trace_ini" "${path}/genpipes_inis/."
   fi
 done < "${input_file}"
