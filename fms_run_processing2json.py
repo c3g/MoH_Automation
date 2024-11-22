@@ -166,39 +166,33 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                         ]
                 for run_v in lane_json["run_validation"]:
                     if run_v.get("sample") == readset_key:
-                        raw_reads_count = run_v["qc"]["nb_reads"]
+                        raw_reads_count = run_v.get("qc", {}).get("nb_reads")
+                        raw_reads_count_flag = get_flag(raw_reads_count)
+                        raw_reads_count, raw_reads_count_flag = check_na(raw_reads_count, raw_reads_count_flag)
                         if raw_reads_count == 0:
                             raw_reads_count_flag = "FAILED"
-                        else:
-                            raw_reads_count_flag = "PASS"
                         if readset["library_type"] == "RNASeq":
                             raw_reads_count_flag = rna_raw_reads_count_check(sample_name, raw_reads_count)
-                        try:
-                            raw_duplication_rate = run_v["qc"]["duplication_rate"]
-                            raw_duplication_rate_flag = "PASS"
-                        except KeyError:
-                            raw_duplication_rate = None
-                            raw_duplication_rate_flag = "MISSING"
+
+                        raw_duplication_rate = run_v.get("qc", {}).get("duplication_rate")
+                        raw_duplication_rate_flag = get_flag(raw_duplication_rate)
                         if readset["library_type"] != "RNASeq":
                             raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample_name, raw_duplication_rate)
-                        try:
-                            raw_median_insert_size = run_v["alignment"]["median_aligned_insert_size"]
-                            raw_median_insert_size_flag = median_insert_size_check(sample_name, raw_median_insert_size)
-                        except KeyError:
-                            raw_median_insert_size = None
-                            raw_median_insert_size_flag = "MISSING"
-                        raw_mean_insert_size = run_v["alignment"]["average_aligned_insert_size"]
-                        if not raw_mean_insert_size:
-                            raw_mean_insert_size_flag = "MISSING"
-                        else:
-                            raw_mean_insert_size_flag = "PASS"
-                        raw_mean_coverage = run_v["alignment"]["mean_coverage"]
-                        if not raw_mean_coverage:
-                            raw_mean_coverage_flag = "MISSING"
-                        else:
-                            raw_mean_coverage_flag = "PASS"
-                            if readset["library_type"] != "RNASeq":
-                                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample_name, raw_mean_coverage, sample_name.endswith("T"))
+                        raw_duplication_rate, raw_duplication_rate_flag = check_na(raw_duplication_rate, raw_duplication_rate_flag)
+
+                        raw_median_insert_size = run_v.get("alignment", {}).get("median_aligned_insert_size")
+                        raw_median_insert_size_flag = median_insert_size_check(sample_name, raw_median_insert_size) if raw_median_insert_size else "MISSING"
+                        raw_median_insert_size, raw_median_insert_size_flag = check_na(raw_median_insert_size, raw_median_insert_size_flag)
+
+                        raw_mean_insert_size = run_v.get("alignment", {}).get("average_aligned_insert_size")
+                        raw_mean_insert_size_flag = get_flag(raw_mean_insert_size)
+                        raw_mean_insert_size, raw_mean_insert_size_flag = check_na(raw_mean_insert_size, raw_mean_insert_size_flag)
+
+                        raw_mean_coverage = run_v.get("alignment", {}).get("mean_coverage")
+                        raw_mean_coverage_flag = get_flag(raw_mean_coverage)
+                        raw_mean_coverage, raw_mean_coverage_flag = check_na(raw_mean_coverage, raw_mean_coverage_flag)
+                        if raw_mean_coverage_flag == "PASS" and readset["library_type"] != "RNASeq":
+                            raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample_name, raw_mean_coverage, sample_name.endswith("T"))
                         metric_json = [
                             {
                                 "metric_name": "raw_reads_count",
@@ -261,6 +255,16 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
 
     return readset_dict, sample_dict
 
+def check_na(value, flag):
+    """ Check if value is 'NA' and set flag to 'NOT_APPLICABLE' """
+    if value == "NA":
+        value = None
+        flag = "NOT_APPLICABLE"
+    return value, flag
+
+def get_flag(value, default="PASS", missing="MISSING"):
+    """ Get flag for metric """
+    return default if value is not None else missing
 
 def dna_raw_mean_coverage_check(sample, value, tumour):
     """ Mean Coverage DNA metric check """
