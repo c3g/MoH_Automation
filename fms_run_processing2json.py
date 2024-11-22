@@ -257,7 +257,7 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
 
 def check_na(value, flag):
     """ Check if value is 'NA' and set flag to 'NOT_APPLICABLE' """
-    if value == "NA":
+    if value == "N/A":
         value = None
         flag = "NOT_APPLICABLE"
     return value, flag
