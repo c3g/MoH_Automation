@@ -56,12 +56,12 @@ else
     location=$location"/"
 fi
 
-# Getting client password to avoid getting timed out
-if [[ -n "${password}" ]]; then
-    echo -n Password: 
-    read -r -s password
-    echo
-fi
+# # Getting client password to avoid getting timed out
+# if [[ -n "${password}" ]]; then
+#     echo -n Password: 
+#     read -r -s password
+#     echo
+# fi
 
 # The label is the run name based on the path given as argument
 label=${location%?}
@@ -242,12 +242,12 @@ if [[ $destination != Abacus ]]; then
         source /lb/project/mugqic/projects/MOH/project_tracking_cli/venv/bin/activate
         # shellcheck disable=SC2086
         /lb/project/mugqic/projects/MOH/moh_automation/moh_automation_main/transfer2json.py --input $TEMP/$LISTFILE --source "abacus" --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.list/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
-        if ! grep -q "password:" ~/.config/pt_cli/connect.yaml; then
-            echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
-        fi
+        # if ! grep -q "password:" ~/.config/pt_cli/connect.yaml; then
+        #     echo "  password: $password" >> ~/.config/pt_cli/connect.yaml
+        # fi
         # shellcheck disable=SC2086
         pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.list/.json}
-        sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
+        # sed -i '/password: /d' ~/.config/pt_cli/connect.yaml
     else
         echo "$task_id failed!"
     fi
