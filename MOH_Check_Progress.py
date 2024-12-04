@@ -327,9 +327,9 @@ class Progress(SampleData):
                                 dna_t_transferred_bam = os.path.basename(fields[-1].strip())
                                 dna_t = True
                 if not dna_n:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_n} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {self.dna_n} in {TRANSFER_LOGS}")
                 if not dna_t:
-                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in {TRANSFER_LOGS}")
+                    raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {self.dna_t} in {TRANSFER_LOGS}")
             else:
                 if self.run_proc_bam_dna_n != "NA":
                     dna_n_transferred_bam = os.path.basename(self.beluga_bam_dna_n)
