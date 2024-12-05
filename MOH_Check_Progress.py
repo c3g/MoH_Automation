@@ -240,6 +240,10 @@ class Progress(SampleData):
 
 
     def Gather_Run_Proc_BAM(self):
+        if not self.dna_n_true:
+            logger.error(f"DNA_N_True is not set for sample {self.sample}")
+        if not self.dna_t_true:
+            logger.error(f"DNA_T_True is not set for sample {self.sample}")
         if self.dna_n_true == "NA":
             self.run_proc_bam_dna_t = "NA"
             self.run_proc_bam_dna_n = "NA"
@@ -269,6 +273,8 @@ class Progress(SampleData):
                 if not dna_t:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {dna_t} in {TRANSFER_LOGS}")
 
+        if not self.rna_true:
+            logger.error(f"RNA_True is not set for sample {self.sample}")
         if self.rna_true == "NA":
             self.run_proc_fastq_1_rna = "NA"
             self.run_proc_fastq_2_rna = "NA"
