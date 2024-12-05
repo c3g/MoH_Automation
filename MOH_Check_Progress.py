@@ -320,7 +320,8 @@ class Progress(SampleData):
                 for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
-                            if self.dna_n in line and line.endswith(".bam"):
+                            if self.dna_n in line:
+                                print(line)
                                 fields = line.split(",")
                                 self.run_proc_bam_dna_n = fields[0].strip()
                                 self.ts_run_proc_bam_dna_n  = getime(filename)
