@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-import progressbar
+
 import glob
-import sys
 import re
 import os.path
-import time
 import datetime
 import errno
 import logging
+import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_details,extract_fileloc_details,extract_timestamp_details,update_timestamp_details,update_fileloc_details,extract_sample_names,update_status_db
 
 
@@ -306,7 +305,10 @@ class Progress(SampleData):
 
     def Gather_BAM_loc(self):
         # Run Processing bams
+        if not self.dna_n_true:
+            logger.error(f"DNA_N_True is not set for sample {self.sample}")
         if self.dna_n_true == "NA":
+            logger.info(f"DNA_N_True is NA for sample {self.sample}; Run Procesing BAMs will be NA.")
             self.run_proc_bam_dna_t = "NA"
             self.run_proc_bam_dna_n = "NA"
             self.ts_run_proc_bam_dna_t = "NA"
@@ -318,20 +320,22 @@ class Progress(SampleData):
                 for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
-                            if dna_n and dna_t:
-                                break
-                            if self.dna_n in line:
+                            if self.dna_n in line and line.endswith(".bam"):
                                 fields = line.split(",")
                                 self.run_proc_bam_dna_n = fields[0].strip()
                                 self.ts_run_proc_bam_dna_n  = getime(filename)
                                 dna_n_transferred_bam = os.path.basename(fields[-1].strip())
                                 dna_n = True
-                            elif self.dna_t in line:
+                            elif self.dna_t in line and line.endswith(".bam"):
                                 fields = line.split(",")
                                 self.run_proc_bam_dna_t = fields[0].strip()
                                 self.ts_run_proc_bam_dna_t = getime(filename)
                                 dna_t_transferred_bam = os.path.basename(fields[-1].strip())
                                 dna_t = True
+                            if dna_n and dna_t:
+                                break
+                    if dna_n and dna_t:
+                        break
                 if not dna_n:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"Noting found for {self.dna_n} in {TRANSFER_LOGS}")
                 if not dna_t:
@@ -342,7 +346,10 @@ class Progress(SampleData):
                 if self.run_proc_bam_dna_t != "NA":
                     dna_t_transferred_bam = os.path.basename(self.beluga_bam_dna_t)
 
+        if not self.rna_true:
+            logger.error(f"RNA_True is not set for sample {self.sample}")
         if self.rna_true == "NA":
+            logger.info(f"RNA_True is NA for sample {self.sample}; Run Procesing Fastqs will be NA.")
             self.run_proc_fastq_1_rna = "NA"
             self.run_proc_fastq_2_rna = "NA"
             self.ts_run_proc_fastq_1_rna = "NA"
@@ -354,8 +361,6 @@ class Progress(SampleData):
                 for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
-                            if fastq1 and fastq2:
-                                break
                             if self.rna in line:
                                 fields = line.split(",")
                                 if re.search(r"_R1.*.fastq", os.path.basename(fields[0])):
@@ -368,6 +373,10 @@ class Progress(SampleData):
                                     self.ts_run_proc_fastq_2_rna = getime(filename)
                                     fastq2_transferred = os.path.basename(fields[-1].strip())
                                     fastq2 = True
+                                if fastq1 and fastq2:
+                                    break
+                    if fastq1 and fastq2:
+                        break
 
                 if not fastq1:
                     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"No fastq1 found for {self.rna_true} in {TRANSFER_LOGS}")
@@ -383,6 +392,7 @@ class Progress(SampleData):
         loc1 = os.path.join(MOH_PROCESSING_FOLDER, "raw_reads")
         loc2 = os.path.join(MAIN_FOLDER, "raw_reads")
         if self.dna_n_true == "NA" or self.dna_t_true == "NA":
+            logger.info(f"DNA_N_True or DNA_T_True is NA for sample {self.sample}; Beluga BAMs will be NA.")
             self.beluga_bam_dna_t = "NA"
             self.beluga_bam_dna_n= "NA"
             self.ts_beluga_bam_dna_t = "NA"
@@ -429,6 +439,7 @@ class Progress(SampleData):
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file_rr} nor {dna_t_file_old_rr} nor {dna_t_file} nor {dna_t_file_old}")
         if self.rna_true == "NA":
+            logger.info(f"RNA_True is NA for sample {self.sample}; Beluga Fastqs will be NA.")
             self.beluga_fastq_1_rna = "NA"
             self.beluga_fastq_2_rna = "NA"
             self.ts_beluga_fastq_1_rna = "NA"
