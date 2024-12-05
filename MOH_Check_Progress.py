@@ -320,14 +320,13 @@ class Progress(SampleData):
                 for filename in glob.glob(TRANSFER_LOGS):
                     with open(filename, 'r') as file:
                         for line in file:
-                            if self.dna_n in line:
-                                print(line)
+                            if self.dna_n in line and line.strip().endswith(".bam"):
                                 fields = line.split(",")
                                 self.run_proc_bam_dna_n = fields[0].strip()
                                 self.ts_run_proc_bam_dna_n  = getime(filename)
                                 dna_n_transferred_bam = os.path.basename(fields[-1].strip())
                                 dna_n = True
-                            elif self.dna_t in line and line.endswith(".bam"):
+                            elif self.dna_t in line and line.strip().endswith(".bam"):
                                 fields = line.split(",")
                                 self.run_proc_bam_dna_t = fields[0].strip()
                                 self.ts_run_proc_bam_dna_t = getime(filename)
