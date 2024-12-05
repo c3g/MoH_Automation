@@ -425,7 +425,7 @@ class Progress(SampleData):
             elif os.path.exists(dna_n_file_old):
                 self.beluga_bam_dna_n = dna_n_file_old
                 self.ts_beluga_bam_dna_n = getime(dna_n_file_old)
-            if all(not os.path.exists(file) for file in [dna_n_file_rr, dna_n_file_old_rr, dna_n_file, dna_n_file_old])
+            if all(not os.path.exists(file) for file in [dna_n_file_rr, dna_n_file_old_rr, dna_n_file, dna_n_file_old]):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_n_file_rr} nor {dna_n_file_old_rr} nor {dna_n_file} nor {dna_n_file_old}")
             # bam dna_t in MAIN/raw_reads
             dna_t_file = os.path.join(loc2, self.dna_t, os.path.basename(dna_t_transferred_bam))
@@ -436,7 +436,7 @@ class Progress(SampleData):
             elif os.path.exists(dna_t_file_old):
                 self.beluga_bam_dna_t = dna_t_file_old
                 self.ts_beluga_bam_dna_t = getime(dna_t_file_old)
-            if all(not os.path.exists(file) for file in [dna_t_file_rr, dna_t_file_old_rr, dna_t_file, dna_t_file_old])
+            if all(not os.path.exists(file) for file in [dna_t_file_rr, dna_t_file_old_rr, dna_t_file, dna_t_file_old]):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{dna_t_file_rr} nor {dna_t_file_old_rr} nor {dna_t_file} nor {dna_t_file_old}")
         if self.rna_true == "NA":
             logger.info(f"RNA_True is NA for sample {self.sample}; Beluga Fastqs will be NA.")
@@ -472,7 +472,7 @@ class Progress(SampleData):
             elif os.path.exists(rna_fq1_old):
                 self.beluga_fastq_1_rna = rna_fq1_old
                 self.ts_beluga_fastq_1_rna = getime(rna_fq1_old)
-            if all(not os.path.exists(file) for file in [rna_fq1_rr, rna_fq1_old_rr, rna_fq1, rna_fq1_old])
+            if all(not os.path.exists(file) for file in [rna_fq1_rr, rna_fq1_old_rr, rna_fq1, rna_fq1_old]):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq1_rr} nor {rna_fq1_old_rr} nor {rna_fq1} nor {rna_fq1_old}")
             # fastq2 in MAIN/raw_reads
             rna_fq2 = os.path.join(loc2, self.rna, os.path.basename(fastq2_transferred))
@@ -483,7 +483,7 @@ class Progress(SampleData):
             elif os.path.exists(rna_fq2_old):
                 self.beluga_fastq_2_rna = rna_fq2_old
                 self.ts_beluga_fastq_2_rna = getime(rna_fq2_old)
-            if all(not os.path.exists(file) for file in [rna_fq2_rr, rna_fq2_old_rr, rna_fq2, rna_fq2_old])
+            if all(not os.path.exists(file) for file in [rna_fq2_rr, rna_fq2_old_rr, rna_fq2, rna_fq2_old]):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), f"{rna_fq2_rr} nor {rna_fq2_old_rr} nor {rna_fq2} nor {rna_fq2_old}")
 
     def Gather_Final_BAMs(self):
