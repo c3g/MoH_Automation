@@ -4,14 +4,15 @@ import glob
 import os
 import re
 import csv
+import logging
 import h5py
 import numpy as np
-import sys
 import progressbar
 from  DB_OPS import update_metrics_db,create_connection,extract_sample_field,extract_sample_names, extract_fileloc_field, extract_value
 
 WIDGETS = [' [', progressbar.Percentage(), ' (', progressbar.SimpleProgress(), ') - ', progressbar.Timer(), '] ', progressbar.Bar(), ' (', progressbar.ETA(), ') ']
 
+logger = logging.getLogger(__name__)
 
 def main():
     connection = create_connection("/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/MOH_analysis.db")
@@ -436,7 +437,8 @@ def extract_dedup_coverage(sample):
             # line is mean coverageData = 304.9902X
             metrics = line.split(" ")
             ret = float(metrics[-1].replace('X', ''))
-    except (FileNotFoundError, ValueError):
+    except (FileNotFoundError, ValueError, IndexError):
+        logger.error(f"ERROR: Could not extract dedup coverage for sample {sample} from file {filename}.")
         ret = "NA"
     return ret
 
