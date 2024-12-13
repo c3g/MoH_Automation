@@ -61,7 +61,7 @@ def jsonify_run_processing(patient_dict, prefix_path):
         for run_row in run_list:
             sample = run_row['Sample Name']
             if sample.startswith("MoHQ"):
-                result = re.search(r"^((MoHQ-(JG|CM|GC|IQ|HM|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+                result = re.search(r"^((MoHQ-(JG|CM|GC|IQ|HM|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
                 patient = result.group(1)
                 try:
                     existing_patient = None
@@ -604,7 +604,7 @@ def get_patient_dict(main_raw_reads_folder):
     patient_dict = {}
     for sample in os.listdir(main_raw_reads_folder):
         if sample.startswith("MoHQ"):
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             patient = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)

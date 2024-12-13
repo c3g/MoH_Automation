@@ -40,7 +40,7 @@ def main():
     all_files = os.listdir(transferred_raw_reads_folder)
     for name in all_files:
         #Test the name. Throw warning if file is bad. Toss it in Bad names.
-        tester = re.match("^MoHQ-(JG|CM|GC|MU|MR|XX)-\w+-\w+-\w+-\w+(D|R)(T|N)", name)
+        tester = re.match("^MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+-\w+-\w+-\w+(D|R)(T|N)", name)
         if tester == None:
             print (f"{name} is in inproper format")
             bad_names.append(name)
@@ -96,7 +96,7 @@ def main():
 
             #Add To database
             for name in rna_samples:
-                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", name)
+                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", name)
                 sample = result.group(1)
                 cohort = result.group(2)
                 institution = result.group(3)
@@ -128,10 +128,10 @@ def main():
         #print("tumour len: " + str(len(tumour_samples)))
         for normal in normal_samples:
             #print("normal: " + normal)
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", normal)
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", normal)
             sample = result.group(1)
             for tumour in tumour_samples:
-                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", tumour)
+                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", tumour)
                 patient = result.group(1)
                 #print("tumour: " + tumour)
                 if sample == patient:
@@ -158,7 +158,7 @@ def main():
                         mylines.append(myline)
                 readset = readset + mylines[1:]
                #Add to db
-                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", normal)
+                result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", normal)
                 sample = result.group(1)
                 cohort = result.group(2)
                 institution = result.group(3)
