@@ -90,5 +90,9 @@ else
   exit 1
 fi
 
-nohup ~/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" &
+nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" &
+if [ "$destination" != "Beluga" ]; then
+  nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d Beluga &
+fi
+
 echo "Transfer started."
