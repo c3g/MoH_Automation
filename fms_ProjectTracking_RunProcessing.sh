@@ -90,9 +90,9 @@ else
   exit 1
 fi
 
-nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" &
+nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" > "${run_processing_json/.json/_${destination}_transfer.log}" 2>&1 &
+echo "Transfer started towards $destination. See log file ${run_processing_json/.json/_${destination}_transfer.log}"
 if [ "$destination" != "Beluga" ]; then
-  nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d Beluga &
+  nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d Beluga > "${run_processing_json/.json/_Beluga_transfer.log}" 2>&1 &
+  echo "Transfer started towards Beluga. See log file ${run_processing_json/.json/_Beluga_transfer.log}"
 fi
-
-echo "Transfer started."
