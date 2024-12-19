@@ -8,19 +8,23 @@ usage() {
   echo " -h                               Display this help message."
   echo " -r <runfolder>                   RunFolder found in abacus under /lb/robot/research/freezeman-processing/<sequencer>/<year>/<runfolder>."
   echo " -d <destination>                 Destination of the transfer (Abacus, Beluga or Cardinal). For now it will also always be transferred to Beluga for Old DB compatibility."
+  echo " -n <nucleic_acid_type>           nucleic_acid_type to be considered for the transfer (either DNA or RNA, Default: ALL)."
   echo " -l <lane>                        Lane(s) to be ingested (default: all)."
   echo " -s <sample>                      Sample Name(s) (as they appear in the json file from Freezeman) (default: all)."
   echo " -x <xsample>                     Sample Name(s) to be EXCLUDED (as they appear in the json file from Freezeman) (default: none)."
   exit 1
   }
 
-while getopts 'hr:d::l::s::x:' OPTION; do
+while getopts 'hr:d::n::l::s::x:' OPTION; do
   case "$OPTION" in
     r)
       runfolder="$OPTARG"
       ;;
     d)
       destination="$OPTARG"
+      ;;
+    n)
+      nucleic_acid_type="$OPTARG"
       ;;
     l)
       lane+=("$OPTARG")
@@ -76,7 +80,8 @@ if [ -s "$input" ]; then
   run_processing_json=$path/$runfolder.json
   # Json creation from run csv file
   # shellcheck disable=SC2086
-  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json
+  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json --nucleic_acid_type "$nucleic_acid_type"
+  
   chmod 664 "$run_processing_json"
   # Using client to add new runs to database
   # shellcheck disable=SC2086

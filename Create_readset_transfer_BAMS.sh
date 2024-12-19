@@ -21,7 +21,7 @@ while getopts 'hl:d::n::s:' OPTION; do
     d)
       destination="$OPTARG"
       ;;
-      n)
+    n)
       nucleic_acid_type="$OPTARG"
       ;;
     s)

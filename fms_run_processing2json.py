@@ -31,6 +31,13 @@ def parse_arguments():
         help="Output json filename (Default: .json)."
         )
     parser.add_argument(
+        '-n',
+        '--nucleic_acid_type',
+        choices=['DNA', 'RNA'],
+        default='ALL',
+        help="Nucleic Acid type, either DNA or RNA (Default: ALL)."
+        )
+    parser.add_argument(
         '-l',
         '--lane',
         nargs='+',
@@ -68,7 +75,7 @@ def parse_sample_name(sample_name):
     result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample_name)
     return result.group(1), result.group(2), result.group(3)
 
-def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes, samples):
+def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes, samples, nucleic_acid_type):
     """
     Converts the Run Processing csv file to a json file for project tracking database.
     Args:
@@ -77,6 +84,7 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
         output (str): Path to the output json file.
         lanes (list): List of lanes to consider.
         samples (list): List of samples to consider.
+        nucleic_acid_type (str): Nucleic Acid type to consider.
     """
     readset_dict = {}
     sample_dict = {}
@@ -250,6 +258,25 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                         }
                     sample_json["readset"].append(readset_json)
 
+    specimens_to_remove = []
+    for specimen in json_output.get("specimen", []):
+        samples_to_remove = []
+        for sample in specimen.get("sample", []):
+            readsets_to_remove = []
+            for readset in sample.get("readset", []):
+                if readset.get("experiment_nucleic_acid_type") != nucleic_acid_type and nucleic_acid_type != 'ALL':
+                    readsets_to_remove.append(readset)
+            for readset in readsets_to_remove:
+                sample["readset"].remove(readset)
+            if not sample["readset"]:
+                samples_to_remove.append(sample)
+        for sample in samples_to_remove:
+            specimen["sample"].remove(sample)
+        if not specimen["sample"]:
+            specimens_to_remove.append(specimen)
+    for specimen in specimens_to_remove:
+        json_output["specimen"].remove(specimen)
+
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
 
@@ -340,7 +367,7 @@ def main():
     else:
         samples = [sample["sample_name"] for sample in fms_json["samples"]]
 
-    jsonify_run_processing(args.input, fms_json, lanes_json, output, lanes, samples)
+    jsonify_run_processing(args.input, fms_json, lanes_json, output, lanes, samples, args.nucleic_acid_type)
 
 if __name__ == '__main__':
     main()

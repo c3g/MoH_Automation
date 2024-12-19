@@ -73,8 +73,8 @@ runfolder=$(jq -r '.run_name' "$run_processing_json")
 # Temporary File location, you may want to change it to your scratch for easier clean up.
 TEMP='/lb/project/mugqic/projects/MOH/TEMP'
 TIMESTAMP=$(date +%FT%H.%M.%S)
-LOGFILE="${runfolder}_${TIMESTAMP}_transfer.log"
-LISTFILE="${runfolder}_${TIMESTAMP}_transfer.list"
+LOGFILE="${runfolder}_${TIMESTAMP}_${destination}_transfer.log"
+LISTFILE="${runfolder}_${TIMESTAMP}_${destination}_transfer.list"
 
 touch "$TEMP/$LOGFILE"
 touch "$TEMP/$LISTFILE"
