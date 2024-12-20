@@ -79,8 +79,13 @@ echo "-> Processing $runfolder..."
 if [ -s "$input" ]; then
   run_processing_json=$path/$runfolder.json
   # Json creation from run csv file
-  # shellcheck disable=SC2086
-  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json --nucleic_acid_type "$nucleic_acid_type"
+  if [ -z "$nucleic_acid_type" ]; then
+    # shellcheck disable=SC2086
+  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json
+  else
+    # shellcheck disable=SC2086
+    ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json --nucleic_acid_type "$nucleic_acid_type"
+  fi
   
   chmod 664 "$run_processing_json"
   # Using client to add new runs to database
