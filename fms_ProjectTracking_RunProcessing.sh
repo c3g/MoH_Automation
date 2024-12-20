@@ -1,6 +1,5 @@
 #!/bin/bash
-set -eu -o pipefail
-
+set -e -o pipefail
 
 usage() {
   echo "script usage: ProjectTracking_RunProcessing.sh -h [-r runfolder] [-l lane] [-s sample] [-x xsample]"
