@@ -72,7 +72,7 @@ cd "$path"
 
 ## Prepare run list
 folder_prefix=/lb/robot/research/freezeman-processing
-input=$(find "$folder_prefix"/*/*/ -type d -name "$runfolder")
+input=$(find "$folder_prefix"/*/*/ -maxdepth 1 -type d -name "$runfolder")
 echo "-> Processing $runfolder..."
 
 if [ -s "$input" ]; then
