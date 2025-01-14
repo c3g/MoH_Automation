@@ -15,7 +15,7 @@ def main():
     #     choices=['DNA', 'RNA']
     #     )
     parser.add_argument(
-        '-i'
+        '-i',
         '--input',
         required=True,
         help="Input file is a csv formatted 'patient,sample_dn,sample_dt,sample_rt'",
