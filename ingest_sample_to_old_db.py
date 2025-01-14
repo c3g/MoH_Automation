@@ -31,14 +31,15 @@ def main():
 
     with open(args.input, mode='r') as file:
         # Create a CSV reader object
-        csv_reader = csv.DictReader(file)
+        csv_reader = csv.reader(file)
 
         # Iterate over each row in the CSV file
         for row in csv_reader:
-            patient = row['patient']
-            sample_dn = row['sample_dn'] if row['sample_dn'] else 'NA'
-            sample_dt = row['sample_dt'] if row['sample_dt'] else 'NA'
-            sample_rt = row['sample_rt'] if row['sample_rt'] else 'NA'
+            patient, sample_dn, sample_dt, sample_rt = row
+
+            sample_dn = sample_dn if sample_dn else 'NA'
+            sample_dt = sample_dt if sample_dt else 'NA'
+            sample_rt = sample_rt if sample_rt else 'NA'
 
             # Determine which sample field to use for parsing
             sample = sample_dn if sample_dn != 'NA' else (sample_dt if sample_dt != 'NA' else sample_rt)
