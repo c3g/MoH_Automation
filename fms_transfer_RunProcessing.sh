@@ -121,6 +121,7 @@ if [[ $destination != Abacus ]]; then
     module unload mugqic/globus-cli/3.24.0
     # shellcheck disable=SC2086
     ~/moh_automation/transfer2json.py --input $TEMP/$LISTFILE --source "abacus" --destination $destination --output /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.list/.json} --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $runfolder --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
+    echo "Ingesting transfer /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.list/.json}..."
     # shellcheck disable=SC2086
     pt-cli ingest transfer --input-json /lb/project/mugqic/projects/MOH/Transfer_json/${LISTFILE/.list/.json}
   else
