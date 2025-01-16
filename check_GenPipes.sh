@@ -35,8 +35,13 @@ genpipes_transfer() {
   transfer_log=$(dirname "$readset_file")/transfer.log
   echo "-> Transferring GenPipes run $genpipes_run..."
   {
-    # shellcheck disable=SC2086
-    nohup $MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh -r $1 -p $2 -t $3 2>&1 &
+    if [ -z "$3" ]; then
+      # If $3 (protocol) is empty, omit the -t option
+      nohup "$MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh" -r "$1" -p "$2" 2>&1 &
+    else
+      # If $3 (protocol) is not empty, include the -t option
+      nohup "$MOH_path/moh_automation/moh_automation_main/transfer_GenPipes.sh" -r "$1" -p "$2" -t "$3" 2>&1 &
+    fi
     echo -n "PID: "
     echo $!
     echo "LOG: "
@@ -123,7 +128,12 @@ module unload mugqic/globus-cli/3.24.0
 
 operation_cmd_line=$(jq '.operation_cmd_line' "$genpipes_json")
 pipeline=$(echo "$operation_cmd_line" | cut -d' ' -f1 | rev | cut -d'/' -f2 | rev)
-protocol=$(echo "$genpipes_json" | cut -d'.' -f2 |  cut -d'_' -f1)
+# if pipeline is rnaseq_light, protocol is empty
+if [[ $pipeline == "rnaseq_light" ]]; then
+  protocol=""
+else
+  protocol=$(echo "$genpipes_json" | cut -d'.' -f2 |  cut -d'_' -f1)
+fi
 
 # MAIN folder location
 MOH_MAIN="$MOH_path/MAIN"

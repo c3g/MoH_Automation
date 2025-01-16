@@ -30,15 +30,17 @@ while getopts 'hj:r:p::t:' OPTION; do
     ;;
   t)
     protocol="$OPTARG"
-    case "$protocol" in
-      ensemble | sv | cancer)
-        ;;
-      *)
-        echo -e "ERROR: Invalid protocol: '$protocol'.\n"
-        usage
-        ;;
-    esac
-    ;;
+    if [ -n "$protocol" ]; then
+        case "$protocol" in
+          ensemble | sv | cancer)
+            ;;
+          *)
+            echo -e "ERROR: Invalid protocol: '$protocol'.\n"
+            usage
+            ;;
+        esac
+      fi
+      ;;
   h)
     usage
     ;;
