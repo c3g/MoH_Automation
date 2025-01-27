@@ -29,7 +29,7 @@ def main():
     if args.lane:
         lanes = list(args.lane)
     else:
-        lanes = ["1", "2", "3", "4"]
+        lanes = ["1", "2", "3", "4", "5", "6", "7", "8"]
 
     samples = []
     input_csv = args.input
