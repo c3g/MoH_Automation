@@ -93,7 +93,7 @@ jq -r '
   file_without_extension="${file_basename%%.sorted.*}"
   file_extension="${file_basename##*.}"
   new_filename="${file_without_extension}_L00${readset_lane}.sorted.${file_extension}"
-  if [[ ($file == *.bam || $file == *.bai) && "$file_basename" != "$new_filename" ]]; then
+  if [[ ($file == *.bam || $file == *.bai) && "$file" != *"_L00${readset_lane}.sorted.${file_extension}" ]]; then
     echo "$file $DEST_LOC/$sample_name/$new_filename" >> "$TEMP/$LISTFILE"
     echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
   else
