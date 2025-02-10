@@ -46,7 +46,7 @@ if [[ $destination = Beluga ]]; then
     # Beluga Endpoint
     DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
     # Beluga main folder location
-    DEST_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/raw_reads"
+    DEST_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
     # Beluga log file location
     DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
