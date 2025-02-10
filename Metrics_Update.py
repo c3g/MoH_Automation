@@ -446,7 +446,8 @@ def extract_dedup_coverage(sample):
             metrics = line.split(" ")
             ret = float(metrics[-1].replace('X', ''))
     except (FileNotFoundError, ValueError, IndexError):
-        logger.error(f"ERROR: Could not extract dedup coverage for sample {sample} from file {filename}.")
+        if not sample.endswith('RT'):
+            logger.error(f"ERROR: Could not extract dedup coverage for sample {sample} from file {filename}.")
         ret = "NA"
     return ret
 
