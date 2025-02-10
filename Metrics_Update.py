@@ -433,7 +433,15 @@ def extract_dedup_coverage(sample):
         filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, 'genome_results.txt')
         with open(filename, 'r', encoding="utf-8") as file:
             lines = file.readlines()
-            line = lines[71]
+            # Make sure the line is the right one
+            if "mean coverageData" in lines[71]:
+                line = lines[71]
+            else:
+                # Look for the line with mean coverageData
+                for current_line in lines:
+                    if "mean coverageData" in current_line:
+                        line = current_line
+                        break
             # line is mean coverageData = 304.9902X
             metrics = line.split(" ")
             ret = float(metrics[-1].replace('X', ''))
