@@ -266,12 +266,18 @@ $custom_ini $extra_ini \
         chmod 664 "$submission_log"
       fi
       # Finding the right trace.ini first to extract timestamp from GenPipes and find json and job_list
-        maybe_trace_ini=$(find "${path}" -maxdepth 1 -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort | tail -n 1)
+        trace_ini_file=""
+        for maybe_trace_ini in $(find "${path}" -maxdepth 1 -type f -regex "$trace_ini_regex" -newermt "$timestamp_find_format" | sort); do
+            if grep -q "$readset_file" "$maybe_trace_ini"; then
+                trace_ini_file="$maybe_trace_ini"
+                break
+            fi
+        done
         # Getting standardized timestamp from trace.ini file
-        if [[ $maybe_trace_ini =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
+        if [[ $trace_ini_file =~ ([0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]) ]]; then
             trace_ini_timestamp="${BASH_REMATCH[1]}"
         else
-            echo "Error: could not find timestamp in json file $maybe_trace_ini using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
+            echo "Error: could not find timestamp in trace.ini file $trace_ini_file using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
             exit 1
         fi
       # Making sure submission log is not empty otherwise skipping
@@ -296,8 +302,8 @@ $custom_ini $extra_ini \
         echo "Warning: file $submission_log is empty. Skipping..."
       fi
       # Do some cleaning
-      chmod 664 -- "$maybe_trace_ini"
-      mv "$maybe_trace_ini" "${path}/genpipes_inis/."
+      chmod 664 -- "$trace_ini_file"
+      mv "$trace_ini_file" "${path}/genpipes_inis/."
     fi
     # Do some cleaning
     mv "$genpipes_file" "${path}/genpipes_files/."
