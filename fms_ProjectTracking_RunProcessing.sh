@@ -75,6 +75,8 @@ folder_prefix=/lb/robot/research/freezeman-processing
 input=$(find "$folder_prefix"/*/*/ -maxdepth 1 -type d -name "$runfolder")
 echo "-> Processing $runfolder..."
 
+TIMESTAMP=$(date +%FT%H.%M.%S)
+
 if [ -s "$input" ]; then
   run_processing_json=$path/$runfolder.json
   # Json creation from run csv file
@@ -90,7 +92,7 @@ if [ -s "$input" ]; then
   # Using client to add new runs to database
   # shellcheck disable=SC2086
   ret="$(pt-cli ingest run_processing --input-json $run_processing_json 2>&1 || true)"
-  echo -e "$ret"
+  echo -e "$ret" | tee "${run_processing_json/.json/_${TIMESTAMP}_run_processing_ingestion.log}"
   if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
     exit 1
   fi
@@ -99,7 +101,6 @@ else
   exit 1
 fi
 
-TIMESTAMP=$(date +%FT%H.%M.%S)
 nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" > "${run_processing_json/.json/_${destination}_${TIMESTAMP}_transfer.log}" 2>&1 &
 echo "Transfer started towards $destination. See log file ${run_processing_json/.json/_${destination}_${TIMESTAMP}_transfer.log}"
 if [ "$destination" != "Beluga" ]; then

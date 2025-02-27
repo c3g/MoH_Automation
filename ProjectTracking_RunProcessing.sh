@@ -71,6 +71,9 @@ cd "$path"
 runs_folder=/lb/robot/research/processing/novaseq
 input=$(find "$runs_folder"/*/"$runid/" -name "$runid-run.align_bwa_mem.csv")
 echo "-> Processing $runid, file $input..."
+
+TIMESTAMP=$(date +%FT%H.%M.%S)
+
 if [ -s "$input" ]; then
   # Json creation from run csv file
   # shellcheck disable=SC2086
@@ -79,7 +82,7 @@ if [ -s "$input" ]; then
   # Using client to add new runs to database
   # shellcheck disable=SC2086
   ret="$(pt-cli ingest run_processing --input-json $path/$runid.json 2>&1 || true)"
-  echo -e "$ret"
+  echo -e "$ret" | tee "${path}/${runid}_${TIMESTAMP}_run_processing_ingestion.log"
   if ! [[ $ret == *"has to be unique"* ]] && [[ $ret == *"BadRequestError"* ]]; then
     exit 1
   fi
