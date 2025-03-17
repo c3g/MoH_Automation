@@ -45,17 +45,25 @@ fi
 if [[ $destination = Beluga ]]; then
     # Beluga Endpoint
     DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
+    # Beluga_MoH_Robot Endpoint
+    # DEST_EP='43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e'
+    # Beluga base path
+    DEST_BASE_PATH="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
     # Beluga main folder location
-    DEST_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/raw_reads"
+    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Beluga log file location
-    DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
+    DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
     DEST_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
+    # Cardinal_MoH_Robot Endpoint
+    # DEST_EP='995863d1-97fe-4af2-bc48-c9bf91c33f08'
+    # Cardinal base path
+    DEST_BASE_PATH="/project/60007/MOH"
     # Cardinal main folder location
-    DEST_LOC="/project/60007/MOH/MAIN/raw_reads"
+    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Cardinal log file location
-    DEST_LOG_LOC="/project/60007/MOH/log_files/transfer"
+    DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Abacus ]]; then
     # Abacus Endpoint
     DEST_EP=''
@@ -114,7 +122,7 @@ if [[ $destination != Abacus ]]; then
   # shellcheck disable=SC2086
   task_id="$(globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id "$sub_id" --label "$runfolder" --batch "$TEMP/$LISTFILE" $ABA_EP $DEST_EP)"
 
-  echo "Waiting on 'globus transfer' task '$task_id'"
+  echo -e "Waiting on 'globus transfer' task '$task_id'.\nTo monitor the transfer see: https://app.globus.org/activity/$task_id/overview"
   globus task wait "$task_id" --polling-interval 60 -H
   # shellcheck disable=SC2181
   if [ $? -eq 0 ]; then
