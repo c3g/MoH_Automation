@@ -126,6 +126,12 @@ if [[ $globus_logged == *"MissingLoginError"* ]] && ! [[ $cluster == beluga ]]; 
 fi
 module unload mugqic/globus-cli/3.24.0
 
+# Check if json file is empty
+if [ ! -s "$genpipes_json" ]; then
+  echo "ERROR: GenPipes json file is empty Cf. $genpipes_json"
+  exit 1
+fi
+
 operation_cmd_line=$(jq '.operation_cmd_line' "$genpipes_json")
 pipeline=$(echo "$operation_cmd_line" | cut -d' ' -f1 | rev | cut -d'/' -f2 | rev)
 # if pipeline is rnaseq_light, protocol is empty

@@ -20,6 +20,11 @@ def main():
     else:
         output = args.output
 
+    # Check if args.input is and empty file and if so print a warning and exit
+    if os.path.getsize(args.input) == 0:
+        logger.error(f"Input file {args.input} is empty.")
+        exit(1)
+
     mark_deliverables(args.input, output)
 
 
@@ -176,7 +181,7 @@ def mark_deliverables(input_json, output_json):
             },
         "linx_plot.*": {
             "files": [
-                r".+.cluster-\d\d\d.sv\d\d.\d\d\d.png"
+                ".+.linx_plot.zip"
             ]
         }
     }
