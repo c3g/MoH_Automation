@@ -155,11 +155,11 @@ elif [[ $cluster == abacus ]]; then
   chmod 660 "${job_list}.txt"
 fi
 # FIRST check if still running and skipping
-if [[ $status == *"ACTIVE"* ]] || [[ $status == *"RUNNING"* ]] || [[ $status == *"PENDING"* ]]; then
+if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"RUNNING"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]]; then
   # Let's skip and wait
   echo "INFO: Job(s) still running Cf. $log_report_file"
 # SECOND check if failed or timeout
-elif [[ $status == *"FAILED"* ]] || [[ $status == *"TIMEOUT"* ]]; then
+elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]]; then
   echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
@@ -167,7 +167,7 @@ elif [[ $status == *"FAILED"* ]] || [[ $status == *"TIMEOUT"* ]]; then
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
 # THIRD check if success or completed
-elif [[ $status == *"SUCCESS"* ]] || [[ $status == *"COMPLETED"* ]]; then
+elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
@@ -178,7 +178,7 @@ elif [[ $status == *"SUCCESS"* ]] || [[ $status == *"COMPLETED"* ]]; then
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
 # FOURTH check if cancelled
-elif [[ $status == *"CANCELLED"* ]]; then
+elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
   echo "INFO: All jobs cancelled Cf. $log_report_file"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
