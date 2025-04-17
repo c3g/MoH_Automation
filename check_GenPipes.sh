@@ -173,7 +173,7 @@ elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
 # THIRD check if success or completed
-elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
+elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && ! [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
