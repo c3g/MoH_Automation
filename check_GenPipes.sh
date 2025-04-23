@@ -165,7 +165,7 @@ if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[
   # Let's skip and wait
   echo "INFO: Job(s) still running Cf. $log_report_file"
 # SECOND check if failed or timeout
-elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]]; then
+elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"OUT_OF_MEMORY"([[:space:]]|$) ]]; then
   echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
