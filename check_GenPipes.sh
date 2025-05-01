@@ -172,7 +172,15 @@ elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^
   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
-# THIRD check if success or completed
+# THIRD check if completed and cancelled for instance when cancelled by a user
+elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+  echo "WARNING: It seems to have been cancelled by a user"
+  # Let's tag GenPipes + Ingest GenPipes
+  genpipes_tagging "$genpipes_json"
+  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+  touch "${genpipes_submission_folder}.checked"
+  chmod 660 "${genpipes_submission_folder}.checked"
+# FOURTH check if success or completed
 elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && ! [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]]; then
   # Let's tag GenPipes + Ingest GenPipes
   genpipes_tagging "$genpipes_json"
@@ -183,7 +191,7 @@ elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (
   fi
   touch "${genpipes_submission_folder}.checked"
   chmod 660 "${genpipes_submission_folder}.checked"
-# FOURTH check if cancelled
+# FIFTH check if cancelled
 elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
   echo "INFO: All jobs cancelled Cf. $log_report_file"
   touch "${genpipes_submission_folder}.checked"
