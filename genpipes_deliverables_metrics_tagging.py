@@ -99,7 +99,8 @@ def mark_deliverables(input_json, output_json):
                 ".+.pcgr_acmg.grch38.flexdb.html",
                 ".+.pcgr_acmg.grch38.maf",
                 ".+.pcgr_acmg.grch38.snvs_indels.tiers.tsv",
-                ".+.pcgr_acmg.grch38.cna_segments.tsv.gz"
+                ".+.pcgr_acmg.grch38.cna_segments.tsv.gz",
+                ".+.pcgr.zip"
                 ]
             },
         "conpair_concordance_contamination.*": {
@@ -107,7 +108,7 @@ def mark_deliverables(input_json, output_json):
                 "concordance",
                 "contamination"
                 ]
-        },
+            },
         "picard_collect_multiple_metrics.*": {
             "metrics": [
                 "bases_over_q30_percent"
@@ -125,9 +126,20 @@ def mark_deliverables(input_json, output_json):
             "files": [
                 ".+.driver.catalog.somatic.tsv",
                 ".+.driver.catalog.germline.tsv",
+                ".+.purple_ensemble.zip",
                 ],
             "metrics": [
                 "purity"
+                ]
+            },
+        "sequenza.*": {
+            "files": [
+                ".+.sequenza.zip"
+                ],
+            },
+        "report_cpsr.*": {
+            "files": [
+                ".+.cpsr.zip"
                 ]
             },
     }
@@ -150,7 +162,8 @@ def mark_deliverables(input_json, output_json):
             },
         "purple.purity.*": {
             "files": [
-                ".+.circos.png"
+                ".+.circos.png",
+                ".+.purple_sv.zip",
                 ]
             },
         "linx_annotations_germline.*": {
