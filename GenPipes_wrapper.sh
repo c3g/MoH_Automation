@@ -237,7 +237,7 @@ $custom_ini $extra_ini \
     # GenPipes file empty
     if ! [ -s "$genpipes_file" ]; then
       echo "Error: file $genpipes_file is empty. Check $(realpath "$patient_logs_folder/${patient}.${timestamp}.log")"
-      exit 1
+      continue
     fi
     # GenPipes file has no job to be submitted
     if grep -q "TOTAL: 0 job... skipping" "$genpipes_file"; then
@@ -278,7 +278,7 @@ $custom_ini $extra_ini \
             trace_ini_timestamp="${BASH_REMATCH[1]}"
         else
             echo "Error: could not find timestamp in trace.ini file $trace_ini_file using regex [0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9][0-9]T[0-9][0-9].[0-9][0-9].[0-9][0-9]"
-            exit 1
+            continue
         fi
       # Making sure submission log is not empty otherwise skipping
       if [ -s "$submission_log" ]; then
@@ -286,7 +286,7 @@ $custom_ini $extra_ini \
         maybe_json=$(find "${path}/json" -maxdepth 1 -type f -name "${json_prefix_name}_${trace_ini_timestamp}.json")
         if [ -z "$maybe_json" ]; then
           echo "Error: could not find json file ${path}/json/${json_prefix_name}_${trace_ini_timestamp}.json"
-          exit 1
+          continue
         fi
         ln -s "$readset_file" "$link_folder"/.
         ln -s "$maybe_json" "$link_folder"/.
