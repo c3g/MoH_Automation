@@ -1,0 +1,20 @@
+{
+  "robot_endpoints": {
+    "abacus": {
+      "uuid": "",
+      "base_path": ""
+    },
+    "beluga": {
+      "uuid": "43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e",
+      "base_path": "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
+    },
+    "cardinal": {
+      "uuid": "624a66f1-7be3-4c16-9053-68b1cc333cbc",
+      "base_path": "/project/60007/MOH"
+    },
+    "sd4h": {
+      "uuid": "973962f0-127f-401c-a428-26a9fae7417e",
+      "base_path": "/MOH-Q"
+    }
+  }
+}
