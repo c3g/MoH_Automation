@@ -99,7 +99,7 @@ elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal log file location
   SRC_LOG_LOC="$SRC_MOH/log_files/transfer"
   # Cardinal Endpoint
-  SRC_EP='26f926d9-6216-4e84-9037-a5c9567b5707'
+  SRC_EP='4e66a712-bd40-4043-9299-799df884956b'
   # Cardinal name for json creation
   SRC='cardinal'
 else
