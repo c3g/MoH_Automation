@@ -55,7 +55,7 @@ if [[ $destination = Beluga ]]; then
     DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
-    DEST_EP='e685653a-9e13-4882-91a4-b1b1a49a6359'
+    DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
     # Cardinal_MoH_Robot Endpoint
     # DEST_EP='995863d1-97fe-4af2-bc48-c9bf91c33f08'
     # Cardinal base path
