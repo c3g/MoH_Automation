@@ -406,7 +406,7 @@ def extract_insert_size(sample, patient, sample_type):
                     try:
                         frequencies = np.asarray(h5file['aux']['fld'])
                     except OSError:
-                        raise Exception(f"ERROR: file {filename} for sample {sample} is corrupted.")
+                        logger.error(f"ERROR: file {filename} for sample {sample} is corrupted.")
                     values = np.arange(0, len(frequencies), 1)
                     # Calculus coming from https://stackoverflow.com/questions/46086663/how-to-get-mean-and-standard-deviation-from-a-frequency-distribution-table
                     ord = np.argsort(values)
@@ -414,7 +414,7 @@ def extract_insert_size(sample, patient, sample_type):
                     median_insert_size = values[ord][np.searchsorted(cdf, cdf[-1] // 2)].astype('float64')
                     mean_insert_size = np.around(np.average(values, weights=frequencies), decimals=1)
             except (OSError, FileNotFoundError):
-                raise Exception(f"ERROR: file {filename} for sample {sample} might have wrong permissions or missing.")
+                logger.error(f"ERROR: file {filename} for sample {sample} might have wrong permissions or missing.")
         elif sample_type in ('DN', 'DT'):
             filename = os.path.join('/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN/metrics/dna', sample, 'qualimap', sample, "raw_data_qualimapReport/insert_size_histogram.txt")
             dataset = np.genfromtxt(fname=filename, delimiter="\t", skip_header=1)
