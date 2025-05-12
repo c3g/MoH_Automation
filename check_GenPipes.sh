@@ -153,50 +153,130 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
   $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1
   status=$(awk -F'\t' 'NR>1 {print $5"\n"$6"\n"$7}' "$log_report_file" | sort | uniq)
   chmod 660 "$log_report_file"
+  # FIRST check if still running and skipping
+  if [[ $status =~ (^|[[:space:]])"RUNNING"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]]; then
+    # Let's skip and wait
+    echo "INFO: Job(s) still running Cf. $log_report_file"
+  # SECOND check if failed or timeout
+  elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"OUT_OF_MEMORY"([[:space:]]|$) ]]; then
+    echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # THIRD check if completed and cancelled for instance when cancelled by a user
+  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+    echo "WARNING: It seems to have been cancelled by a user"
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FOURTH check if success or completed
+  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    # Let's transfer GenPipes only if NOT on beluga
+    if ! [[ $cluster == beluga ]]; then
+      genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+    fi
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FIFTH check if cancelled
+  elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+    echo "INFO: All jobs cancelled Cf. $log_report_file"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FIFTH check if unknown status
+  else
+    echo "ERROR: Unknown status Cf. $log_report_file"
+  fi
 elif [[ $cluster == abacus ]]; then
   log_report_file="${job_list}.txt"
   # shellcheck disable=SC2086
   $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.pl $job_list > $log_report_file
   status=$(grep -v "^#" "$log_report_file" | awk -F'\t' '{print $5}' | sort | uniq)
   chmod 660 "${job_list}.txt"
-fi
-# FIRST check if still running and skipping
-if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"RUNNING"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] || { [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]]; } || { [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; }; then
-  # Let's skip and wait
-  echo "INFO: Job(s) still running Cf. $log_report_file"
-# SECOND check if failed or timeout
-elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"OUT_OF_MEMORY"([[:space:]]|$) ]]; then
-  echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
-  # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
-  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  touch "${genpipes_submission_folder}.checked"
-  chmod 660 "${genpipes_submission_folder}.checked"
-# THIRD check if completed and cancelled for instance when cancelled by a user
-elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
-  echo "WARNING: It seems to have been cancelled by a user"
-  # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
-  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  touch "${genpipes_submission_folder}.checked"
-  chmod 660 "${genpipes_submission_folder}.checked"
-# FOURTH check if success or completed
-elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && ! [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]]; then
-  # Let's tag GenPipes + Ingest GenPipes
-  genpipes_tagging "$genpipes_json"
-  genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-  # Let's transfer GenPipes only if NOT on beluga
-  if ! [[ $cluster == beluga ]]; then
-    genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+  # FIRST check if still running and skipping
+  if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"QUEUED"([[:space:]]|$) ]]; then
+    # Let's skip and wait
+    echo "INFO: Job(s) still running Cf. $log_report_file"
+  # SECOND check if failed or timeout
+  elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]]; then
+    echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # THIRD check if completed and cancelled for instance when cancelled by a user
+  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+    echo "WARNING: It seems to have been cancelled by a user"
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FOURTH check if success or completed
+  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
+    # Let's tag GenPipes + Ingest GenPipes
+    genpipes_tagging "$genpipes_json"
+    genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+    # Let's transfer GenPipes only if NOT on beluga
+    if ! [[ $cluster == beluga ]]; then
+      genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+    fi
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FIFTH check if cancelled
+  elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+    echo "INFO: All jobs cancelled Cf. $log_report_file"
+    touch "${genpipes_submission_folder}.checked"
+    chmod 660 "${genpipes_submission_folder}.checked"
+  # FIFTH check if unknown status
+  else
+    echo "ERROR: Unknown status Cf. $log_report_file"
   fi
-  touch "${genpipes_submission_folder}.checked"
-  chmod 660 "${genpipes_submission_folder}.checked"
-# FIFTH check if cancelled
-elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
-  echo "INFO: All jobs cancelled Cf. $log_report_file"
-  touch "${genpipes_submission_folder}.checked"
-  chmod 660 "${genpipes_submission_folder}.checked"
-# FIFTH check if unknown status
-else
-  echo "ERROR: Unknown status Cf. $log_report_file"
 fi
+# # FIRST check if still running and skipping
+# if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"RUNNING"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] || { [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]]; } || { [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; }; then
+#   # Let's skip and wait
+#   echo "INFO: Job(s) still running Cf. $log_report_file"
+# # SECOND check if failed or timeout
+# elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"OUT_OF_MEMORY"([[:space:]]|$) ]]; then
+#   echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
+#   # Let's tag GenPipes + Ingest GenPipes
+#   genpipes_tagging "$genpipes_json"
+#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+#   touch "${genpipes_submission_folder}.checked"
+#   chmod 660 "${genpipes_submission_folder}.checked"
+# # THIRD check if completed and cancelled for instance when cancelled by a user
+# elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+#   echo "WARNING: It seems to have been cancelled by a user"
+#   # Let's tag GenPipes + Ingest GenPipes
+#   genpipes_tagging "$genpipes_json"
+#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+#   touch "${genpipes_submission_folder}.checked"
+#   chmod 660 "${genpipes_submission_folder}.checked"
+# # FOURTH check if success or completed
+# elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && ! [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]]; then
+#   # Let's tag GenPipes + Ingest GenPipes
+#   genpipes_tagging "$genpipes_json"
+#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
+#   # Let's transfer GenPipes only if NOT on beluga
+#   if ! [[ $cluster == beluga ]]; then
+#     genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+#   fi
+#   touch "${genpipes_submission_folder}.checked"
+#   chmod 660 "${genpipes_submission_folder}.checked"
+# # FIFTH check if cancelled
+# elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+#   echo "INFO: All jobs cancelled Cf. $log_report_file"
+#   touch "${genpipes_submission_folder}.checked"
+#   chmod 660 "${genpipes_submission_folder}.checked"
+# # FIFTH check if unknown status
+# else
+#   echo "ERROR: Unknown status Cf. $log_report_file"
+# fi
