@@ -212,7 +212,7 @@ elif [[ $cluster == abacus ]]; then
     touch "${genpipes_submission_folder}.checked"
     chmod 660 "${genpipes_submission_folder}.checked"
   # THIRD check if completed and cancelled for instance when cancelled by a user
-  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
+  elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
     echo "WARNING: It seems to have been cancelled by a user"
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
