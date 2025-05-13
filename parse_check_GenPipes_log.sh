@@ -33,6 +33,10 @@ fi
 
 # Read the log file line by line
 while IFS= read -r line; do
+  # Skip log_report.py verbosity lines
+  if [[ $line == *"ERROR:__main__:"* ]]; then
+    continue
+  fi
   # Extract the pipeline, protocol, patient, and job file using grep and awk
   if echo "$line" | grep -q "Checking"; then
     pipeline=$(echo "$line" | awk -F'[/.]' '{print $(NF-8)}')
