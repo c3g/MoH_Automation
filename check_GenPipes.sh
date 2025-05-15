@@ -220,7 +220,7 @@ elif [[ $cluster == abacus ]]; then
     touch "${genpipes_submission_folder}.checked"
     chmod 660 "${genpipes_submission_folder}.checked"
   # FOURTH check if success or completed
-  elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
+  elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]]; then
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
     genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
