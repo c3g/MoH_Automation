@@ -34,11 +34,10 @@ fi
 # Read the log file line by line
 while IFS= read -r line; do
   # Skip log_report.py verbosity lines
-  if [[ $line == *"ERROR:__main__:"* ]]; then
+  if [[ $line == *"ERROR:__main__:"* || $line == "WARNING:" ]]; then
     continue
-  fi
   # Extract the pipeline, protocol, patient, and job file using grep and awk
-  if echo "$line" | grep -q "Checking"; then
+  elif echo "$line" | grep -q "Checking"; then
     pipeline=$(echo "$line" | awk -F'[/.]' '{print $(NF-8)}')
     if [[ $pipeline == "RnaSeqLight" ]]; then
       protocol=""
@@ -81,7 +80,7 @@ while IFS= read -r line; do
     fi
 
   # Extract the status and job file using grep and awk
-  elif echo "$line" | grep -q -E "INFO|ERROR|WARNING"; then
+  elif echo "$line" | grep -q -E "INFO|ERROR|WARNING|SUCCESS"; then
     status=$(echo "$line" | awk '{print $1}' | tr -d ':')
 
     # Determine the status file name based on the status
@@ -90,9 +89,12 @@ while IFS= read -r line; do
         status_file="${OUTPUT_PATH}/running.${pipeline}.${protocol}.txt"
         ;;
       ERROR)
-        status_file="${OUTPUT_PATH}/failed.${pipeline}.${protocol}.txt"
+        status_file="${OUTPUT_PATH}/error.${pipeline}.${protocol}.txt"
         ;;
       WARNING)
+        status_file="${OUTPUT_PATH}/warning.${pipeline}.${protocol}.txt"
+        ;;
+      SUCCESS)
         status_file="${OUTPUT_PATH}/success.${pipeline}.${protocol}.txt"
         ;;
     esac

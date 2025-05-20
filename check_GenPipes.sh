@@ -175,6 +175,7 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
     chmod 660 "${genpipes_submission_folder}.checked"
   # FOURTH check if success or completed
   elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; then
+    echo "SUCCESS: All jobs completed"
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
     genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
@@ -221,6 +222,7 @@ elif [[ $cluster == abacus ]]; then
     chmod 660 "${genpipes_submission_folder}.checked"
   # FOURTH check if success or completed
   elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]]; then
+    echo "SUCCESS: All jobs completed"
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
     genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
