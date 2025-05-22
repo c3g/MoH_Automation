@@ -150,7 +150,6 @@ module unload mugqic/python/3.10.4
 for patient in "${!patients_associative_array[@]}"; do
   if [ "$pipeline" = "tumor_pair" ] && [ "$protocol" = "ensemble" ]; then
     {
-      echo "--recursive $SRC_MAIN/alignment/realign/${patient} $DEST_MAIN/alignment/realign/${patient}"
       echo "--recursive $SRC_MAIN/pairedVariants/${patient} $DEST_MAIN/pairedVariants/${patient}"
       echo "--recursive $SRC_MAIN/pairedVariants/ensemble/${patient} $DEST_MAIN/pairedVariants/ensemble/${patient}"
       echo "--recursive $SRC_MAIN/SVariants/${patient} $DEST_MAIN/SVariants/${patient}"
