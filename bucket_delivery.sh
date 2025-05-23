@@ -83,6 +83,7 @@ listfile=${SRC_DELIVERY}/Delivery_${specimen_name}_${experiment_nucleic_acid_typ
 transfer_json=${SRC_DELIVERY}/${specimen_name}_${experiment_nucleic_acid_type}_${timestamp}_transfer.json
 
 # shellcheck disable=SC1091
+unset PYTHONPATH
 source $SRC_MOH/project_tracking_cli/venv/bin/activate
 # shellcheck disable=SC2086
 pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json
