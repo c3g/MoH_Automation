@@ -36,12 +36,19 @@ def merge_jsons(json_files, output_file):
                 jobs = []
                 for job in readset["job"]:
                     if job["job_status"] == "COMPLETED" and job["job_name"] not in merged_json_jobs[readset["readset_name"]]:
-                        jobs.append(
-                            {
-                                "job_name": job["job_name"],
-                                "file": job["file"]
-                            }
-                        )
+                        if "file" not in job:
+                            jobs.append(
+                                {
+                                    "job_name": job["job_name"]
+                                }
+                            )
+                        else:
+                            jobs.append(
+                                {
+                                    "job_name": job["job_name"],
+                                    "file": job["file"]
+                                }
+                            )
                         merged_json_jobs[readset["readset_name"]].append(job["job_name"])
                 if jobs:
                     readsets.append(
