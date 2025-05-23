@@ -262,6 +262,8 @@ def extract_sample_details(conn, sample_true):
     #Test to see if it exists and if so extract the current data
     cur.execute(f"""SELECT * FROM Samples WHERE Sample='{sample_true}'""")
     result = cur.fetchone()
+    if not result:
+        raise Exception(f"""No database entry in table "Samples" for "Sample" {sample_true}""")
     ret.update(result)
     return ret
 
