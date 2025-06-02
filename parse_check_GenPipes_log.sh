@@ -38,6 +38,7 @@ while IFS= read -r line; do
     continue
   # Extract the pipeline, protocol, patient, and job file using grep and awk
   elif echo "$line" | grep -q "Checking"; then
+    current_date=$(echo "$line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}')
     pipeline=$(echo "$line" | awk -F'[/.]' '{print $(NF-8)}')
     if [[ $pipeline == "RnaSeqLight" ]]; then
       protocol=""
@@ -58,7 +59,7 @@ while IFS= read -r line; do
     empty_json_file="${OUTPUT_PATH}/empty_json.${pipeline}.${protocol}.txt"
 
     # Append the json path to the empty_json file
-    echo "${json_path}" >> "${empty_json_file}"
+    echo "${json_path},${current_date}" >> "${empty_json_file}"
 
   # Handle lines with 'WARNING: Missing files'
   elif echo "$line" | grep -q "WARNING: Missing files"; then
@@ -76,7 +77,7 @@ while IFS= read -r line; do
       missing_job_file="${OUTPUT_PATH}/missing_files.${pipeline}.${protocol}.txt"
 
       # Append the job list to the missing_job file
-      echo "${job_list}" >> "${missing_job_file}"
+      echo "${job_list},${current_date}" >> "${missing_job_file}"
     fi
 
   # Extract the status and job file using grep and awk
@@ -100,6 +101,6 @@ while IFS= read -r line; do
     esac
 
     # Append the patient information to the appropriate file based on status
-    echo "${patient}" >> "${status_file}"
+    echo "${patient},${current_date}" >> "${status_file}"
   fi
 done < "$LOG_FILE"
