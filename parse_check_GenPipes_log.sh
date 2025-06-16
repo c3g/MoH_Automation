@@ -83,6 +83,9 @@ while IFS= read -r line; do
   # Extract the status and job file using grep and awk
   elif echo "$line" | grep -q -E "INFO|ERROR|WARNING|SUCCESS"; then
     status=$(echo "$line" | awk '{print $1}' | tr -d ':')
+    if [[ $pipeline == "RnaSeqLight" ]]; then
+      protocol=""
+    fi
 
     # Determine the status file name based on the status
     case $status in
