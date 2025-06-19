@@ -139,22 +139,34 @@ def main():
                 else:
                     sample_name_dna_n = sample_name
                 dedup_coverage = extract_metrics(sample, "dedup_coverage")
-                if float(dedup_coverage) <= 30 and not tumour:
-                    logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 30")
+                if not isinstance(dedup_coverage, list):
+                    if float(dedup_coverage) <= 30 and not tumour:
+                        logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 30")
+                        if not args.force:
+                            dna = False
+                    if float(dedup_coverage) <= 80 and tumour:
+                        logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 80")
+                        if not args.force:
+                            dna = False
+                else:
+                    logger.warning(f"Multiple dedup_coverage values for Sample {sample_name}: {dedup_coverage}.")
                     if not args.force:
-                        dna = False
-                if float(dedup_coverage) <= 80 and tumour:
-                    logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 80")
-                    if not args.force:
+                        logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
                         dna = False
 
             elif experiment_nucleic_acid_type == "RNA":
                 rna = True
                 sample_name_rna = sample_name
-                dedup_coverage = extract_metrics(sample, "raw_reads_count")
-                if float(dedup_coverage) <= 80000000:
-                    logger.warning(f"Metric raw_reads_count for Sample {sample_name} is <= 80.000.000")
+                raw_reads_count = extract_metrics(sample, "raw_reads_count")
+                if not isinstance(raw_reads_count, list):
+                    if float(raw_reads_count) <= 80000000:
+                        logger.warning(f"Metric raw_reads_count for Sample {sample_name} is <= 80.000.000")
+                        if not args.force:
+                            rna = False
+                else:
+                    logger.warning(f"Multiple raw_reads_count values for Sample {sample_name}: {raw_reads_count}.")
                     if not args.force:
+                        logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
                         rna = False
 
         # Folders used for Delivery
@@ -318,17 +330,26 @@ def main():
 
 
 def extract_metrics(sample_content, metric_name):
-    """Extracts a metric from a sample content dictionary."""
-    metric_value = [
+    """Extracts a metric from a sample content dictionary.
+    
+    Returns a float if all values are the same, otherwise returns a list of unique float values.
+    """
+    metric_values = [
         metric["value"]
         for readset in sample_content["readset"]
         for metric in readset["metric"]
         if metric["name"] == metric_name
     ]
 
-    if len(metric_value) == 1:
-        return float(metric_value[0])
-    print(f"Multiple values found for metric {metric_name}: {metric_value}")
+    if not metric_values:
+        raise ValueError(f"No values found for metric '{metric_name}'.")
+
+    unique_values = sorted(set(float(v) for v in metric_values))
+
+    if len(unique_values) == 1:
+        return unique_values[0]
+
+    return unique_values
 
 
 def deliver_dna(
