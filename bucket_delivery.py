@@ -644,8 +644,30 @@ def update_warnings(existing_warnings_dict, metrics_dict, soup):
 
 def generate_updated_warnings_content(warnings_dict, soup):
     table = soup.find('table')
-    tbody = table.find('tbody')
-    tbody.clear()
+
+    if not table:
+        # Create a new table if it doesn't exist
+        table = soup.new_tag('table')
+        thead = soup.new_tag('thead')
+        header_row = soup.new_tag('tr')
+        for header in ['Sample Name', 'Flags', 'Fails']:
+            th = soup.new_tag('th')
+            th.string = header
+            header_row.append(th)
+        thead.append(header_row)
+        table.append(thead)
+
+        tbody = soup.new_tag('tbody')
+        table.append(tbody)
+        soup.body.append(table)  # Or insert it appropriately
+    else:
+        tbody = table.find('tbody')
+        if not tbody:
+            tbody = soup.new_tag('tbody')
+            table.append(tbody)
+        else:
+            tbody.clear()
+
     for metrics in warnings_dict.values():
         tbody.append(metrics['row'])
 
@@ -683,6 +705,7 @@ def generate_updated_warnings_content(warnings_dict, soup):
     head.append(style)
 
     return str(soup)
+
 
 
 def file_exist_check(file, files_list):
