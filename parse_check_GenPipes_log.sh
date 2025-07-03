@@ -40,6 +40,9 @@ while IFS= read -r line; do
   elif echo "$line" | grep -q "Checking"; then
     current_date=$(echo "$line" | grep -oE '[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}\.[0-9]{2}\.[0-9]{2}')
     pipeline=$(echo "$line" | awk -F'[/.]' '{print $(NF-8)}')
+    if [[ $pipeline == "genpipes_submission" ]]; then
+      pipeline=$(echo "$line" | awk -F'[/.]' '{print $(NF-7)}')
+    fi
     if [[ $pipeline == "RnaSeqLight" ]]; then
       protocol=""
     else
