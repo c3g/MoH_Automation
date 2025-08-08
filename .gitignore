@@ -61,3 +61,6 @@ manually_*.sh
 
 # DB file
 *.db
+
+.pdm*
+.python*
