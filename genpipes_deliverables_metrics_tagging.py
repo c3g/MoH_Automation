@@ -163,6 +163,8 @@ def mark_deliverables(input_json, output_json):
         "purple.purity.*": {
             "files": [
                 ".+.circos.png",
+                ".+.driver.catalog.somatic.tsv",
+                ".+.driver.catalog.germline.tsv",
                 ".+.purple_sv.zip",
                 ]
             },
