@@ -72,7 +72,7 @@ def load_json_file(file_path):
 
 def parse_sample_name(sample_name):
     """Parse the sample name to extract specimen, cohort, and institution."""
-    result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample_name)
+    result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM|CQ|IQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample_name)
     return result.group(1), result.group(2), result.group(3)
 
 def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes, samples, nucleic_acid_type):

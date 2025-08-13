@@ -66,7 +66,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
     for run_row in run_list:
         sample = run_row['Sample Name']
         if sample.startswith("MoHQ") and run_row['Lane'] in lanes and sample in samples:
-            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM|CQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
+            result = re.search(r"^((MoHQ-(JG|CM|GC|MU|MR|XX|HM|CQ|IQ)-\w+)-\w+)-\w+-\w+(D|R)(T|N)", sample)
             specimen = result.group(1)
             cohort = result.group(2)
             institution = result.group(3)
