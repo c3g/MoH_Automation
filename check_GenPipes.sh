@@ -179,11 +179,10 @@ if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
     genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-    # Let's transfer GenPipes only if NOT on beluga
-    # As of now (13/08/2025) we no longer transfer to Beluga automatically
-    # if ! [[ $cluster == beluga ]]; then
-    #   genpipes_transfer "$readset_file" "$pipeline" "$protocol"
-    # fi
+    # Let's transfer GenPipes only if on abacus
+    if [[ $cluster == abacus ]]; then
+      genpipes_transfer "$readset_file" "$pipeline" "$protocol"
+    fi
     touch "${genpipes_submission_folder}.checked"
     chmod 660 "${genpipes_submission_folder}.checked"
   # FIFTH check if cancelled
