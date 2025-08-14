@@ -143,6 +143,7 @@ module load mugqic/python/3.10.4
     fi
     # shellcheck disable=SC2086
     $SRC_MOH/moh_automation/moh_automation_main/merge_GenPipes_jsons.py -i $input_jsons -o $SRC_MOH/Transfer_json/$merged_json
+    echo "Merged GenPipes JSONs written to $SRC_MOH/Transfer_json/$merged_json"
   done
 } < "$readset_file"
 module unload mugqic/python/3.10.4
@@ -203,6 +204,8 @@ for patient in "${!patients_associative_array[@]}"; do
     fi
   done
 done
+
+echo "List of files to transfer written to $SRC_LOG_LOC/$LISTFILE"
 
 # Load globus module
 module load mugqic/globus-cli/3.24.0
