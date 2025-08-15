@@ -597,7 +597,14 @@ def generate_key_metrics(metrics_dict):
 
 
 def parse_existing_warnings(warnings_content):
-    soup = BeautifulSoup(warnings_content, 'html.parser')
+    # If the content is empty or just whitespace, use a minimal fallback
+    if not warnings_content.strip():
+        warnings_content = "<table></table>"
+
+    # Wrap the content in a full HTML structure to ensure soup.body exists
+    wrapped_content = f"<html><head></head><body>{warnings_content}</body></html>"
+    soup = BeautifulSoup(wrapped_content, 'html.parser')
+
     table = soup.find('table')
     warnings_dict = {}
     if table:
@@ -609,7 +616,7 @@ def parse_existing_warnings(warnings_content):
                 flags = cols[1].text.strip()
                 fails = cols[2].text.strip()
                 for col in cols:
-                    col.string = col.text.replace('&nbsp;', '').strip()
+                    col.string = col.text.replace('\xa0', '').strip()
                 warnings_dict[sample_name] = {
                     'Flags': flags,
                     'Fails': fails,
@@ -661,6 +668,18 @@ def generate_updated_warnings_content(warnings_dict, soup):
         table.append(tbody)
         soup.body.append(table)  # Or insert it appropriately
     else:
+        # Ensure thead exists
+        thead = table.find('thead')
+        if not thead:
+            thead = soup.new_tag('thead')
+            header_row = soup.new_tag('tr')
+            for header in ['Sample Name', 'Flags', 'Fails']:
+                th = soup.new_tag('th')
+                th.string = header
+                header_row.append(th)
+            thead.append(header_row)
+            table.insert(0, thead)  # Insert before tbody
+        # Ensure tbody exists
         tbody = table.find('tbody')
         if not tbody:
             tbody = soup.new_tag('tbody')
