@@ -300,11 +300,13 @@ def main():
         all_delivered_files = list(set(already_delivered_files))
 
         if transferred_files:
+            lines = []
+            for file, _ in transferred_files:
+                for src_file, dest_file in file_dict.items():
+                    if dest_file == file:
+                        lines.append(f"{os.path.join(in_base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
             with open(args.list_file, 'w') as list_file:
-                for file, _ in transferred_files:
-                    for src_file, dest_file in file_dict.items():
-                        if dest_file == file:
-                            list_file.write(f"{os.path.join(in_base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
+                list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
                 s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(ini_file_name, out_base_path), Body=ini_content)
             # Read already delivered warnings
