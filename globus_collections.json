@@ -2,7 +2,7 @@
   "robot_endpoints": {
     "abacus": {
       "uuid": "892ba9e9-f6f3-4b6c-b428-4039a6214be1",
-      "base_path": " /lb/project/mugqic/projects/MOH"
+      "base_path": "/lb/project/mugqic/projects/MOH"
     },
     "beluga": {
       "uuid": "43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e",
