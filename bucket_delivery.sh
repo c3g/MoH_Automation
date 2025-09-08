@@ -99,8 +99,11 @@ $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile -
 # shellcheck disable=SC2086
 pt-cli ingest transfer --input-json $transfer_json
 for i in $(cat $listfile | awk '{print $1}'); do
-    rm $i
-    location_id=$(pt-cli getid location --endpoint $location --file_name $(basename $i))
-    # shellcheck disable=SC2086
-    pt-cli --data "{\"modification\": [{\"table\": \"location\", \"id\": [\"$location_id\"]}]}" delete
+    # Skip Abacus rw data deletion
+    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* ]]; then
+        rm $i
+        location_id=$(pt-cli getid location --endpoint $location --file_name $(basename $i))
+        # shellcheck disable=SC2086
+        pt-cli --data "{\"modification\": [{\"table\": \"location\", \"id\": [\"$location_id\"]}]}" delete
+    fi
 done
