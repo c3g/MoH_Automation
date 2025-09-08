@@ -391,10 +391,10 @@ def deliver_dna(
     variant_pattern = re.compile(r"\.ensemble\.(germline|somatic)\.vt\.annot\.vcf\.gz")
     cal_pattern = re.compile(r"(mutect2|strelka2|vardict|varscan2)\.(somatic|germline)\.vt\.vcf\.gz")
     svar_pattern = re.compile(
-        r"(gridss|gripss\.filtered\.(somatic|germline)\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png)$"
+        r"(gridss|(gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png)$|\.purple_ensemble\.zip$"
     )
-    reports_pattern = re.compile(r"(_D\.multiqc|_D\.pcgr)\.html")
-    pcgr_pattern = re.compile(r"(_D\.acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
+    reports_pattern = re.compile(r"(\.multiqc|pcgr_acmg\.grch38\.flexdb)\.html$|\.cpsr\.zip$")
+    pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
 
     for sample in patient["sample"]:
         sample_name = sample["name"]
@@ -404,7 +404,7 @@ def deliver_dna(
                 file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
-                if "MAIN/raw_reads/" in file_location:
+                if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), os.path.basename(file_location))
                 # variants
@@ -427,6 +427,11 @@ def deliver_dna(
                     file_dict[file_location] = os.path.join(remove_path_parts(linx_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
+                    match = reports_pattern.search(file_name)
+                    if match:
+                        # Insert '_D' before the matched part to differentiate between DNA and RNA reports
+                        start = match.start()
+                        file_name = file_name[:start] + "_D" + file_name[start:]
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
@@ -471,8 +476,8 @@ def deliver_rna(
     # Compile the regex patterns
     expression_pattern = re.compile(r"\.abundance_(transcripts|genes)\.tsv$")
     variant_pattern = re.compile(r"\.hc\.vt\.annot(\.filt)?\.vcf\.gz")
-    reports_pattern = re.compile(r"(_R\.multiqc\.html|\.anno_fuse\.tsv|_R\.pcgr\.html)")
-    pcgr_pattern = re.compile(r"(_R\.acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
+    reports_pattern = re.compile(r"(\.multiqc\.html|\.anno_fuse\.tsv|\.pcgr\.html)")
+    pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
 
     for sample in patient["sample"]:
         sample_name = sample["name"]
@@ -482,7 +487,7 @@ def deliver_rna(
                 file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
-                if "MAIN/raw_reads/" in file_location:
+                if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                 # expression
                 elif expression_pattern.search(file_name):
@@ -495,6 +500,11 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
+                    match = reports_pattern.search(file_name)
+                    if match:
+                        # Insert '_R' before the matched part to differentiate between DNA and RNA reports
+                        start = match.start()
+                        file_name = file_name[:start] + "_R" + file_name[start:]
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
@@ -829,6 +839,7 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{patient}.driver.catalog.somatic.tsv` *Driver somatic structural variant calls* {file_exist_check(f"{patient}.driver.catalog.somatic.tsv", all_delivered_files)}
     * `{patient}.driver.catalog.germline.tsv` *Driver germline structural variant calls* {file_exist_check(f"{patient}.driver.catalog.germline.tsv", all_delivered_files)}
     * `{patient}.circos.png` *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(f"{patient}.circos.png", all_delivered_files)}
+    * `{patient}.purple_ensemble.zip` {file_exist_check(f"{patient}.purple_ensemble.zip", all_delivered_files)} 
     * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*{linx}
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
     * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(f"{patient}.cnvkit.vcf.gz", all_delivered_files)}
@@ -849,6 +860,7 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{sample_name_rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(f"{sample_name_rna}.anno_fuse.tsv", all_delivered_files)}
     * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_D.pcgr.html", all_delivered_files)}
     * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_R.pcgr.html", all_delivered_files)}
+    * `{patient}_D.cpsr.zip` *Cancer Predisposition Sequencing Reporter report for the DNA analysis; Cf. https://sigven.github.io/cpsr/* {file_exist_check(f"{patient}_D.cpsr.zip", all_delivered_files)}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
         * `{patient}_D.acmg.grch38.maf` {file_exist_check(f"{patient}_D.acmg.grch38.maf", all_delivered_files)}
         * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
