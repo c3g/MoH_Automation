@@ -427,11 +427,11 @@ def deliver_dna(
                     file_dict[file_location] = os.path.join(remove_path_parts(linx_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
+                    # Insert '_D' before the matched part to differentiate between DNA and RNA reports
                     match = reports_pattern.search(file_name)
                     if match:
-                        # Insert '_D' before the matched part to differentiate between DNA and RNA reports
-                        start = match.start()
-                        file_name = file_name[:start] + "_D" + file_name[start:]
+                        matched_str = match.group()
+                        file_name = file_name.replace(matched_str, f"_D{matched_str}")
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
@@ -500,11 +500,11 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
+                    # Insert '_R' before the matched part to differentiate between DNA and RNA reports
                     match = reports_pattern.search(file_name)
                     if match:
-                        # Insert '_R' before the matched part to differentiate between DNA and RNA reports
-                        start = match.start()
-                        file_name = file_name[:start] + "_R" + file_name[start:]
+                        matched_str = match.group()
+                        file_name = file_name.replace(matched_str, f"_R{matched_str}")
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
