@@ -393,7 +393,7 @@ def deliver_dna(
     svar_pattern = re.compile(
         r"(gridss|(gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png)$|\.purple_ensemble\.zip$"
     )
-    reports_pattern = re.compile(r"(\.multiqc|pcgr_acmg\.grch38\.flexdb)\.html$|\.cpsr\.zip$")
+    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.cpsr\.zip$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
 
     for sample in patient["sample"]:
@@ -427,11 +427,14 @@ def deliver_dna(
                     file_dict[file_location] = os.path.join(remove_path_parts(linx_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
-                    # Insert '_D' before the matched part to differentiate between DNA and RNA reports
                     match = reports_pattern.search(file_name)
                     if match:
-                        matched_str = match.group()
-                        file_name = file_name.replace(matched_str, f"_D{matched_str}")
+                        # Insert '_D' before the matched part to differentiate between DNA and RNA reports
+                        start = match.start()
+                        file_name = file_name[:start] + "_D" + file_name[start:]
+                    # Rename pcgr report
+                    if "pcgr_acmg" in file_name:
+                        file_name = file_name.replace("_acmg.grch38.flexdb", "")
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
@@ -476,7 +479,7 @@ def deliver_rna(
     # Compile the regex patterns
     expression_pattern = re.compile(r"\.abundance_(transcripts|genes)\.tsv$")
     variant_pattern = re.compile(r"\.hc\.vt\.annot(\.filt)?\.vcf\.gz")
-    reports_pattern = re.compile(r"(\.multiqc\.html|\.anno_fuse\.tsv|\.pcgr\.html)")
+    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.anno_fuse\.tsv$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
 
     for sample in patient["sample"]:
@@ -500,11 +503,11 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
-                    # Insert '_R' before the matched part to differentiate between DNA and RNA reports
                     match = reports_pattern.search(file_name)
                     if match:
-                        matched_str = match.group()
-                        file_name = file_name.replace(matched_str, f"_R{matched_str}")
+                        # Insert '_R' before the matched part to differentiate between DNA and RNA reports
+                        start = match.start()
+                        file_name = file_name[:start] + "_R" + file_name[start:]
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
