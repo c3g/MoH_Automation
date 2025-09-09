@@ -448,6 +448,7 @@ def deliver_dna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
+                file_name = file["name"]
                 # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
@@ -456,7 +457,6 @@ def deliver_dna(
                     continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
-                file_name = file["name"]
                 # raw_data
                 if "MAIN/raw_reads/" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
@@ -543,6 +543,7 @@ def deliver_rna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
+                file_name = file["name"]
                 # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
@@ -551,7 +552,6 @@ def deliver_rna(
                     continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
-                file_name = file["name"]
                 # raw_data
                 if "MAIN/raw_reads/" in file_location:
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
