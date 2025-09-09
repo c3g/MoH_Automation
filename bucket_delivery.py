@@ -311,6 +311,7 @@ def main():
 
         # Transfer for Abacus rawdata only
         if file_dict_rawdata:
+            logger.debug(f"Transferring Abacus rawdata files: {file_dict_rawdata}")
             task_id = transfer_files_with_sync(in_uuid_abacus_rawdata, out_uuid, file_dict_rawdata, transfer_client, f"{transfer_label}_rawdata")
             display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
@@ -318,6 +319,7 @@ def main():
 
         # Transfer for all endpoints (including abacus after rawdata split)
         if file_dict:
+            logger.debug(f"Transferring files: {file_dict}")
             task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
             display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
@@ -430,7 +432,7 @@ def deliver_dna(
     variant_pattern = re.compile(r"\.ensemble\.(germline|somatic)\.vt\.annot\.vcf\.gz")
     cal_pattern = re.compile(r"(mutect2|strelka2|vardict|varscan2)\.(somatic|germline)\.vt\.vcf\.gz")
     svar_pattern = re.compile(
-        r"(gridss|(gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png)$|\.purple_ensemble\.zip$"
+        r"(gridss|gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png$|\.purple_(ensemble|sv)\.zip$"
     )
     reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.cpsr\.zip$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
@@ -898,7 +900,8 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{patient}.driver.catalog.somatic.tsv` *Driver somatic structural variant calls* {file_exist_check(f"{patient}.driver.catalog.somatic.tsv", all_delivered_files)}
     * `{patient}.driver.catalog.germline.tsv` *Driver germline structural variant calls* {file_exist_check(f"{patient}.driver.catalog.germline.tsv", all_delivered_files)}
     * `{patient}.circos.png` *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(f"{patient}.circos.png", all_delivered_files)}
-    * `{patient}.purple_ensemble.zip` {file_exist_check(f"{patient}.purple_ensemble.zip", all_delivered_files)} 
+    * `{patient}.purple_ensemble.zip` {file_exist_check(f"{patient}.purple_ensemble.zip", all_delivered_files)}
+    * `{patient}.purple_sv.zip` {file_exist_check(f"{patient}.purple_sv.zip", all_delivered_files)}
     * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*{linx}
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
     * `{patient}.cnvkit.vcf.gz` *Raw cnvkit output* {file_exist_check(f"{patient}.cnvkit.vcf.gz", all_delivered_files)}
