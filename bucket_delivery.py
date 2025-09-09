@@ -216,6 +216,8 @@ def main():
         methods_file = os.path.join(out_folder, "Methods.html")
         key_metrics_file = os.path.join(out_folder, "Key_metrics.csv")
         file_dict = {}
+        # For Abacus rawdata special handling
+        file_dict_rawdata = {}
         ini_dict = {}
         metrics_dict = defaultdict(lambda: None)
         # Check if the key metrics file exists
@@ -256,6 +258,7 @@ def main():
                 in_base_path_abacus_rawdata,
                 location_endpoint,
                 file_dict,
+                file_dict_rawdata,
                 metrics_dict
                 )
             for index, operation_object in enumerate(operation_list):
@@ -278,6 +281,7 @@ def main():
                 in_base_path_abacus_rawdata,
                 location_endpoint,
                 file_dict,
+                file_dict_rawdata,
                 metrics_dict
                 )
             for index, operation_object in enumerate(operation_list):
@@ -305,26 +309,12 @@ def main():
 
         transferred_files = []
 
-        # Special handling for Abacus: split file_dict by source path
-        if location_endpoint == "abacus":
-            # Extract files from abacus_rawdata
-            file_dict_rawdata = {
-                src: dst for src, dst in file_dict.items()
-                if src.startswith(in_base_path_abacus_rawdata)
-            }
-
-            # Transfer files from abacus_rawdata
-            if file_dict_rawdata:
-                task_id = transfer_files_with_sync(in_uuid_abacus_rawdata, out_uuid, file_dict_rawdata, transfer_client, f"{transfer_label}_rawdata")
-                display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-                transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
-                already_delivered_files.extend(format_timestamps(transferred_files))
-
-            # Transfer remaining files (standard abacus) using original file_dict
-            file_dict = {
-                src: dst for src, dst in file_dict.items()
-                if not src.startswith(in_base_path_abacus_rawdata)
-            }
+        # Transfer for Abacus rawdata only
+        if file_dict_rawdata:
+            task_id = transfer_files_with_sync(in_uuid_abacus_rawdata, out_uuid, file_dict_rawdata, transfer_client, f"{transfer_label}_rawdata")
+            display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+            transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            already_delivered_files.extend(format_timestamps(transferred_files))
 
         # Transfer for all endpoints (including abacus after rawdata split)
         if file_dict:
@@ -332,8 +322,6 @@ def main():
             display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             already_delivered_files.extend(format_timestamps(transferred_files))
-        else:
-            logger.warning("No file found for transfer.")
 
         # task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
         # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
@@ -348,6 +336,9 @@ def main():
                 for src_file, dest_file in file_dict.items():
                     if dest_file == file:
                         lines.append(f"{os.path.join(in_base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
+                for src_file, dest_file in file_dict_rawdata.items():
+                    if dest_file == file:
+                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata, src_file)} {os.path.join(out_base_path, dest_file)}")
             with open(args.list_file, 'w') as list_file:
                 list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
@@ -416,6 +407,7 @@ def deliver_dna(
     in_base_path_abacus_rawdata,
     location_endpoint,
     file_dict,
+    file_dict_rawdata,
     metrics_dict
     ):
 
@@ -453,7 +445,7 @@ def deliver_dna(
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    file_dict_rawdata[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                     continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
@@ -516,6 +508,7 @@ def deliver_rna(
     in_base_path_abacus_rawdata,
     location_endpoint,
     file_dict,
+    file_dict_rawdata,
     metrics_dict
     ):
 
@@ -548,7 +541,7 @@ def deliver_rna(
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    file_dict_rawdata[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                     continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
