@@ -303,6 +303,8 @@ def main():
 
         # list_file = os.path.join(args.list_file, f"Delivery_{patient_name}_{experiment_nucleic_acid_type}_{now}.list")
 
+        transferred_files = []
+
         # Special handling for Abacus: split file_dict by source path
         if location_endpoint == "abacus":
             # Extract files from abacus_rawdata
@@ -330,6 +332,8 @@ def main():
             display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             already_delivered_files.extend(format_timestamps(transferred_files))
+        else:
+            logger.warning("No file found for transfer.")
 
         # task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
         # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
@@ -353,6 +357,8 @@ def main():
             updated_warnings_dict = update_warnings(existing_warnings_dict, metrics_dict, soup)
             updated_warnings_content = generate_updated_warnings_content(updated_warnings_dict, soup)
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(warning_file, out_base_path), Body=updated_warnings_content)
+        else:
+            logger.warning("No new file were transferred.")
 
         # Add methods file
         if args.update_methods or transferred_files:
@@ -442,14 +448,17 @@ def deliver_dna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
+                # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
-                else:
-                    file_location = remove_path_parts(file["location"], in_base_path)
-                # file_location = remove_path_parts(file["location"], in_base_path)
+                    # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    continue
+                # Usual case
+                file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
-                if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
+                if "MAIN/raw_reads/" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), os.path.basename(file_location))
                 # variants
@@ -534,14 +543,17 @@ def deliver_rna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
+                # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
                 if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
                     file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
-                else:
-                    file_location = remove_path_parts(file["location"], in_base_path)
-                # file_location = remove_path_parts(file["location"], in_base_path)
+                    # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    continue
+                # Usual case
+                file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
-                if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
+                if "MAIN/raw_reads/" in file_location:
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                 # expression
                 elif expression_pattern.search(file_name):
