@@ -292,11 +292,42 @@ def main():
 
         # list_file = os.path.join(args.list_file, f"Delivery_{patient_name}_{experiment_nucleic_acid_type}_{now}.list")
 
-        task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
-        display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-        transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
-        transferred_files = format_timestamps(transferred_files)
-        already_delivered_files.extend(transferred_files)
+        # Special handling for Abacus: split file_dict by source path
+        if location_endpoint == "abacus":
+            # Abacus RawData is located somewhere else
+            in_uuid_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["uuid"]
+            in_base_path_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["base_path"]
+            # Extract files from abacus_rawdata
+            file_dict_rawdata = {
+                src: dst for src, dst in file_dict.items()
+                if src.startswith(in_base_path_abacus_rawdata)
+            }
+
+            # Transfer files from abacus_rawdata
+            if file_dict_rawdata:
+                task_id = transfer_files_with_sync(in_uuid_abacus_rawdata, out_uuid, file_dict_rawdata, transfer_client, f"{transfer_label}_rawdata")
+                display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+                transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+                already_delivered_files.extend(format_timestamps(transferred_files))
+
+            # Transfer remaining files (standard abacus) using original file_dict
+            file_dict = {
+                src: dst for src, dst in file_dict.items()
+                if not src.startswith(in_base_path_abacus_rawdata)
+            }
+
+        # Transfer for all endpoints (including abacus after rawdata split)
+        if file_dict:
+            task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
+            display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+            transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            already_delivered_files.extend(format_timestamps(transferred_files))
+
+        # task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
+        # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+        # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+        # transferred_files = format_timestamps(transferred_files)
+        # already_delivered_files.extend(transferred_files)
         all_delivered_files = list(set(already_delivered_files))
 
         if transferred_files:

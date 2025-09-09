@@ -4,6 +4,10 @@
       "uuid": "892ba9e9-f6f3-4b6c-b428-4039a6214be1",
       "base_path": "/lb/project/mugqic/projects/MOH"
     },
+    "abacus_rawdata": {
+      "uuid": "fb9e89bd-7bfb-4842-9c4d-9190eb946160",
+      "base_path": "/lb/robot/research/freezeman-processing"
+    },
     "beluga": {
       "uuid": "43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e",
       "base_path": "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
