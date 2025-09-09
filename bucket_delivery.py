@@ -177,6 +177,13 @@ def main():
         in_uuid = globus_collection["robot_endpoints"][location_endpoint]["uuid"]
         # Input Folder
         in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"]
+        if location_endpoint == "abacus":
+            # Abacus RawData is located somewhere else
+            in_uuid_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["uuid"]
+            in_base_path_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["base_path"]
+        else:
+            in_uuid_abacus_rawdata = None
+            in_base_path_abacus_rawdata = None
         # Output UUID
         out_uuid = globus_collection["robot_endpoints"]["sd4h"]["uuid"]
         # Output Folder
@@ -246,6 +253,8 @@ def main():
                 patient,
                 out_base_path,
                 in_base_path,
+                in_base_path_abacus_rawdata,
+                location_endpoint,
                 file_dict,
                 metrics_dict
                 )
@@ -266,6 +275,8 @@ def main():
                 patient,
                 out_base_path,
                 in_base_path,
+                in_base_path_abacus_rawdata,
+                location_endpoint,
                 file_dict,
                 metrics_dict
                 )
@@ -294,9 +305,6 @@ def main():
 
         # Special handling for Abacus: split file_dict by source path
         if location_endpoint == "abacus":
-            # Abacus RawData is located somewhere else
-            in_uuid_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["uuid"]
-            in_base_path_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["base_path"]
             # Extract files from abacus_rawdata
             file_dict_rawdata = {
                 src: dst for src, dst in file_dict.items()
@@ -399,6 +407,8 @@ def deliver_dna(
     patient,
     out_base_path,
     in_base_path,
+    in_base_path_abacus_rawdata,
+    location_endpoint,
     file_dict,
     metrics_dict
     ):
@@ -432,7 +442,11 @@ def deliver_dna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
-                file_location = remove_path_parts(file["location"], in_base_path)
+                if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
+                    file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
+                else:
+                    file_location = remove_path_parts(file["location"], in_base_path)
+                # file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
@@ -490,6 +504,8 @@ def deliver_rna(
     patient,
     out_base_path,
     in_base_path,
+    in_base_path_abacus_rawdata,
+    location_endpoint,
     file_dict,
     metrics_dict
     ):
@@ -518,7 +534,11 @@ def deliver_rna(
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
-                file_location = remove_path_parts(file["location"], in_base_path)
+                if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
+                    file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
+                else:
+                    file_location = remove_path_parts(file["location"], in_base_path)
+                # file_location = remove_path_parts(file["location"], in_base_path)
                 file_name = file["name"]
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "/lb/robot/research/freezeman-processing/novaseqx/" in file_location:
