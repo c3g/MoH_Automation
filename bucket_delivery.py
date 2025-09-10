@@ -434,7 +434,7 @@ def deliver_dna(
     svar_pattern = re.compile(
         r"(gridss|gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png$|\.purple_(ensemble|sv)\.zip$"
     )
-    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.cpsr\.zip$")
+    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.(cpsr|pcgr)\.zip$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
 
     for sample in patient["sample"]:
@@ -528,7 +528,7 @@ def deliver_rna(
     }
 
     # Compile the regex patterns
-    expression_pattern = re.compile(r"\.abundance_(transcripts|genes)\.tsv$")
+    expression_pattern = re.compile(r"abundance_(transcripts|genes)\.tsv$")
     variant_pattern = re.compile(r"\.hc\.vt\.annot(\.filt)?\.vcf\.gz")
     reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.anno_fuse\.tsv$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
@@ -556,9 +556,6 @@ def deliver_rna(
                 # variants
                 elif variant_pattern.search(file_name):
                     file_dict[file_location] = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
-                # alignment
-                elif "MAIN/alignment/" in file_location and not ignore_alignment:
-                    file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
                     match = reports_pattern.search(file_name)
@@ -570,6 +567,9 @@ def deliver_rna(
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
                     file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
+                # alignment has to go as last if because otehr regex files are located under alignment folder
+                elif "MAIN/alignment/" in file_location and not ignore_alignment:
+                    file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
             for metric in readset["metric"]:
                 metric_name = metric["name"]
                 metric_value = metric["value"]
@@ -922,7 +922,8 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{sample_name_rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(f"{sample_name_rna}.anno_fuse.tsv", all_delivered_files)}
     * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_D.pcgr.html", all_delivered_files)}
     * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_R.pcgr.html", all_delivered_files)}
-    * `{patient}_D.cpsr.zip` *Cancer Predisposition Sequencing Reporter report for the DNA analysis; Cf. https://sigven.github.io/cpsr/* {file_exist_check(f"{patient}_D.cpsr.zip", all_delivered_files)}
+    * `{patient}_D.pcgr.zip` *Personal Cancer Genome Reporter archive for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_D.pcgr.zip", all_delivered_files)}
+    * `{patient}_D.cpsr.zip` *Cancer Predisposition Sequencing Reporter archive for the DNA analysis; Cf. https://sigven.github.io/cpsr/* {file_exist_check(f"{patient}_D.cpsr.zip", all_delivered_files)}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
         * `{patient}_D.acmg.grch38.maf` {file_exist_check(f"{patient}_D.acmg.grch38.maf", all_delivered_files)}
         * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
