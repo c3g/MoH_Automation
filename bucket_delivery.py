@@ -529,7 +529,7 @@ def deliver_rna(
 
     # Compile the regex patterns
     expression_pattern = re.compile(r"abundance_(transcripts|genes)\.tsv$")
-    variant_pattern = re.compile(r"\.hc\.vt\.annot(\.filt)?\.vcf\.gz")
+    variant_pattern = re.compile(r"\.hc\.vt\.annot(\.flt)?\.vcf\.gz")
     reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.anno_fuse\.tsv$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
 
@@ -552,24 +552,33 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                 # expression
                 elif expression_pattern.search(file_name):
+                    # Rename to include sample name in file
                     file_name = f"{sample_name}.{file_name}"
                     file_dict[file_location] = os.path.join(remove_path_parts(expression_folder, out_base_path), file_name)
                 # variants
                 elif variant_pattern.search(file_name):
+                    # Rename as it's delivered as filt and not flt
+                    file_name = file_name.replace("flt", "filt")
                     file_dict[file_location] = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
+                    # Rename to patient name instead of sample name
+                    file_name = file_name.replace(sample_name, patient["name"])
                     match = reports_pattern.search(file_name)
                     if match:
                         # Insert '_R' before the matched part to differentiate between DNA and RNA reports
                         start = match.start()
                         file_name = file_name[:start] + "_R" + file_name[start:]
+                    # Rename pcgr report
+                    if "pcgr_acmg" in file_name:
+                        file_name = file_name.replace("_acmg.grch38.flexdb", "")
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
                     file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
                 # alignment has to go as last if because otehr regex files are located under alignment folder
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
+                    # Rename to remove extra part from rna bams
                     file_name = file_name.replace("sorted.mdup.split.recal", "variants")
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
             for metric in readset["metric"]:
