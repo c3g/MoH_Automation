@@ -569,6 +569,7 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
                 # alignment has to go as last if because otehr regex files are located under alignment folder
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
+                    file_name = file_name.replace("sorted.mdup.split.recal", "variants")
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
             for metric in readset["metric"]:
                 metric_name = metric["name"]
@@ -922,7 +923,6 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{sample_name_rna}.anno_fuse.tsv` *TSV for fusions detected using RN, to be loaded into Excel sheet for easier display* {file_exist_check(f"{sample_name_rna}.anno_fuse.tsv", all_delivered_files)}
     * [`{patient}_D.pcgr.html`](reports/{patient}_D.pcgr.html) *Personal Cancer Genome Reporter report for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_D.pcgr.html", all_delivered_files)}
     * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_R.pcgr.html", all_delivered_files)}
-    * `{patient}_D.pcgr.zip` *Personal Cancer Genome Reporter archive for the DNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_D.pcgr.zip", all_delivered_files)}
     * `{patient}_D.cpsr.zip` *Cancer Predisposition Sequencing Reporter archive for the DNA analysis; Cf. https://sigven.github.io/cpsr/* {file_exist_check(f"{patient}_D.cpsr.zip", all_delivered_files)}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
         * `{patient}_D.acmg.grch38.maf` {file_exist_check(f"{patient}_D.acmg.grch38.maf", all_delivered_files)}
