@@ -552,6 +552,7 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                 # expression
                 elif expression_pattern.search(file_name):
+                    file_name = f"{sample_name}.{file_name}"
                     file_dict[file_location] = os.path.join(remove_path_parts(expression_folder, out_base_path), file_name)
                 # variants
                 elif variant_pattern.search(file_name):
