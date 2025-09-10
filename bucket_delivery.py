@@ -575,6 +575,8 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
+                    # Rename to patient name instead of sample name
+                    file_name = file_name.replace(sample_name, patient["name"])
                     file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
                 # alignment has to go as last if because otehr regex files are located under alignment folder
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
