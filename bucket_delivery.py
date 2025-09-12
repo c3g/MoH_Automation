@@ -452,7 +452,7 @@ def deliver_dna(
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
                 # raw_data
-                if "MAIN/raw_reads/" in file_location:
+                if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), os.path.basename(file_location))
                 # variants
@@ -548,7 +548,7 @@ def deliver_rna(
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
                 # raw_data
-                if "MAIN/raw_reads/" in file_location:
+                if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                 # expression
                 elif expression_pattern.search(file_name):
@@ -563,7 +563,7 @@ def deliver_rna(
                 # reports
                 elif reports_pattern.search(file_name):
                     if "putative_driver_fusions" in file_name:
-                        file_name = file_name.replace("putative_driver_fusions", f"anno_fuse")
+                        file_name = file_name.replace("putative_driver_fusions", "anno_fuse")
                     # Anno Fuse is not renamed by patient but keeping sample name
                     else:
                         # Rename to patient name instead of sample name
