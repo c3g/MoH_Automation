@@ -87,12 +87,21 @@ unset PYTHONPATH
 source $SRC_MOH/project_tracking_cli/venv/bin/activate
 # shellcheck disable=SC2086
 pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json
+if [ ! -f $delivery_json ]; then
+    echo "ERROR: Delivery JSON file not created: $delivery_json. Exiting..."
+    exit 1
+fi
 # shellcheck disable=SC2086
 $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
 status=$?
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
+fi
+
+if [ ! -s $listfile ]; then
+    echo "WARNING: Delivery list file is empty: $listfile. Exiting..."
+    exit 0
 fi
 
 $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile"
