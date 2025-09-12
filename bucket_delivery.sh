@@ -100,7 +100,7 @@ $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile -
 pt-cli ingest transfer --input-json $transfer_json
 for i in $(cat $listfile | awk '{print $1}'); do
     # Skip Abacus rw data deletion
-    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* ]]; then
+    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]]; then
         rm $i
         location_id=$(pt-cli getid location --endpoint $location --file_name $(basename $i))
         # shellcheck disable=SC2086
