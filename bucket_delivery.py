@@ -1046,8 +1046,8 @@ def transfer_files_with_sync(endpoint_id_src, endpoint_id_dest, file_dict, trans
         endpoint_id_dest,
         label=transfer_label,
         sync_level=sync_level,
-        encrypt_data=encrypt,
-        recursive_symlinks="copy"
+        encrypt_data=encrypt
+        # recursive_symlinks="copy"
     )
 
     for src_file, dest_file in file_dict.items():
