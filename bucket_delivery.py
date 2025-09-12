@@ -530,7 +530,7 @@ def deliver_rna(
     # Compile the regex patterns
     expression_pattern = re.compile(r"abundance_(transcripts|genes)\.tsv$")
     variant_pattern = re.compile(r"\.hc\.vt\.annot(\.flt)?\.vcf\.gz")
-    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.anno_fuse\.tsv$")
+    reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.putative_driver_fusions\.tsv$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv))$")
 
     for sample in patient["sample"]:
@@ -562,16 +562,20 @@ def deliver_rna(
                     file_dict[file_location] = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
                 # reports
                 elif reports_pattern.search(file_name):
-                    # Rename to patient name instead of sample name
-                    file_name = file_name.replace(sample_name, patient["name"])
-                    match = reports_pattern.search(file_name)
-                    if match:
-                        # Insert '_R' before the matched part to differentiate between DNA and RNA reports
-                        start = match.start()
-                        file_name = file_name[:start] + "_R" + file_name[start:]
-                    # Rename pcgr report
-                    if "pcgr_acmg" in file_name:
-                        file_name = file_name.replace("_acmg.grch38.flexdb", "")
+                    if "putative_driver_fusions" in file_name:
+                        file_name = file_name.replace("putative_driver_fusions", f"anno_fuse")
+                    # Anno Fuse is not renamed by patient but keeping sample name
+                    else:
+                        # Rename to patient name instead of sample name
+                        file_name = file_name.replace(sample_name, patient["name"])
+                        match = reports_pattern.search(file_name)
+                        if match:
+                            # Insert '_R' before the matched part to differentiate between DNA and RNA reports
+                            start = match.start()
+                            file_name = file_name[:start] + "_R" + file_name[start:]
+                        # Rename pcgr report
+                        if "pcgr_acmg" in file_name:
+                            file_name = file_name.replace("_acmg.grch38.flexdb", "")
                     file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
