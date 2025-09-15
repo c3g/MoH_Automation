@@ -466,6 +466,8 @@ def deliver_dna(
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_cnv_folder, out_base_path), file_name)
                 # alignment
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
+                    # Rename to remove extra part from dna bams
+                    file_name = file_name.replace(".sorted.dup.recal", "")
                     file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
                 # svariants
                 elif svar_pattern.search(file_name):
