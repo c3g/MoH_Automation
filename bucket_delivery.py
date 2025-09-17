@@ -63,7 +63,7 @@ def main():
     parser = argparse.ArgumentParser(prog=__name__, description="Prepare delivery to the bucket.")
     parser.add_argument('-i', '--input', required=True, help="The json file returned by pt_cli digest delivery.")
     parser.add_argument('-l', '--list_file', required=True, help="The name of the list file for transferred files.")
-    parser.add_argument('-f', '--force', required=False, help="Ignores thresholds over metrics to deliver.", action='store_true')
+    # parser.add_argument('-f', '--force', required=False, help="Ignores thresholds over metrics to deliver.", action='store_true')
     parser.add_argument('--ignore_alignment', required=False, help="Ignores alignments for delivery; aka doesn't deliver it.", action='store_true')
     parser.add_argument('--update_metrics', required=False, help="Forces Key_metrics.csv and Warnings.html files generation.", action='store_true')
     parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.", action='store_true')
@@ -142,17 +142,17 @@ def main():
                 if not isinstance(dedup_coverage, list):
                     if float(dedup_coverage) <= 30 and not tumour:
                         logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 30")
-                        if not args.force:
+                        # if not args.force:
                             # dna = False
                     if float(dedup_coverage) <= 80 and tumour:
                         logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 80")
-                        if not args.force:
+                        # if not args.force:
                             # dna = False
                 else:
                     logger.warning(f"Multiple dedup_coverage values for Sample {sample_name}: {dedup_coverage}.")
-                    if not args.force:
-                        logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
-                        # dna = False
+                    # if not args.force:
+                    #     logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
+                    #     dna = False
 
             elif experiment_nucleic_acid_type == "RNA":
                 rna = True
@@ -161,13 +161,13 @@ def main():
                 if not isinstance(raw_reads_count, list):
                     if float(raw_reads_count) <= 80000000:
                         logger.warning(f"Metric raw_reads_count for Sample {sample_name} is <= 80.000.000")
-                        if not args.force:
+                        # if not args.force:
                             # rna = False
                 else:
                     logger.warning(f"Multiple raw_reads_count values for Sample {sample_name}: {raw_reads_count}.")
-                    if not args.force:
-                        logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
-                        # rna = False
+                    # if not args.force:
+                    #     logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
+                    #     rna = False
 
         # Folders used for Delivery
         with open(f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'globus_collections.json')}", "r") as globus_collection_file:
