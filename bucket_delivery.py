@@ -143,16 +143,16 @@ def main():
                     if float(dedup_coverage) <= 30 and not tumour:
                         logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 30")
                         if not args.force:
-                            dna = False
+                            # dna = False
                     if float(dedup_coverage) <= 80 and tumour:
                         logger.warning(f"Metric dedup_coverage for Sample {sample_name} is <= 80")
                         if not args.force:
-                            dna = False
+                            # dna = False
                 else:
                     logger.warning(f"Multiple dedup_coverage values for Sample {sample_name}: {dedup_coverage}.")
                     if not args.force:
                         logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
-                        dna = False
+                        # dna = False
 
             elif experiment_nucleic_acid_type == "RNA":
                 rna = True
@@ -162,12 +162,12 @@ def main():
                     if float(raw_reads_count) <= 80000000:
                         logger.warning(f"Metric raw_reads_count for Sample {sample_name} is <= 80.000.000")
                         if not args.force:
-                            rna = False
+                            # rna = False
                 else:
                     logger.warning(f"Multiple raw_reads_count values for Sample {sample_name}: {raw_reads_count}.")
                     if not args.force:
                         logger.warning(f"Skipping delivery for Sample {sample_name}. To force delivery, use '-f' option.")
-                        rna = False
+                        # rna = False
 
         # Folders used for Delivery
         with open(f"{os.path.join(os.path.dirname(os.path.abspath(__file__)), 'globus_collections.json')}", "r") as globus_collection_file:
