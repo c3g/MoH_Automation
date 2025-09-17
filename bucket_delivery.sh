@@ -46,10 +46,10 @@ if [[ $location == "abacus"* ]]; then
     SRC_MOH="/lb/project/mugqic/projects/MOH"
     # Abacus delivery folder location
     SRC_DELIVERY="$SRC_MOH/DELIVERY"
-elif [[ $location == "beluga"* ]]; then
-    # Beluga MOH
-    SRC_MOH="/project/def-c3g/MOH"
-    # Beluga delivery folder location
+elif [[ $location == "rorqual"* ]]; then
+    # Rorqual MOH
+    SRC_MOH="/project/6007512/C3G/projects/MOH_PROCESSING"
+    # Rorqual delivery folder location
     SRC_DELIVERY="$SRC_MOH/DELIVERY"
 elif [[ $location == "cardinal"* ]]; then
     # Cardinal MOH
@@ -97,6 +97,7 @@ status=$?
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
+    exit $status
 fi
 
 if [ ! -s $listfile ]; then
@@ -106,13 +107,10 @@ fi
 
 $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile"
 # shellcheck disable=SC2086
-pt-cli ingest transfer --input-json $transfer_json
-for i in $(cat $listfile | awk '{print $1}'); do
-    # Skip Abacus rw data deletion
+pt-cli ingest delivery --input-json $transfer_json
+for i in $(awk '{print $1}' "$listfile"); do
+    # Skip Abacus rm data deletion
     if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]]; then
-        rm $i
-        location_id=$(pt-cli getid location --endpoint $location --file_name $(basename $i))
-        # shellcheck disable=SC2086
-        pt-cli --data "{\"modification\": [{\"table\": \"location\", \"id\": [\"$location_id\"]}]}" delete
+        rm "$i"
     fi
 done
