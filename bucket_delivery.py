@@ -590,7 +590,7 @@ def deliver_rna(
                     if match:
                         # Insert '_D' before the matched part to differentiate between DNA and RNA reports
                         start = match.start()
-                        file_name = file_name[:start] + "_D" + file_name[start:]
+                        file_name = file_name[:start] + "_R" + file_name[start:]
                     # Rename to patient name instead of sample name
                     file_name = file_name.replace(sample_name, patient["name"])
                     file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
