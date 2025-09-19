@@ -73,11 +73,15 @@ label="${label}.${pipeline}.${protocol}"
 
 # Destination cluster
 ## Beluga main folder location
-DEST_MAIN="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+# DEST_MAIN="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
 ## Beluga log file location
 # DEST_LOG_LOC="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING/DATABASE/log_files/transfer"
 ## Beluga Endpoint
-DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
+# DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
+## Rorqual main folder location
+DEST_MAIN="/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+## Rorqual Endpoint
+DEST_EP='f19f13f5-5553-40e3-ba30-6c151b9d35d4'
 
 # Source cluster
 if [[ $HOSTNAME == "abacus"* ]]; then
@@ -225,7 +229,7 @@ if [ $? -eq 0 ]; then
   # shellcheck disable=SC1091
   source $SRC_MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --source $SRC --destination beluga --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
+  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --source $SRC --destination rorqual --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json $transfer_json
 else
