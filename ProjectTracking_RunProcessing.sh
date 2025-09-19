@@ -79,6 +79,7 @@ if [ -s "$input" ]; then
   # shellcheck disable=SC2086
   ~/moh_automation/run_processing2json.py $run_processing2json_args --input $input --output $path/$runid.json
   chmod 664 "$path/$runid.json"
+  ~/moh_automation/pt_check_sample.sh $path/$runid.json
   # Using client to add new runs to database
   # shellcheck disable=SC2086
   ret="$(pt-cli ingest run_processing --input-json $path/$runid.json 2>&1 || true)"
