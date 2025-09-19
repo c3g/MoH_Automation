@@ -1082,9 +1082,14 @@ def get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name):
         if event.get('is_error', False):
             try:
                 details = json.loads(event['details'])  # Parse the JSON string
-                fault_events.append(details['error']['body'])
+                error_body = details.get('error', {}).get('body')
+                if error_body:
+                    fault_events.append(error_body)
+                else:
+                    fault_events.append(event.get('description', 'No description available'))
             except json.JSONDecodeError:
-                fault_events.append(event['description'])  # Use description if details is not valid JSON
+                fault_events.append(event.get('description', 'No description available'))
+
 
     # Check task status
     task = transfer_client.get_task(task_id)
