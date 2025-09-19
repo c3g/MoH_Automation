@@ -46,10 +46,10 @@ if [[ $location == "abacus"* ]]; then
     SRC_MOH="/lb/project/mugqic/projects/MOH"
     # Abacus delivery folder location
     SRC_DELIVERY="$SRC_MOH/DELIVERY"
-elif [[ $location == "beluga"* ]]; then
-    # Beluga MOH
-    SRC_MOH="/project/def-c3g/MOH"
-    # Beluga delivery folder location
+elif [[ $location == "rorqual"* ]]; then
+    # Rorqual MOH
+    SRC_MOH="/project/6007512/C3G/projects/MOH_PROCESSING"
+    # Rorqual delivery folder location
     SRC_DELIVERY="$SRC_MOH/DELIVERY"
 elif [[ $location == "cardinal"* ]]; then
     # Cardinal MOH
@@ -97,6 +97,7 @@ status=$?
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
+    exit $status
 fi
 
 if [ ! -s $listfile ]; then

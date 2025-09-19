@@ -61,8 +61,8 @@ while getopts 'hc:j:r:l:' OPTION; do
         if [ -z "${MUGQIC_INSTALL_HOME_PRIVATE:-}" ]; then
           export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
         fi
-      elif [[ $cluster == beluga ]]; then
-        MOH_path="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
+      elif [[ $cluster == rorqual ]]; then
+        MOH_path="/project/6007512/C3G/projects/MOH_PROCESSING"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
@@ -72,7 +72,7 @@ while getopts 'hc:j:r:l:' OPTION; do
           export MUGQIC_INSTALL_HOME_DEV=/project/60007/analyste_dev
         fi
       else
-        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'beluga' or 'cardinal'\n"
+        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'rorqual' or 'cardinal'\n"
         usage
       fi
     ;;
@@ -120,7 +120,7 @@ fi
 # Load globus module
 module load mugqic/globus-cli/3.24.0
 globus_logged=$(globus whoami 2>&1)
-if [[ $globus_logged == *"MissingLoginError"* ]] && ! [[ $cluster == beluga ]]; then
+if [[ $globus_logged == *"MissingLoginError"* ]] && ! [[ $cluster == rorqual ]]; then
   echo "ERROR: Globus not logged in. Please run 'globus login' in $cluster under robot user. Exiting..."
   exit 1
 fi
@@ -147,7 +147,7 @@ MOH_MAIN="$MOH_path/MAIN"
 genpipes_submission_folder=$(dirname "$readset_file")
 
 echo "-> Checking $genpipes_submission_folder..."
-if [[ $cluster == beluga ]] || [[ $cluster == cardinal ]] ; then
+if [[ $cluster == rorqual ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
   $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1
@@ -226,8 +226,8 @@ elif [[ $cluster == abacus ]]; then
     # Let's tag GenPipes + Ingest GenPipes
     genpipes_tagging "$genpipes_json"
     genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-    # Let's transfer GenPipes only if NOT on beluga
-    if ! [[ $cluster == beluga ]]; then
+    # Let's transfer GenPipes only if NOT on rorqual
+    if ! [[ $cluster == rorqual ]]; then
       genpipes_transfer "$readset_file" "$pipeline" "$protocol"
     fi
     touch "${genpipes_submission_folder}.checked"
@@ -242,43 +242,3 @@ elif [[ $cluster == abacus ]]; then
     echo "ERROR: Unknown status Cf. $log_report_file"
   fi
 fi
-# # FIRST check if still running and skipping
-# if [[ $status =~ (^|[[:space:]])"ACTIVE"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"RUNNING"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] || { [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]]; } || { [[ $status =~ (^|[[:space:]])"PENDING"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]]; }; then
-#   # Let's skip and wait
-#   echo "INFO: Job(s) still running Cf. $log_report_file"
-# # SECOND check if failed or timeout
-# elif [[ $status =~ (^|[[:space:]])"FAILED"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"TIMEOUT"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"OUT_OF_MEMORY"([[:space:]]|$) ]]; then
-#   echo "WARNING: FAILED and/or TIMEOUT found in $job_list Cf. $log_report_file"
-#   # Let's tag GenPipes + Ingest GenPipes
-#   genpipes_tagging "$genpipes_json"
-#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-#   touch "${genpipes_submission_folder}.checked"
-#   chmod 660 "${genpipes_submission_folder}.checked"
-# # THIRD check if completed and cancelled for instance when cancelled by a user
-# elif [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
-#   echo "WARNING: It seems to have been cancelled by a user"
-#   # Let's tag GenPipes + Ingest GenPipes
-#   genpipes_tagging "$genpipes_json"
-#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-#   touch "${genpipes_submission_folder}.checked"
-#   chmod 660 "${genpipes_submission_folder}.checked"
-# # FOURTH check if success or completed
-# elif [[ $status =~ (^|[[:space:]])"SUCCESS"([[:space:]]|$) ]] || [[ $status =~ (^|[[:space:]])"COMPLETED"([[:space:]]|$) ]] && ! [[ $status =~ (^|[[:space:]])"INACTIVE"([[:space:]]|$) ]]; then
-#   # Let's tag GenPipes + Ingest GenPipes
-#   genpipes_tagging "$genpipes_json"
-#   genpipes_ingesting "${genpipes_json/.json/_tagged.json}"
-#   # Let's transfer GenPipes only if NOT on beluga
-#   if ! [[ $cluster == beluga ]]; then
-#     genpipes_transfer "$readset_file" "$pipeline" "$protocol"
-#   fi
-#   touch "${genpipes_submission_folder}.checked"
-#   chmod 660 "${genpipes_submission_folder}.checked"
-# # FIFTH check if cancelled
-# elif [[ $status =~ (^|[[:space:]])"CANCELLED"([[:space:]]|$) ]]; then
-#   echo "INFO: All jobs cancelled Cf. $log_report_file"
-#   touch "${genpipes_submission_folder}.checked"
-#   chmod 660 "${genpipes_submission_folder}.checked"
-# # FIFTH check if unknown status
-# else
-#   echo "ERROR: Unknown status Cf. $log_report_file"
-# fi
