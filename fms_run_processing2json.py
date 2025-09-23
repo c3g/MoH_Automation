@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import glob
+import hashlib
 import os
 import logging
 from datetime import datetime
@@ -147,12 +148,14 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                         {
                             "location_uri": f"abacus://{fastq1}",
                             "file_name": f"{os.path.basename(fastq1)}",
+                            "file_md5sum": compute_md5(fastq1),
                             "file_extra_metadata": {"read_type": "R1"},
                             "file_deliverable": True
                             },
                         {
                             "location_uri": f"abacus://{fastq2}",
                             "file_name": f"{os.path.basename(fastq2)}",
+                            "file_md5sum": compute_md5(fastq2),
                             "file_extra_metadata": {"read_type": "R2"},
                             "file_deliverable": True
                             }
@@ -164,11 +167,13 @@ def jsonify_run_processing(input_run_folder, fms_json, lanes_json, output, lanes
                         {
                             "location_uri": f"abacus://{bam}",
                             "file_name": f"{os.path.basename(bam)}",
+                            "file_md5sum": compute_md5(bam),
                             "file_deliverable": True
                             },
                         {
                             "location_uri": f"abacus://{bai}",
                             "file_name": f"{os.path.basename(bai)}",
+                            "file_md5sum": compute_md5(bai),
                             "file_deliverable": True
                             }
                         ]
@@ -344,6 +349,14 @@ def median_insert_size_check(sample, value):
     else:
         ret = "PASS"
     return ret
+
+def compute_md5(file_path, chunk_size=8 * 1024 * 1024):  # 8MB chunks
+    """ Compute MD5 checksum of a file """
+    md5 = hashlib.md5()
+    with open(file_path, 'rb') as f:
+        while chunk := f.read(chunk_size):
+            md5.update(chunk)
+    return md5.hexdigest()
 
 def main():
     """ Main """
