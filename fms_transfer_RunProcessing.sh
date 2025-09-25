@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <run_processing_json>         Run Processing json."
-  echo " -d <destination>                 Destination for the transfer (either Beluga or Cardinal or Abacus)."
+  echo " -d <destination>                 Destination for the transfer (either Rorqual or Cardinal or Abacus)."
   exit 1
   }
 
@@ -34,24 +34,21 @@ if [ ! "$run_processing_json" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if ! [[ $destination =~ Cardinal|Beluga|Abacus ]]; then
-    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Beluga, Cardinal or Abacus.\n"
+if ! [[ $destination =~ Cardinal|Rorqual|Abacus ]]; then
+    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Cardinal or Abacus.\n"
     usage
 fi
 
-# location on Beluga. CURRENTLY VERY IMPORTANT. DO NOT CHANGE OR IT WILL BREAK THE DATABASE
-# SERIOUSLY DON'T CHANGE IT.
-# PLEASE DONT.
-if [[ $destination = Beluga ]]; then
-    # Beluga Endpoint
-    DEST_EP='278b9bfe-24da-11e9-9fa2-0a06afd4a22e'
-    # Beluga_MoH_Robot Endpoint
-    # DEST_EP='43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e'
-    # Beluga base path
-    DEST_BASE_PATH="/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
-    # Beluga main folder location
+if [[ $destination = Rorqual ]]; then
+    # Rorqual Endpoint
+    DEST_EP='f19f13f5-5553-40e3-ba30-6c151b9d35d4'
+    # Rorqual_MoH_Robot Endpoint
+    # DEST_EP='b8ae5665-590d-45b9-ae83-d1dfde08e7d0'
+    # Rorqual base path
+    DEST_BASE_PATH="/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+    # Rorqual main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
-    # Beluga log file location
+    # Rorqual log file location
     DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
