@@ -179,11 +179,15 @@ def main():
         in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"]
         if location_endpoint == "abacus":
             # Abacus RawData is located somewhere else
-            in_uuid_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["uuid"]
-            in_base_path_abacus_rawdata = globus_collection["robot_endpoints"]["abacus_rawdata"]["base_path"]
+            # It can be /lb/robot/research/freezeman-processing
+            in_uuid_abacus_rawdata_freezeman = globus_collection["robot_endpoints"]["abacus_rawdata_freezeman-processing"]["uuid"]
+            in_base_path_abacus_rawdata_freezeman = globus_collection["robot_endpoints"]["abacus_rawdata_freezeman-processing"]["base_path"]
+            # Or /lb/robot/research/processing
+            in_uuid_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["uuid"]
+            in_base_path_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["base_path"]
         else:
-            in_uuid_abacus_rawdata = None
-            in_base_path_abacus_rawdata = None
+            in_uuid_abacus_rawdata_freezeman = in_base_path_abacus_rawdata_freezeman = None
+            in_uuid_abacus_rawdata_processing = in_base_path_abacus_rawdata_processing = None
         # Output UUID
         out_uuid = globus_collection["robot_endpoints"]["sd4h"]["uuid"]
         # Output Folder
@@ -217,7 +221,7 @@ def main():
         key_metrics_file = os.path.join(out_folder, "Key_metrics.csv")
         file_dict = {}
         # For Abacus rawdata special handling
-        file_dict_rawdata = {}
+        file_dict_rawdata_freezeman = file_dict_rawdata_processing = {}
         ini_dict = {}
         metrics_dict = defaultdict(lambda: None)
         # Check if the key metrics file exists
@@ -255,10 +259,12 @@ def main():
                 patient,
                 out_base_path,
                 in_base_path,
-                in_base_path_abacus_rawdata,
+                in_base_path_abacus_rawdata_freezeman,
+                in_base_path_abacus_rawdata_processing,
                 location_endpoint,
                 file_dict,
-                file_dict_rawdata,
+                file_dict_rawdata_freezeman,
+                file_dict_rawdata_processing,
                 metrics_dict
                 )
             for index, operation_object in enumerate(operation_list):
@@ -278,10 +284,12 @@ def main():
                 patient,
                 out_base_path,
                 in_base_path,
-                in_base_path_abacus_rawdata,
+                in_base_path_abacus_rawdata_freezeman,
+                in_base_path_abacus_rawdata_processing,
                 location_endpoint,
                 file_dict,
-                file_dict_rawdata,
+                file_dict_rawdata_freezeman,
+                file_dict_rawdata_processing,
                 metrics_dict
                 )
             for index, operation_object in enumerate(operation_list):
@@ -310,9 +318,13 @@ def main():
         transferred_files = []
 
         # Transfer for Abacus rawdata only
-        if file_dict_rawdata:
-            logger.debug(f"Transferring Abacus rawdata files: {file_dict_rawdata}")
-            task_id = transfer_files_with_sync(in_uuid_abacus_rawdata, out_uuid, file_dict_rawdata, transfer_client, f"{transfer_label}_rawdata")
+        if file_dict_rawdata_freezeman or file_dict_rawdata_processing:
+            if file_dict_rawdata_freezeman:
+                logger.debug(f"Transferring Abacus rawdata files: {file_dict_rawdata_freezeman}")
+                task_id = transfer_files_with_sync(in_uuid_abacus_rawdata_freezeman, out_uuid, file_dict_rawdata_freezeman, transfer_client, f"{transfer_label}_rawdata")
+            if file_dict_rawdata_processing:
+                logger.debug(f"Transferring Abacus rawdata files: {file_dict_rawdata_processing}")
+                task_id = transfer_files_with_sync(in_uuid_abacus_rawdata_processing, out_uuid, file_dict_rawdata_processing, transfer_client, f"{transfer_label}_rawdata")
             display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             already_delivered_files.extend(format_timestamps(transferred_files))
@@ -338,9 +350,12 @@ def main():
                 for src_file, dest_file in file_dict.items():
                     if dest_file == file:
                         lines.append(f"{os.path.join(in_base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
-                for src_file, dest_file in file_dict_rawdata.items():
+                for src_file, dest_file in file_dict_rawdata_freezeman.items():
                     if dest_file == file:
-                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata, src_file)} {os.path.join(out_base_path, dest_file)}")
+                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata_freezeman, src_file)} {os.path.join(out_base_path, dest_file)}")
+                for src_file, dest_file in file_dict_rawdata_processing.items():
+                    if dest_file == file:
+                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata_processing, src_file)} {os.path.join(out_base_path, dest_file)}")
             with open(args.list_file, 'w') as list_file:
                 list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
@@ -406,10 +421,12 @@ def deliver_dna(
     patient,
     out_base_path,
     in_base_path,
-    in_base_path_abacus_rawdata,
+    in_base_path_abacus_rawdata_freezeman,
+    in_base_path_abacus_rawdata_processing,
     location_endpoint,
     file_dict,
-    file_dict_rawdata,
+    file_dict_rawdata_freezeman,
+    file_dict_rawdata_processing,
     metrics_dict
     ):
 
@@ -444,11 +461,17 @@ def deliver_dna(
             for file in readset["file"]:
                 file_name = file["name"]
                 # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
-                if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
-                    file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
-                    # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                    file_dict_rawdata[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
-                    continue
+                if location_endpoint == "abacus":
+                    if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
+                        file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                        file_dict_rawdata_freezeman[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        continue
+                    if file["location"].startswith(in_base_path_abacus_rawdata_processing):
+                        file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                        file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
                 # raw_data
@@ -514,10 +537,12 @@ def deliver_rna(
     patient,
     out_base_path,
     in_base_path,
-    in_base_path_abacus_rawdata,
+    in_base_path_abacus_rawdata_freezeman,
+    in_base_path_abacus_rawdata_processing,
     location_endpoint,
     file_dict,
-    file_dict_rawdata,
+    file_dict_rawdata_freezeman,
+    file_dict_rawdata_processing,
     metrics_dict
     ):
 
@@ -547,11 +572,17 @@ def deliver_rna(
             for file in readset["file"]:
                 file_name = file["name"]
                 # Handle Abacus rawdata path located in /lb/robot/research/freezeman-processing/novaseqx/
-                if location_endpoint == "abacus" and file["location"].startswith(in_base_path_abacus_rawdata):
-                    file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata)
-                    # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                    file_dict_rawdata[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
-                    continue
+                if location_endpoint == "abacus":
+                    if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
+                        file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                        file_dict_rawdata_freezeman[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        continue
+                    if file["location"].startswith(in_base_path_abacus_rawdata_processing):
+                        file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
+                        file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        continue
                 # Usual case
                 file_location = remove_path_parts(file["location"], in_base_path)
                 # raw_data
