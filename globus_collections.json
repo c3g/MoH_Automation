@@ -8,6 +8,10 @@
       "uuid": "fb9e89bd-7bfb-4842-9c4d-9190eb946160",
       "base_path": "/lb/robot/research/freezeman-processing"
     },
+    "rorqual": {
+      "uuid": "b8ae5665-590d-45b9-ae83-d1dfde08e7d0",
+      "base_path": "/project/6007512/C3G/projects/MOH_PROCESSING"
+    },
     "beluga": {
       "uuid": "43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e",
       "base_path": "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
