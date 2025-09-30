@@ -186,8 +186,10 @@ def main():
             in_uuid_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["uuid"]
             in_base_path_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["base_path"]
         else:
-            in_uuid_abacus_rawdata_freezeman = in_base_path_abacus_rawdata_freezeman = None
-            in_uuid_abacus_rawdata_processing = in_base_path_abacus_rawdata_processing = None
+            in_uuid_abacus_rawdata_freezeman = None
+            in_base_path_abacus_rawdata_freezeman = None
+            in_uuid_abacus_rawdata_processing = None
+            in_base_path_abacus_rawdata_processing = None
         # Output UUID
         out_uuid = globus_collection["robot_endpoints"]["sd4h"]["uuid"]
         # Output Folder
@@ -221,7 +223,8 @@ def main():
         key_metrics_file = os.path.join(out_folder, "Key_metrics.csv")
         file_dict = {}
         # For Abacus rawdata special handling
-        file_dict_rawdata_freezeman = file_dict_rawdata_processing = {}
+        file_dict_rawdata_freezeman = {}
+        file_dict_rawdata_processing = {}
         ini_dict = {}
         metrics_dict = defaultdict(lambda: None)
         # Check if the key metrics file exists
