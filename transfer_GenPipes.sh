@@ -115,6 +115,7 @@ TIMESTAMP=$(date +%FT%H.%M.%S)
 # LOGFILE="$TIMESTAMP_transfer_GenPipes.log"
 LISTFILE="${label}_${TIMESTAMP}_transfer_GenPipes.list"
 merged_json="${label}_${TIMESTAMP}_transfer_GenPipes_files.json"
+timestamp_start=$(date "+%Y-%m-%dT%H.%M.%S")
 
 # samples files, case,normal,tumor
 # Activate beluga endpoint, before
@@ -226,10 +227,11 @@ globus task wait "$task_id" --polling-interval 60 -H
 if [ $? -eq 0 ]; then
   transfer_json=$SRC_MOH/Transfer_json/${LISTFILE/.list/.json}
   module unload mugqic/globus-cli/3.24.0
+  timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
   # shellcheck disable=SC1091
   source $SRC_MOH/project_tracking_cli/venv/bin/activate
   # shellcheck disable=SC2086
-  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --source $SRC --destination rorqual --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json
+  $SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $SRC_LOG_LOC/$LISTFILE --output $transfer_json --source $SRC --destination rorqual --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $label --batch $SRC_LOG_LOC/$LISTFILE $SRC_EP $DEST_EP" --genpipes $SRC_MOH/Transfer_json/$merged_json --start $timestamp_start --end $timestamp_end
   # shellcheck disable=SC2086
   pt-cli ingest transfer --input-json $transfer_json
 else

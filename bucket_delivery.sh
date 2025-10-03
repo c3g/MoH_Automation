@@ -105,7 +105,9 @@ if [ ! -s $listfile ]; then
     exit 0
 fi
 
-$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile"
+timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
+
+$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start $timestamp --end $timestamp_end
 # shellcheck disable=SC2086
 pt-cli ingest delivery --input-json $transfer_json
 for i in $(awk '{print $1}' "$listfile"); do
