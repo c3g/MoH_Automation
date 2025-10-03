@@ -120,7 +120,7 @@ jq -r '
   fi
 done
 
-echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
+# echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
 
 if [[ $destination != Abacus ]]; then
   # Load globus module
