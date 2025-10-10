@@ -351,7 +351,17 @@ def median_insert_size_check(sample, value):
     return ret
 
 def compute_md5(file_path, chunk_size=8 * 1024 * 1024):  # 8MB chunks
-    """ Compute MD5 checksum of a file """
+    """Compute or retrieve MD5 checksum of a file using EAFP style."""
+    md5_file_path = f"{file_path}.md5"
+
+    try:
+        with open(md5_file_path, 'r') as f:
+            line = f.readline()
+            return line.split()[0]
+    except (FileNotFoundError, IOError):
+        pass  # Proceed to compute MD5 if .md5 file doesn't exist or can't be read
+
+    # Compute MD5
     md5 = hashlib.md5()
     with open(file_path, 'rb') as f:
         while chunk := f.read(chunk_size):
