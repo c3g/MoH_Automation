@@ -17,6 +17,8 @@ def main():
     parser.add_argument('-d', '--destination', required=True, help="Cluster of destination for the transfer.")
     parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
     parser.add_argument('-j', '--genpipes', required=False, help="GenPipes json file when creating json for a GenPipes transfer.")
+    parser.add_argument('--start', required=False, help="Start time of operation (format: YYYY-MM-DDTHH.MM.SS).")
+    parser.add_argument('--stop', required=False, help="End time of operation (format: YYYY-MM-DDTHH.MM.SS).")
     parser.add_argument('--operation_cmd_line', required=True, help="Command used for transfer.")
     args = parser.parse_args()
 
@@ -27,15 +29,35 @@ def main():
         output = args.output
 
     if args.genpipes:
-        jsonify_genpipes_transfer(args.input, args.source, args.destination.lower(), args.genpipes, output, args.operation_cmd_line)
+        jsonify_genpipes_transfer(
+            batch_file = args.input,
+            source = args.source,
+            destination = args.destination.lower(),
+            genpipes_json = args.genpipes,
+            output = output,
+            operation_cmd_line = args.operation_cmd_line,
+            start = args.start,
+            stop = args.stop
+            )
     else:
-        jsonify_run_processing_transfer(args.input, args.destination.lower(), output, args.operation_cmd_line)
+        jsonify_run_processing_transfer(
+            batch_file = args.input,
+            destination = args.destination.lower(),
+            output = output,
+            operation_cmd_line = args.operation_cmd_line,
+            start = args.start,
+            stop = args.stop
+            )
 
-def jsonify_run_processing_transfer(batch_file, destination, output, operation_cmd_line):
+def jsonify_run_processing_transfer(batch_file, destination, output, operation_cmd_line, start=None, stop=None):
     """Writing transfer json based on batch file"""
+    start = start.replace('.', ':').replace('T', ' ') if start else None
+    stop = stop.replace('.', ':').replace('T', ' ') if stop else None
     json_output = {
         "operation_platform": "abacus",
         "operation_cmd_line": operation_cmd_line,
+        "job_start": start,
+        "job_stop": stop,
         "readset": []
         }
     with open(batch_file, 'r') as file:
@@ -102,7 +124,7 @@ def jsonify_run_processing_transfer(batch_file, destination, output, operation_c
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
 
-def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, output, operation_cmd_line):
+def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, output, operation_cmd_line, start=None, stop=None):
     """Writing transfer json based on batch file"""
     with open(genpipes_json, 'r') as json_file:
         genpipes_json = json.load(json_file)
@@ -115,9 +137,13 @@ def jsonify_genpipes_transfer(batch_file, source, destination, genpipes_json, ou
                         genpipes_file[file['file_name']].append(readset['readset_name'])
                     else:
                         genpipes_file[file['file_name']] = [readset['readset_name']]
+    start = start.replace('.', ':').replace('T', ' ') if start else None
+    stop = stop.replace('.', ':').replace('T', ' ') if stop else None
     json_output = {
         "operation_platform": source,
         "operation_cmd_line": operation_cmd_line,
+        "job_start": start,
+        "job_stop": stop,
         "readset": []
         }
     with open(batch_file, 'r') as file:

@@ -91,6 +91,7 @@ TIMESTAMP=$(date +%FT%H.%M.%S)
 LOGFILE="${runfolder}_${TIMESTAMP}_${destination}_transfer.log"
 LISTFILE="${runfolder}_${TIMESTAMP}_${destination}_transfer.list"
 LISTFILE_FULLPATH="${runfolder}_${TIMESTAMP}_${destination}_transfer_fullpath.list"
+timestamp_start=$(date "+%Y-%m-%dT%H.%M.%S")
 
 touch "$TEMP/$LOGFILE"
 touch "$TEMP/$LISTFILE"
@@ -142,8 +143,9 @@ if [[ $destination != Abacus ]]; then
   if [ $? -eq 0 ]; then
     TRANSFER_JSON="$TRANSFER_JSON_DIR/${LISTFILE/.list/.json}"
     module unload mugqic/globus-cli/3.24.0
+    timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
     # shellcheck disable=SC2086
-    ~/moh_automation/transfer2json.py --input $TEMP/$LISTFILE_FULLPATH --source "abacus" --destination $destination --output $TRANSFER_JSON --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $runfolder --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP"
+    ~/moh_automation/transfer2json.py --input $TEMP/$LISTFILE_FULLPATH --source "abacus" --destination $destination --output $TRANSFER_JSON --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $runfolder --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP" --start $timestamp_start --end $timestamp_end
     echo "Ingesting transfer $TRANSFER_JSON..."
     # shellcheck disable=SC2086
     pt-cli ingest transfer --input-json $TRANSFER_JSON
