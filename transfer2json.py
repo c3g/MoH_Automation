@@ -42,6 +42,7 @@ def main():
     else:
         jsonify_run_processing_transfer(
             batch_file = args.input,
+            source = args.source,
             destination = args.destination.lower(),
             output = output,
             operation_cmd_line = args.operation_cmd_line,
@@ -49,12 +50,12 @@ def main():
             stop = args.stop
             )
 
-def jsonify_run_processing_transfer(batch_file, destination, output, operation_cmd_line, start=None, stop=None):
+def jsonify_run_processing_transfer(batch_file, source, destination, output, operation_cmd_line, start=None, stop=None):
     """Writing transfer json based on batch file"""
     start = start.replace('.', ':').replace('T', ' ') if start else None
     stop = stop.replace('.', ':').replace('T', ' ') if stop else None
     json_output = {
-        "operation_platform": "abacus",
+        "operation_platform": source,
         "operation_cmd_line": operation_cmd_line,
         "job_start": start,
         "job_stop": stop,
