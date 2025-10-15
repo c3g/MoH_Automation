@@ -272,6 +272,8 @@ def mark_deliverables(input_json, output_json):
         json_hash_out = iterate_json(current_json_hash, deliverables_rnaseq_cancer)
     elif current_json_hash["operation_name"] == "GenPipes_RnaSeqLight":
         json_hash_out = iterate_json(current_json_hash, deliverables_rnaseqlight)
+    else:
+        json_hash_out = None
 
     if json_hash_out:
         with open(output_json, 'w', encoding='utf-8') as j_file:
@@ -281,6 +283,14 @@ def mark_deliverables(input_json, output_json):
 def iterate_json(current_json_hash, deliverables_metrics_json):
     for sample in current_json_hash["sample"]:
         for readset in sample["readset"]:
+            readset["job"] = [
+                job for job in readset["job"]
+                if not (
+                    job["job_start"] is None and
+                    job["job_stop"] is None and
+                    job["job_status"] is None
+                )
+            ]
             for job in readset["job"]:
                 key_to_use = None
                 for key in deliverables_metrics_json:
