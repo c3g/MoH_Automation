@@ -328,16 +328,18 @@ def main():
             if file_dict_rawdata_processing:
                 logger.debug(f"Transferring Abacus rawdata files: {file_dict_rawdata_processing}")
                 task_id = transfer_files_with_sync(in_uuid_abacus_rawdata_processing, out_uuid, file_dict_rawdata_processing, transfer_client, f"{transfer_label}_rawdata")
-            display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-            transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+            # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             already_delivered_files.extend(format_timestamps(transferred_files))
 
         # Transfer for all endpoints (including abacus after rawdata split)
         if file_dict:
             logger.debug(f"Transferring files: {file_dict}")
             task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
-            display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-            transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+            # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             already_delivered_files.extend(format_timestamps(transferred_files))
 
         # task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
@@ -1151,110 +1153,112 @@ def get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name):
 
     return transferred_files, fault_events
 
+def safe_get_task(transfer_client, task_id, retries=3, delay=10):
+    for attempt in range(retries):
+        try:
+            return transfer_client.get_task(task_id)
+        except Exception as e:
+            logger.warning(f"Attempt {attempt+1} failed to fetch task: {e}")
+            time.sleep(delay)
+    logger.error("Failed to fetch task after retries.")
+    return None
 
 def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
-    """Function to display live transfer status and speed"""
+    """Function to display live transfer status and speed with fault tolerance"""
 
     def signal_handler(sig, frame):
-        logger.debug("Transfer interrupted. Fetching final event log...")
+        logger.debug("Transfer interrupted. Attempting to cancel and fetch final event log...")
         stop_transfer(transfer_client, task_id)
+        finalize_transfer()
+        sys.exit(0)
+
+    def finalize_transfer():
         transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
         if transferred_files:
             logger.debug(f"Transferred files:\n {'\n '.join([file[0] for file in transferred_files])}")
-        # if skipped_files:
-        #     logger.info(f"Skipped files: {skipped_files}")
         if fault_events:
             logger.info(f"Fault events:\n {'\n '.join(list(fault_events))}")
-        sys.exit(0)
+        return transferred_files, fault_events
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    # Wait until start_time is available
+    max_duration = datetime.timedelta(hours=6)
+    stall_threshold = 5
+    stall_counter = 0
+    previous_message_length = 0
+
+    # Wait for task to start
     start_time = None
     while not start_time:
-        task = transfer_client.get_task(task_id)
+        task = safe_get_task(transfer_client, task_id)
+        if not task:
+            logger.error("Unable to retrieve task. Exiting.")
+            return
         start_time = task.get('request_time', None)
         if not start_time:
-            time.sleep(10)  # Wait for 10 seconds before checking again
+            time.sleep(10)
 
     start_time = datetime.datetime.strptime(start_time, "%Y-%m-%dT%H:%M:%S%z")
 
-    previous_message_length = 0
+    try:
+        while True:
+            task = safe_get_task(transfer_client, task_id)
+            if not task:
+                logger.error("Unable to retrieve task. Exiting.")
+                break
 
-    while True:
-        task = transfer_client.get_task(task_id)
-        status = task['status']
-        bytes_transferred = task.get('bytes_transferred', None)
-        transfer_rate = task.get('effective_bytes_per_second', None)
-        end_time = task.get('completion_time', None)
+            status = task['status']
+            bytes_transferred = task.get('bytes_transferred', 0)
+            transfer_rate = task.get('effective_bytes_per_second', 0)
+            end_time = task.get('completion_time', None)
 
-        # logger.info(f"Status: {status}")
-        # logger.info(f"Transferred: {human_readable_size(bytes_transferred)}")
-        # logger.info(f"Transfer rate: {human_readable_size(transfer_rate)}/second")
-
-        # Calculate the elapsed time
-        current_time = datetime.datetime.now(datetime.timezone.utc)
-        if end_time:
-            end_time = datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S%z")
-            elapsed_time = end_time - start_time
-        else:
-            elapsed_time = current_time - start_time
-
-            # Ensure elapsed_time is not negative
+            current_time = datetime.datetime.now(datetime.timezone.utc)
+            elapsed_time = (datetime.datetime.strptime(end_time, "%Y-%m-%dT%H:%M:%S%z") if end_time else current_time) - start_time
             if elapsed_time.total_seconds() < 0:
                 elapsed_time = datetime.timedelta(seconds=0)
 
-        duration = str(elapsed_time).split('.', maxsplit=1)[0] # Remove microseconds
+            if elapsed_time > max_duration:
+                logger.warning("Transfer exceeded max duration. Exiting monitoring loop.")
+                break
 
-        # Create the status message
-        status_message = (
-            f"Status: {status} | "
-            f"Transferred: {human_readable_size(bytes_transferred)} | "
-            f"Transfer rate: {human_readable_size(transfer_rate)}/second | "
-            f"Duration: {duration}"
-        )
+            duration = str(elapsed_time).split('.', maxsplit=1)[0]
 
-        # Pad the message with spaces to clear any remaining characters
-        padded_message = status_message.ljust(previous_message_length)
-        previous_message_length = len(status_message)
-
-
-        # Print the status message without a new line and flush the output
-        sys.stdout.write(f"\r{padded_message}")
-        sys.stdout.flush()
-
-
-        transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
-        # if skipped_files:
-        #     logger.info(f"Skipped files: {skipped_files}")
-        if fault_events:
-            # Create the status message
             status_message = (
                 f"Status: {status} | "
                 f"Transferred: {human_readable_size(bytes_transferred)} | "
                 f"Transfer rate: {human_readable_size(transfer_rate)}/second | "
-                f"Duration: {duration} | "
-                f"Fault events:\n {'\n '.join(list(fault_events))}"
+                f"Duration: {duration}"
             )
 
-            # Pad the message with spaces to clear any remaining characters
             padded_message = status_message.ljust(previous_message_length)
             previous_message_length = len(status_message)
-
-
-            # Print the status message without a new line and flush the output
             sys.stdout.write(f"\r{padded_message}")
             sys.stdout.flush()
-            # logger.info(f"Fault events: {fault_events}")
 
-        if status in ['SUCCEEDED', 'FAILED', 'CANCELED']:
-            # To have a new line after the sys.stdout write and flush
-            print()
-            if transferred_files:
-                logger.debug(f"Transferred files:\n {'\n '.join([file[0] for file in transferred_files])}")
-            break
+            if bytes_transferred == 0 and transfer_rate == 0:
+                stall_counter += 1
+            else:
+                stall_counter = 0
 
-        time.sleep(60)
+            if stall_counter >= stall_threshold:
+                logger.warning("Transfer appears stalled. Exiting.")
+                break
+
+            transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+            if fault_events:
+                fault_message = f"\nFault events:\n {'\n '.join(list(fault_events))}"
+                sys.stdout.write(f"{fault_message}\n")
+                sys.stdout.flush()
+
+            if status in ['SUCCEEDED', 'FAILED', 'CANCELED']:
+                print()
+                finalize_transfer()
+                break
+
+            time.sleep(60)
+
+    finally:
+        return finalize_transfer()
 
 
 def stop_transfer(transfer_client, task_id):
