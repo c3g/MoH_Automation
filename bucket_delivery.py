@@ -402,7 +402,7 @@ def extract_metrics(sample_content, metric_name):
     ]
 
     if not metric_values:
-        raise ValueError(f"No values found for metric '{metric_name}'.")
+        raise ValueError(f"No values found for metric '{metric_name}' and sample '{sample_content['name']}' for none of its readsets.")
 
     unique_values = sorted(set(float(v) for v in metric_values))
 
