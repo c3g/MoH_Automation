@@ -145,7 +145,7 @@ if [[ $destination != Abacus ]]; then
     module unload mugqic/globus-cli/3.24.0
     timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
     # shellcheck disable=SC2086
-    ~/moh_automation/transfer2json.py --input $TEMP/$LISTFILE_FULLPATH --source "abacus" --destination $destination --output $TRANSFER_JSON --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $runfolder --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP" --start $timestamp_start --end $timestamp_end
+    ~/moh_automation/transfer2json.py --input $TEMP/$LISTFILE_FULLPATH --source "abacus" --destination $destination --output $TRANSFER_JSON --operation_cmd_line "globus transfer --sync-level mtime --jmespath 'task_id' --format=UNIX --submission-id $sub_id --label $runfolder --batch $TEMP/$LISTFILE $ABA_EP $DEST_EP" --start $timestamp_start --stop $timestamp_end
     echo "Ingesting transfer $TRANSFER_JSON..."
     # shellcheck disable=SC2086
     pt-cli ingest transfer --input-json $TRANSFER_JSON
