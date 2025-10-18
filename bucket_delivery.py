@@ -330,17 +330,27 @@ def main():
                 task_id = transfer_files_with_sync(in_uuid_abacus_rawdata_processing, out_uuid, file_dict_rawdata_processing, transfer_client, f"{transfer_label}_rawdata")
             # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
             # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
-            transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-            already_delivered_files.extend(format_timestamps(transferred_files))
+            try:
+                transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+                already_delivered_files.extend(format_timestamps(transferred_files))
+            except Exception as e:
+                logger.exception("Error during transfer or monitoring")
+                print(f"ERROR: {e}")
+                sys.exit(1)
 
         # Transfer for all endpoints (including abacus after rawdata split)
         if file_dict:
             logger.debug(f"Transferring files: {file_dict}")
-            task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
-            # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-            # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
-            transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-            already_delivered_files.extend(format_timestamps(transferred_files))
+            try:
+                task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
+                # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+                # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
+                transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
+                already_delivered_files.extend(format_timestamps(transferred_files))
+            except Exception as e:
+                logger.exception("Error during transfer or monitoring")
+                print(f"ERROR: {e}")
+                sys.exit(1)
 
         # task_id = transfer_files_with_sync(in_uuid, out_uuid, file_dict, transfer_client, transfer_label)
         # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
@@ -387,6 +397,8 @@ def main():
         if args.update_readme or transferred_files:
             readme_content = generate_readme(patient_name, sample_name_dna_n, sample_name_dna_t, sample_name_rna, all_delivered_files)
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(readme_file, out_base_path), Body=readme_content)
+
+    print("Transfer script completed successfully.")
 
 
 def extract_metrics(sample_content, metric_name):
@@ -1086,8 +1098,13 @@ def get_remote_file_mod_date(endpoint_id, file_path, transfer_client):
             return parse(item['last_modified'])
     return None  # Return None if the file is not found
 
+@retry(globus_sdk.TransferAPIError, tries=5, delay=10, backoff=2)
+def submit_transfer_with_retry(transfer_client, transfer_data):
+    """Function to submit a Globus transfer with retry mechanism"""
+    return transfer_client.submit_transfer(transfer_data)
+
 def transfer_files_with_sync(endpoint_id_src, endpoint_id_dest, file_dict, transfer_client, transfer_label, sync_level=2, encrypt=True):
-    """Function to transfer files with sync level and track transferred/skipped files"""
+    """Function to transfer files with sync level and retry mechanism to track transferred/skipped files"""
     transfer_data = globus_sdk.TransferData(
         transfer_client,
         endpoint_id_src,
@@ -1095,15 +1112,37 @@ def transfer_files_with_sync(endpoint_id_src, endpoint_id_dest, file_dict, trans
         label=transfer_label,
         sync_level=sync_level,
         encrypt_data=encrypt
-        # recursive_symlinks="copy"
     )
-
     for src_file, dest_file in file_dict.items():
         transfer_data.add_item(src_file, dest_file)
 
-    transfer_task = transfer_client.submit_transfer(transfer_data)
-    print(f"Track your transfer here: https://app.globus.org/activity/{transfer_task['task_id']}")
-    return transfer_task['task_id']
+    try:
+        transfer_task = submit_transfer_with_retry(transfer_client, transfer_data)
+        print(f"Track your transfer here: https://app.globus.org/activity/{transfer_task['task_id']}")
+        return transfer_task['task_id']
+    except globus_sdk.TransferAPIError as e:
+        logger.error(f"Globus Transfer API error during submission: {e}")
+        print(f"ERROR: Globus Transfer API failed: {e}")
+        sys.exit(1)
+
+# def transfer_files_with_sync(endpoint_id_src, endpoint_id_dest, file_dict, transfer_client, transfer_label, sync_level=2, encrypt=True):
+#     """Function to transfer files with sync level and track transferred/skipped files"""
+#     transfer_data = globus_sdk.TransferData(
+#         transfer_client,
+#         endpoint_id_src,
+#         endpoint_id_dest,
+#         label=transfer_label,
+#         sync_level=sync_level,
+#         encrypt_data=encrypt
+#         # recursive_symlinks="copy"
+#     )
+
+#     for src_file, dest_file in file_dict.items():
+#         transfer_data.add_item(src_file, dest_file)
+
+#     transfer_task = transfer_client.submit_transfer(transfer_data)
+#     print(f"Track your transfer here: https://app.globus.org/activity/{transfer_task['task_id']}")
+#     return transfer_task['task_id']
 
 def get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name):
     """Function to get the event log of a transfer task with timestamps"""
@@ -1161,7 +1200,7 @@ def safe_get_task(transfer_client, task_id, retries=3, delay=10):
             logger.warning(f"Attempt {attempt+1} failed to fetch task: {e}")
             time.sleep(delay)
     logger.error("Failed to fetch task after retries.")
-    return None
+    raise RuntimeError("Failed to fetch task after retries.")
 
 def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
     """Function to display live transfer status and speed with fault tolerance"""
@@ -1208,6 +1247,8 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
                 break
 
             status = task['status']
+            if status not in ['ACTIVE', 'SUCCEEDED', 'FAILED', 'CANCELED']:
+                logger.warning(f"Unexpected transfer status: {status}")
             bytes_transferred = task.get('bytes_transferred', 0)
             transfer_rate = task.get('effective_bytes_per_second', 0)
             end_time = task.get('completion_time', None)
@@ -1232,8 +1273,13 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
 
             padded_message = status_message.ljust(previous_message_length)
             previous_message_length = len(status_message)
-            sys.stdout.write(f"\r{padded_message}")
-            sys.stdout.flush()
+            if sys.stdout.isatty():
+                sys.stdout.write(f"\r{padded_message}")
+                sys.stdout.flush()
+            else:
+                print(status_message)
+            # sys.stdout.write(f"\r{padded_message}")
+            # sys.stdout.flush()
 
             if bytes_transferred == 0 and transfer_rate == 0:
                 stall_counter += 1
@@ -1247,8 +1293,13 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
             transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             if fault_events:
                 fault_message = f"\nFault events:\n {'\n '.join(list(fault_events))}"
-                sys.stdout.write(f"{fault_message}\n")
-                sys.stdout.flush()
+                if sys.stdout.isatty():
+                    sys.stdout.write(f"\r{fault_message}")
+                    sys.stdout.flush()
+                else:
+                    print(fault_message)
+                # sys.stdout.write(f"{fault_message}\n")
+                # sys.stdout.flush()
 
             if status in ['SUCCEEDED', 'FAILED', 'CANCELED']:
                 print()
