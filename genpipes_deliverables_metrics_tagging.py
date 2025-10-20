@@ -100,6 +100,7 @@ def mark_deliverables(input_json, output_json):
                 ".+.pcgr_acmg.grch38.maf",
                 ".+.pcgr_acmg.grch38.snvs_indels.tiers.tsv",
                 ".+.pcgr_acmg.grch38.cna_segments.tsv.gz",
+                ".+.pcgr_acmg.grch38.vcf.gz",
                 ".+.pcgr.zip"
                 ]
             },
