@@ -1258,9 +1258,9 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
             if elapsed_time.total_seconds() < 0:
                 elapsed_time = datetime.timedelta(seconds=0)
 
-            if elapsed_time > max_duration:
-                logger.warning("Transfer exceeded max duration. Exiting monitoring loop.")
-                break
+            # if elapsed_time > max_duration:
+            #     logger.warning("Transfer exceeded max duration. Exiting monitoring loop.")
+            #     break
 
             duration = str(elapsed_time).split('.', maxsplit=1)[0]
 
@@ -1281,14 +1281,14 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
             # sys.stdout.write(f"\r{padded_message}")
             # sys.stdout.flush()
 
-            if bytes_transferred == 0 and transfer_rate == 0:
-                stall_counter += 1
-            else:
-                stall_counter = 0
+            # if bytes_transferred == 0 and transfer_rate == 0:
+            #     stall_counter += 1
+            # else:
+            #     stall_counter = 0
 
-            if stall_counter >= stall_threshold:
-                logger.warning("Transfer appears stalled. Exiting.")
-                break
+            # if stall_counter >= stall_threshold:
+            #     logger.warning("Transfer appears stalled. Exiting.")
+            #     break
 
             transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             if fault_events:
