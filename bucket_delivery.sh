@@ -91,6 +91,8 @@ if [ ! -f $delivery_json ]; then
     echo "ERROR: Delivery JSON file not created: $delivery_json. Exiting..."
     exit 1
 fi
+# To force python to not buffer and print/log right away
+export PYTHONUNBUFFERED=1
 # shellcheck disable=SC2086
 $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
 status=$?

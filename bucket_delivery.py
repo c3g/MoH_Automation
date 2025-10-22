@@ -332,7 +332,10 @@ def main():
             # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
             try:
                 transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-                already_delivered_files.extend(format_timestamps(transferred_files))
+                if not transferred_files:
+                    logger.warning("No new Abacus raw data file were transferred.")
+                else:
+                    already_delivered_files.extend(format_timestamps(transferred_files))
             except Exception as e:
                 logger.exception("Error during transfer or monitoring")
                 print(f"ERROR: {e}")
@@ -346,7 +349,11 @@ def main():
                 # display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
                 # transferred_files, _ = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
                 transferred_files, _ = display_transfer_status(transfer_client, task_id, s3_client, bucket_name)
-                already_delivered_files.extend(format_timestamps(transferred_files))
+                if not transferred_files:
+                    logger.warning("No new file were transferred.")
+                else:
+                    already_delivered_files.extend(format_timestamps(transferred_files))
+                # already_delivered_files.extend(format_timestamps(transferred_files))
             except Exception as e:
                 logger.exception("Error during transfer or monitoring")
                 print(f"ERROR: {e}")
@@ -381,7 +388,7 @@ def main():
             updated_warnings_content = generate_updated_warnings_content(updated_warnings_dict, soup)
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(warning_file, out_base_path), Body=updated_warnings_content)
         else:
-            logger.warning("No new file were transferred.")
+            logger.warning("No new file were transferred. Skipping...")
 
         # Add methods file
         if args.update_methods or transferred_files:
@@ -1165,7 +1172,6 @@ def get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name):
             except json.JSONDecodeError:
                 fault_events.append(event.get('description', 'No description available'))
 
-
     # Check task status
     task = transfer_client.get_task(task_id)
     if task['status'] != 'SUCCEEDED':
@@ -1221,9 +1227,9 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
 
     signal.signal(signal.SIGINT, signal_handler)
 
-    max_duration = datetime.timedelta(hours=6)
-    stall_threshold = 5
-    stall_counter = 0
+    # max_duration = datetime.timedelta(hours=6)
+    # stall_threshold = 5
+    # stall_counter = 0
     previous_message_length = 0
 
     # Wait for task to start
