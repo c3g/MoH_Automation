@@ -82,7 +82,7 @@ if [ -s "$input" ]; then
   # Json creation from run csv file
   if [ -z "$nucleic_acid_type" ]; then
     # shellcheck disable=SC2086
-  ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json
+    ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json
   else
     # shellcheck disable=SC2086
     ~/moh_automation/fms_run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json --nucleic_acid_type "$nucleic_acid_type"
