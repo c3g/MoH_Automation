@@ -470,10 +470,10 @@ def deliver_dna(
     }
 
     # Compile the regex patterns
-    variant_pattern = re.compile(r"\.ensemble\.(germline|somatic)\.vt\.annot\.vcf\.gz")
+    variant_pattern = re.compile(r"\.ensemble\.(germline|somatic)\.vt\.annot\.vcf\.gz|\.purple_ensemble\.zip$")
     cal_pattern = re.compile(r"(mutect2|strelka2|vardict|varscan2)\.(somatic|germline)\.vt\.vcf\.gz")
     svar_pattern = re.compile(
-        r"(gridss|gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png$|\.purple_(ensemble|sv)\.zip$"
+        r"(gridss|gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png$|\.purple_sv\.zip$"
     )
     reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.(cpsr|pcgr)\.zip$")
     pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
@@ -969,6 +969,7 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{patient}.hc.vt.annot.vcf.gz.tbi` *Index of Variants found using RNA sample* {file_exist_check(f"{patient}.hc.vt.annot.vcf.gz.tbi", all_delivered_files)}
     * `{patient}.hc.vt.annot.filt.vcf.gz` *Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(f"{patient}.hc.vt.annot.filt.vcf.gz", all_delivered_files)}
     * `{patient}.hc.vt.annot.filt.vcf.gz.tbi` *Index of Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(f"{patient}.hc.vt.annot.filt.vcf.gz.tbi", all_delivered_files)}
+    * `{patient}.purple_ensemble.zip` {file_exist_check(f"{patient}.purple_ensemble.zip", all_delivered_files)}
     * `caller_vcfs/` *Contains the vcfs produced from individual callers on the DNA samples*
         * `{patient}.mutect2.somatic.vt.vcf.gz` *Somatic results for mutect2* {file_exist_check(f"{patient}.mutect2.somatic.vt.vcf.gz", all_delivered_files)}
         * `{patient}.strelka2.germline.vt.vcf.gz` *Germline results for strelka2* {file_exist_check(f"{patient}.strelka2.germline.vt.vcf.gz", all_delivered_files)}
@@ -984,7 +985,6 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{patient}.driver.catalog.somatic.tsv` *Driver somatic structural variant calls* {file_exist_check(f"{patient}.driver.catalog.somatic.tsv", all_delivered_files)}
     * `{patient}.driver.catalog.germline.tsv` *Driver germline structural variant calls* {file_exist_check(f"{patient}.driver.catalog.germline.tsv", all_delivered_files)}
     * `{patient}.circos.png` *Circos plot of all variants. Cf. https://github.com/hartwigmedical/hmftools/blob/master/purple/README.md#circos* {file_exist_check(f"{patient}.circos.png", all_delivered_files)}
-    * `{patient}.purple_ensemble.zip` {file_exist_check(f"{patient}.purple_ensemble.zip", all_delivered_files)}
     * `{patient}.purple_sv.zip` {file_exist_check(f"{patient}.purple_sv.zip", all_delivered_files)}
     * `linx/` *Contains structural variant annotated and visualized by LINX Cf. https://github.com/hartwigmedical/hmftools/tree/master/linx*{linx}
 * `raw_cnv/` *Contains the raw copy number calls for each patient DNA*
