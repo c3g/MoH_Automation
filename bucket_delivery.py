@@ -476,7 +476,7 @@ def deliver_dna(
         r"(gridss|gripss\.filtered\.(somatic|germline))\.vcf\.gz|driver\.catalog\.(somatic|germline)\.tsv|circos\.png$|\.purple_sv\.zip$"
     )
     reports_pattern = re.compile(r"(\.multiqc|\.pcgr_acmg\.grch38\.flexdb)\.html$|\.(cpsr|pcgr)\.zip$")
-    pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
+    pcgr_pattern = re.compile(r"(\.pcgr_acmg\.grch38\.(maf|vcf\.gz|snvs_indels\.tiers\.tsv|cna_segments\.tsv\.gz))$")
 
     for sample in patient["sample"]:
         sample_name = sample["name"]
@@ -1008,11 +1008,12 @@ When :white_check_mark: is present the file is available and the date at which i
     * [`{patient}_R.pcgr.html`](reports/{patient}_R.pcgr.html) *Personal Cancer Genome Reporter report for the RNA analysis; Cf. https://pcgr.readthedocs.io/en/latest* {file_exist_check(f"{patient}_R.pcgr.html", all_delivered_files)}
     * `{patient}_D.cpsr.zip` *Cancer Predisposition Sequencing Reporter archive for the DNA analysis; Cf. https://sigven.github.io/cpsr/* {file_exist_check(f"{patient}_D.cpsr.zip", all_delivered_files)}
     * `pcgr/` *Contains raw tables used to generate PCGR reports*
-        * `{patient}_D.acmg.grch38.maf` {file_exist_check(f"{patient}_D.acmg.grch38.maf", all_delivered_files)}
-        * `{patient}_D.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_D.acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
-        * `{patient}_D.acmg.grch38.cna_segments.tsv.gz` {file_exist_check(f"{patient}_D.acmg.grch38.cna_segments.tsv.gz", all_delivered_files)}
-        * `{patient}_R.acmg.grch38.maf` {file_exist_check(f"{patient}_R.acmg.grch38.maf", all_delivered_files)}
-        * `{patient}_R.acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_R.acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
+        * `{patient}_D.pcgr_acmg.grch38.maf` {file_exist_check(f"{patient}_D.pcgr_acmg.grch38.maf", all_delivered_files)}
+        * `{patient}_D.pcgr_acmg.grch38.vcf.gz` {file_exist_check(f"{patient}_D.pcgr_acmg.grch38.vcf.gz", all_delivered_files)}
+        * `{patient}_D.pcgr_acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_D.pcgr_acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
+        * `{patient}_D.pcgr_acmg.grch38.cna_segments.tsv.gz` {file_exist_check(f"{patient}_D.pcgr_acmg.grch38.cna_segments.tsv.gz", all_delivered_files)}
+        * `{patient}_R.pcgr_acmg.grch38.maf` {file_exist_check(f"{patient}_R.pcgr_acmg.grch38.maf", all_delivered_files)}
+        * `{patient}_R.pcgr_acmg.grch38.snvs_indels.tiers.tsv` {file_exist_check(f"{patient}_R.pcgr_acmg.grch38.snvs_indels.tiers.tsv", all_delivered_files)}
 * `parameters/` *Contains the records of all the Parameters used in the pipeline analysis*{tumor_pair_inis}{rna_ligth_inis}{rna_cancer_inis}
 
 Generated {timestamp}."""
