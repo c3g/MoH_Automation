@@ -6,7 +6,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <runfolder>                   RunFolder found in abacus under /lb/robot/research/freezeman-processing/<sequencer>/<year>/<runfolder>."
-  echo " -d <destination>                 Destination of the transfer (Abacus, Beluga or Cardinal). For now it will also always be transferred to Beluga for Old DB compatibility."
+  echo " -d <destination>                 Destination of the transfer (Abacus, Cardinal or Rorqual)."
   echo " -n <nucleic_acid_type>           nucleic_acid_type to be considered for the transfer (either DNA or RNA, Default: ALL)."
   echo " -l <lane>                        Lane(s) to be ingested (default: all)."
   echo " -s <sample>                      Sample Name(s) (as they appear in the json file from Freezeman) (default: all)."
@@ -103,7 +103,3 @@ fi
 
 nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d "$destination" > "${run_processing_json/.json/_${destination}_${TIMESTAMP}_transfer.log}" 2>&1 &
 echo "Transfer started towards $destination. See log file ${run_processing_json/.json/_${destination}_${TIMESTAMP}_transfer.log}"
-if [ "$destination" != "Beluga" ]; then
-  nohup ~/moh_automation/fms_transfer_RunProcessing.sh -r "$run_processing_json" -d Beluga > "${run_processing_json/.json/_Beluga_${TIMESTAMP}_transfer.log}" 2>&1 &
-  echo "Transfer started towards Beluga. See log file ${run_processing_json/.json/_Beluga_${TIMESTAMP}_transfer.log}"
-fi
