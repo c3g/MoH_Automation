@@ -109,7 +109,7 @@ fi
 
 timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
 
-$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start "$timestamp" --stop "$timestamp_end"
+$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --delivery $delivery_json --output $transfer_json --source $location --destination sd4h --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start "$timestamp" --stop "$timestamp_end"
 if [ ! -f $transfer_json ]; then
     echo "ERROR: Delivery JSON file for ingestion in the DB not created: $transfer_json. Exiting..."
     exit 1

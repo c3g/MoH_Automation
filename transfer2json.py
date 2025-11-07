@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 def main():
     """ Main """
     parser = argparse.ArgumentParser(prog='transfer2json.py', description="Creates json file for project tracking database for a given transfer of data.")
-    parser.add_argument('-i', '--input', required=True, help="Input align_bwa_mem.csv file from Run Processing.")
+    parser.add_argument('-i', '--input', required=True, help="Batch file from Globus.")
     parser.add_argument('-s', '--source', required=True, help="Source cluster of the transfer.")
     parser.add_argument('-d', '--destination', required=True, help="Cluster of destination for the transfer.")
     parser.add_argument('-o', '--output', required=False, help="Output json filename (Default: <input_filename>.json).")
@@ -20,6 +20,7 @@ def main():
     parser.add_argument('--start', required=False, help="Start time of operation (format: YYYY-MM-DDTHH.MM.SS).")
     parser.add_argument('--stop', required=False, help="End time of operation (format: YYYY-MM-DDTHH.MM.SS).")
     parser.add_argument('--operation_cmd_line', required=True, help="Command used for transfer.")
+    parser.add_argument('--delivery', required=False, help="Delivery json file.")
     args = parser.parse_args()
 
     if not args.output:
@@ -39,6 +40,17 @@ def main():
             start = args.start,
             stop = args.stop
             )
+    elif args.delivery:
+        jsonify_delivery_transfer(
+            batch_file = args.input,
+            source = args.source,
+            destination = args.destination.lower(),
+            delivery_json = args.delivery,
+            output = output,
+            operation_cmd_line = args.operation_cmd_line,
+            start = args.start,
+            stop = args.stop
+            )
     else:
         jsonify_run_processing_transfer(
             batch_file = args.input,
@@ -49,6 +61,67 @@ def main():
             start = args.start,
             stop = args.stop
             )
+
+def jsonify_delivery_transfer(batch_file, source, destination, delivery_json, output, operation_cmd_line, start=None, stop=None):
+    """Writing transfer json based on json delivery file"""
+    with open(delivery_json, 'r') as json_file:
+        delivery_json = json.load(json_file)
+    delivery_file = {}
+    for specimen in delivery_json['specimen']:
+        for sample in specimen['sample']:
+            for readset in sample['readset']:
+                for file in readset['file']:
+                    if file['name'] in delivery_file:
+                        delivery_file[file['name']].append(readset['name'])
+                    else:
+                        delivery_file[file['name']] = [readset['name']]
+
+    start = start.replace('.', ':').replace('T', ' ') if start else None
+    stop = stop.replace('.', ':').replace('T', ' ') if stop else None
+    json_output = {
+        "operation_platform": source,
+        "operation_cmd_line": operation_cmd_line,
+        "job_start": start,
+        "job_stop": stop,
+        "readset": []
+        }
+    with open(batch_file, 'r') as file:
+        for line in file:
+            fields = line.split(" ")
+            src_location_uri = f"{source}://{fields[0]}"
+            dest_location_uri = f"{destination}://{fields[1].strip()}"
+            current_file = os.path.basename(fields[0])
+            if current_file in delivery_file:
+                for readset_name in delivery_file[os.path.basename(current_file)]:
+                    # relative_file_path = current_file.replace(fields[1], '')
+                    # src_location_uri_file = f"{src_location_uri}{relative_file_path}"
+                    # dest_location_uri_file = f"{dest_location_uri}{relative_file_path}"
+                    if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
+                        for readset in json_output["readset"]:
+                            if readset_name == readset["readset_name"]:
+                                readset["file"].append(
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                )
+                    else:
+                        json_output["readset"].append(
+                            {
+                                "readset_name": readset_name,
+                                "file": [
+                                    {
+                                        "src_location_uri": src_location_uri,
+                                        "dest_location_uri": dest_location_uri
+                                    }
+                                ]
+                            }
+                        )
+
+    with open(output, 'w', encoding='utf-8') as file:
+        json.dump(json_output, file, ensure_ascii=False, indent=4)
+
+
 
 def jsonify_run_processing_transfer(batch_file, source, destination, output, operation_cmd_line, start=None, stop=None):
     """Writing transfer json based on batch file"""
