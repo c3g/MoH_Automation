@@ -90,7 +90,7 @@ if [ -s "$input" ]; then
   
   chmod 664 "$run_processing_json"
   # Sample check before ingestion: make sure sample name is correct aka an existing one is not renamed
-  ~/moh_automation/pt_check_sample.sh $run_processing_json
+  ~/moh_automation/pt_check_sample.sh -i $run_processing_json
   # Using client to add new runs to database
   # shellcheck disable=SC2086
   ret="$(pt-cli ingest run_processing --input-json $run_processing_json 2>&1 || true)"

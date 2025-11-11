@@ -33,14 +33,14 @@ specimen_count=$(jq '.specimen | length' "$TMP_FILE")
 
 for ((i=0; i<specimen_count; i++)); do
     specimen_name=$(jq -r ".specimen[$i].specimen_name" "$TMP_FILE")
-    specimen_id=$(pt-cli route "/project/1/specimens?json={\"specimen_name\":\"$specimen_name\"}" | jq '.DB_ACTION_OUTPUT[0].id')
+    specimen_json=$(pt-cli route "/project/1/specimens?json={\"specimen_name\":\"$specimen_name\"}" | jq '.DB_ACTION_OUTPUT[0]')
+    specimen_id=$(echo "$specimen_json" | jq -r '.id')
+    sample_ids=$(echo "$specimen_json" | jq -r '.sample_ids[]')
 
     # Skip if specimen not found in DB
     if [[ -z "$specimen_id" ]]; then
         continue
     fi
-
-    sample_ids=$(pt-cli route "/project/1/specimens/$specimen_id" | jq -r '.samples[]')
 
     for ((j=0; ; j++)); do
         sample_path=".specimen[$i].sample[$j]"
@@ -58,7 +58,7 @@ for ((i=0; i<specimen_count; i++)); do
         fi
 
         for sample_id in $sample_ids; do
-            db_sample_name=$(pt-cli route "/project/1/samples/$sample_id" | jq -r '.name')
+            db_sample_name=$(pt-cli route "/project/1/samples/$sample_id" | jq -r '.DB_ACTION_OUTPUT[0].name')
 
             # Skip if names are identical
             if [[ "$sample_name" == "$db_sample_name" ]]; then
