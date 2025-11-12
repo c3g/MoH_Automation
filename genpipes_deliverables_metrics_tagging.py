@@ -280,6 +280,17 @@ def mark_deliverables(input_json, output_json):
         with open(output_json, 'w', encoding='utf-8') as j_file:
             json.dump(json_hash_out, j_file, ensure_ascii=False, indent=4)
 
+def to_float(value, default=None):
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
+
+def to_int(value, default=None):
+    try:
+        return int(float(value))
+    except (ValueError, TypeError):
+        return default
 
 def iterate_json(current_json_hash, deliverables_metrics_json):
     for sample in current_json_hash["sample"]:
@@ -315,36 +326,43 @@ def iterate_json(current_json_hash, deliverables_metrics_json):
                             metric_name = metric["metric_name"]
                             metric_value = metric["metric_value"]
                             metric["metric_flag"] = "PASS"
-                            # Concordance
-                            if metric_name == "concordance" and float(metric_value) < 99:
+
+                            if metric_value in ("", None):
                                 metric["metric_flag"] = "FAILED"
-                            # Contamination
-                            if metric_name == "contamination":
-                                if float(metric_value) > 0.5:
-                                    metric["metric_flag"] = "WARNING"
-                                elif float(metric_value) > 0.05:
+                            else:
+                                val_float = to_float(metric_value)
+                                val_int = to_int(metric_value)
+
+                                # Concordance
+                                if metric_name == "concordance" and val_float < 99:
                                     metric["metric_flag"] = "FAILED"
-                            # Median Insert Size
-                            if metric_name == "median_insert_size":
-                                if int(float(metric_value)) < 300:
-                                    metric["metric_flag"] = "WARNING"
-                                elif int(float(metric_value)) < 150:
+                                # Contamination
+                                if metric_name == "contamination":
+                                    if val_float > 0.5:
+                                        metric["metric_flag"] = "WARNING"
+                                    elif val_float > 0.05:
+                                        metric["metric_flag"] = "FAILED"
+                                # Median Insert Size
+                                if metric_name == "median_insert_size":
+                                    if val_int < 300:
+                                        metric["metric_flag"] = "WARNING"
+                                    elif val_int < 150:
+                                        metric["metric_flag"] = "FAILED"
+                                # Dedup Coverage DN
+                                if metric_name == "dedup_coverage" and val_float < 30 and sample["sample_name"].endswith("DN"):
                                     metric["metric_flag"] = "FAILED"
-                            # Dedup Coverage DN
-                            if metric_name == "dedup_coverage" and float(metric_value) < 30 and sample["sample_name"].endswith("DN"):
-                                metric["metric_flag"] = "FAILED"
-                            # Dedup Coverage DT
-                            if metric_name == "dedup_coverage" and float(metric_value) < 80 and sample["sample_name"].endswith("DT"):
-                                metric["metric_flag"] = "FAILED"
-                            # Purity
-                            if metric_name == "purity" and int(metric_value) < 30:
-                                metric["metric_flag"] = "FAILED"
-                            # rRNA rate
-                            if metric_name == "rrna_rate":
-                                if float(metric_value) > 0.35:
+                                # Dedup Coverage DT
+                                if metric_name == "dedup_coverage" and val_float < 80 and sample["sample_name"].endswith("DT"):
                                     metric["metric_flag"] = "FAILED"
-                                elif float(metric_value) > 0.1:
-                                    metric["metric_flag"] = "WARNING"
+                                # Purity
+                                if metric_name == "purity" and int(metric_value) < 30:
+                                    metric["metric_flag"] = "FAILED"
+                                # rRNA rate
+                                if metric_name == "rrna_rate":
+                                    if val_float > 0.35:
+                                        metric["metric_flag"] = "FAILED"
+                                    elif val_float > 0.1:
+                                        metric["metric_flag"] = "WARNING"
                     except KeyError:
                         pass
     return current_json_hash
