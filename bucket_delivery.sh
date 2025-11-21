@@ -118,7 +118,7 @@ fi
 pt-cli ingest delivery --input-json $transfer_json
 for i in $(awk '{print $1}' "$listfile"); do
     # Skip Abacus rm data deletion
-    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]]; then
+    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/robot/research/processing/novaseq* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]]; then
         rm "$i"
     fi
 done
