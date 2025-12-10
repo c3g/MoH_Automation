@@ -2,31 +2,31 @@
   "robot_endpoints": {
     "abacus": {
       "uuid": "892ba9e9-f6f3-4b6c-b428-4039a6214be1",
-      "base_path": "/lb/project/mugqic/projects/MOH"
+      "base_path": ["/lb/project/mugqic/projects/MOH"]
     },
     "abacus_rawdata_freezeman-processing": {
       "uuid": "fb9e89bd-7bfb-4842-9c4d-9190eb946160",
-      "base_path": "/lb/robot/research/freezeman-processing"
+      "base_path": ["/lb/robot/research/freezeman-processing"]
     },
     "abacus_rawdata_processing": {
       "uuid": "e153b230-bcf1-4673-bbdb-48153afa73dd",
-      "base_path": "/lb/robot/research/processing"
+      "base_path": ["/lb/robot/research/processing"]
     },
     "rorqual": {
       "uuid": "b8ae5665-590d-45b9-ae83-d1dfde08e7d0",
-      "base_path": "/project/6007512/C3G/projects/MOH_PROCESSING"
+      "base_path": ["/project/6007512/C3G/projects/MOH_PROCESSING", "/project/6007512/shared/C3G/projects/MOH_PROCESSING"]
     },
     "beluga": {
       "uuid": "43c48ed2-8c4e-4c4d-bd4d-f29ace1c1a5e",
-      "base_path": "/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"
+      "base_path": ["/lustre03/project/6007512/C3G/projects/MOH_PROCESSING"]
     },
     "cardinal": {
       "uuid": "ee0ec49b-7bf7-4b25-9030-2e19c03476ca",
-      "base_path": "/project/60007/MOH"
+      "base_path": ["/project/60007/MOH"]
     },
     "sd4h": {
       "uuid": "973962f0-127f-401c-a428-26a9fae7417e",
-      "base_path": "/MOH-Q"
+      "base_path": ["/MOH-Q"]
     }
   }
 }

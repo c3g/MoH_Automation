@@ -56,6 +56,9 @@ extension_configs = {
 
 logger = logging.getLogger(__name__)
 
+# To remove extra logging messages with Globus > v4
+logging.getLogger("globus_sdk").setLevel(logging.WARNING)
+
 def main():
     """
     Main function to prepare delivery to the bucket.
@@ -371,13 +374,19 @@ def main():
             for file, _ in transferred_files:
                 for src_file, dest_file in file_dict.items():
                     if dest_file == file:
-                        lines.append(f"{os.path.join(in_base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
+                        for base_path in in_base_path:
+                            if src_file.startswith(base_path):
+                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
                 for src_file, dest_file in file_dict_rawdata_freezeman.items():
                     if dest_file == file:
-                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata_freezeman, src_file)} {os.path.join(out_base_path, dest_file)}")
+                        for base_path in in_base_path_abacus_rawdata_freezeman:
+                            if src_file.startswith(base_path):
+                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
                 for src_file, dest_file in file_dict_rawdata_processing.items():
                     if dest_file == file:
-                        lines.append(f"{os.path.join(in_base_path_abacus_rawdata_processing, src_file)} {os.path.join(out_base_path, dest_file)}")
+                        for base_path in in_base_path_abacus_rawdata_processing:
+                            if src_file.startswith(base_path):
+                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
             with open(args.list_file, 'w') as list_file:
                 list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
@@ -497,7 +506,10 @@ def deliver_dna(
                         file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         continue
                 # Usual case
-                file_location = remove_path_parts(file["location"], in_base_path)
+                for base_path in in_base_path:
+                    if file["location"].startswith(base_path):
+                        file_location = remove_path_parts(file["location"], base_path)
+                        break
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name

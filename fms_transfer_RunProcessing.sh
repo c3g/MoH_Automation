@@ -43,7 +43,7 @@ ROBOT_EP="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/globus_collections.json"
 
 destination_lowercase="${destination,,}"
 DEST_EP=$(jq -r --arg dest "$destination_lowercase" '.robot_endpoints[$dest].uuid' "$ROBOT_EP")
-DEST_BASE_PATH=$(jq -r --arg dest "$destination_lowercase" '.robot_endpoints[$dest].base_path' "$ROBOT_EP")
+DEST_BASE_PATH=$(jq -r --arg dest "$destination_lowercase" '.robot_endpoints[$dest].base_path[0]' "$ROBOT_EP")
 
 if [[ $destination = Rorqual ]]; then
     # Rorqual Endpoint
