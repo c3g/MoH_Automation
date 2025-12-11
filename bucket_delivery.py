@@ -179,15 +179,15 @@ def main():
         # Input UUID
         in_uuid = globus_collection["robot_endpoints"][location_endpoint]["uuid"]
         # Input Folder
-        in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"]
+        in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"][0]
         if location_endpoint == "abacus":
             # Abacus RawData is located somewhere else
             # It can be /lb/robot/research/freezeman-processing
             in_uuid_abacus_rawdata_freezeman = globus_collection["robot_endpoints"]["abacus_rawdata_freezeman-processing"]["uuid"]
-            in_base_path_abacus_rawdata_freezeman = globus_collection["robot_endpoints"]["abacus_rawdata_freezeman-processing"]["base_path"]
+            in_base_path_abacus_rawdata_freezeman = globus_collection["robot_endpoints"]["abacus_rawdata_freezeman-processing"]["base_path"][0]
             # Or /lb/robot/research/processing
             in_uuid_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["uuid"]
-            in_base_path_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["base_path"]
+            in_base_path_abacus_rawdata_processing = globus_collection["robot_endpoints"]["abacus_rawdata_processing"]["base_path"][0]
         else:
             in_uuid_abacus_rawdata_freezeman = None
             in_base_path_abacus_rawdata_freezeman = None
@@ -196,7 +196,7 @@ def main():
         # Output UUID
         out_uuid = globus_collection["robot_endpoints"]["sd4h"]["uuid"]
         # Output Folder
-        out_base_path = globus_collection["robot_endpoints"]["sd4h"]["base_path"]
+        out_base_path = globus_collection["robot_endpoints"]["sd4h"]["base_path"][0]
         # Contains Warnings.txt Readme.txt Log.txt and all subfolders
         out_folder = os.path.join(out_base_path, institution, cohort, patient_name)
         # Contains raw bams and fastqs
