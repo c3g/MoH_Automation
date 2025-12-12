@@ -620,7 +620,10 @@ def deliver_rna(
                         file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         continue
                 # Usual case
-                file_location = remove_path_parts(file["location"], in_base_path)
+                for base_path in in_base_path:
+                    if file["location"].startswith(base_path):
+                        file_location = remove_path_parts(file["location"], base_path)
+                        break
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
                     file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
