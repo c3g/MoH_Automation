@@ -179,7 +179,7 @@ def main():
         # Input UUID
         in_uuid = globus_collection["robot_endpoints"][location_endpoint]["uuid"]
         # Input Folder
-        in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"][0]
+        in_base_path = globus_collection["robot_endpoints"][location_endpoint]["base_path"]
         if location_endpoint == "abacus":
             # Abacus RawData is located somewhere else
             # It can be /lb/robot/research/freezeman-processing
