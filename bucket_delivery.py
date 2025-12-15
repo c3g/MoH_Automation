@@ -1038,7 +1038,7 @@ Generated {timestamp}."""
 def generate_methods():
     # get_local_file_log(methods_file, log, updated, old_log)
     data = r"""# Methods
-Using an Illumina NovaSeq 6000 instrument, Whole Genome Sequencing (WGS) was performed on the tumor and matched normal samples, with a target depth of coverage of 80X and 30X respectively. Similarly, Whole Transcriptome Sequencing (WTS) was done on tumour samples, with a target of 100 million paired-end reads per sample.
+Using an Illumina NovaSeq 6000 or NovaSeqX instrument, Whole Genome Sequencing (WGS) was performed on the tumor and matched normal samples, with a target depth of coverage of 80X and 30X respectively. Similarly, Whole Transcriptome Sequencing (WTS) was done on tumour samples, with a target of 100 million paired-end reads per sample.
 
 Bioinformatics analyses were performed using the [GenPipes][GenPipes_BB][^GenPipes_] Tumor-Pair and RNA-seq analytical pipelines (detailed documentation can be found [here][GenPipes_RTD]). Specific parameter values and reference databases are tracked in corresponding *\*.ini* files found under the `parameters` directory. An explanation of the various steps is detailed below.
 
