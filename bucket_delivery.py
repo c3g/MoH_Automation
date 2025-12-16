@@ -14,6 +14,7 @@ from pathlib import Path
 import signal
 import sys
 import time
+from pathlib import Path
 
 import botocore
 import boto3
@@ -83,8 +84,8 @@ def main():
         logger.setLevel(logging.INFO)
         logging.basicConfig(level=log_level, format='%(levelname)s: %(message)s')
 
-    # Path to your environment variables file
-    globus_env_file_path = os.path.expanduser('~/.config/globus_cli/globus_cli_env.sh')
+    # Path to environment variables file
+    globus_env_file_path = find_globus_env_file()
     boto3_env_file_path = os.path.expanduser('~/.config/openstack/boto3_env.sh')
 
     # Read the environment variables from the file
@@ -1098,6 +1099,18 @@ In both WGS and WTS, reports were generated with MultiQC for visualization of ke
     # with open(methods_file, "w", encoding="utf-8", errors="xmlcharrefreplace") as out_file:
     #     out_file.write(html)
     return html
+
+def find_globus_env_file():
+    base_dir = Path.home() / ".config" / "globus_cli"
+    pattern = "*_to_c3g-data-reposMOH-Q.sh"
+    matches = sorted(base_dir.glob(pattern))
+
+    if not matches:
+        raise FileNotFoundError(f"No env file found.\nSearched directory: {base_dir}\nExpected pattern: {pattern}"
+        )
+    if len(matches) > 1:
+        raise RuntimeError("Unexpected multiple env files found for this cluster:\n  - " + "\n  - ".join(str(m) for m in matches))
+    return matches[0]
 
 def read_env_file(file_path):
     """Function to read environment variables from a file"""

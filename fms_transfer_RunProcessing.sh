@@ -126,10 +126,28 @@ done
 if [[ $destination != Abacus ]]; then
   # Load globus module
   module load mugqic/globus-cli/3.24.0
-
   # Now using Robot account to do the transfer
+  ENV_DIR="$HOME/.config/globus_cli"
+
+  case "$destination" in
+    Cardinal)
+      ENV_FILE="$ENV_DIR/Abacus_to_Cardinal.sh"
+      ;;
+    Rorqual)
+      ENV_FILE="$ENV_DIR/Abacus_to_Rorqual.sh"
+      ;;
+    *)
+      echo "ERROR: No Globus env file defined for destination '$destination'." >&2
+      exit 1
+      ;;
+  esac
+
+  if [[ ! -f "$ENV_FILE" ]]; then
+    echo "ERROR: Expected environment file '$ENV_FILE' not found." >&2
+    exit 1
+  fi
   # shellcheck disable=SC1090
-  source ~/.config/globus_cli/globus_cli_env.sh
+  source "$ENV_FILE"
 
   # Generate and store a UUID for the submission-id
   sub_id="$(globus task generate-submission-id)"
