@@ -14,7 +14,6 @@ from pathlib import Path
 import signal
 import sys
 import time
-from pathlib import Path
 
 import botocore
 import boto3
@@ -231,6 +230,7 @@ def main():
         file_dict_rawdata_processing = {}
         ini_dict = {}
         metrics_dict = defaultdict(lambda: None)
+        src_abs_by_dest = {}
         # Check if the key metrics file exists
         key_metrics_file_outpath = remove_path_parts(key_metrics_file, out_base_path)
         if file_exists(s3_client, bucket_name, key_metrics_file_outpath):
@@ -272,7 +272,8 @@ def main():
                 file_dict,
                 file_dict_rawdata_freezeman,
                 file_dict_rawdata_processing,
-                metrics_dict
+                metrics_dict,
+                src_abs_by_dest
                 )
             for index, operation_object in enumerate(operation_list):
                 ini_dict[os.path.join(param_folder, f"{patient_name}.TumourPair.{index+1}.ini")] = operation_object["config_data"]
@@ -297,7 +298,8 @@ def main():
                 file_dict,
                 file_dict_rawdata_freezeman,
                 file_dict_rawdata_processing,
-                metrics_dict
+                metrics_dict,
+                src_abs_by_dest
                 )
             for index, operation_object in enumerate(operation_list):
                 match = re.search(r'-t (\w+)', operation_object["cmd_line"])
@@ -373,21 +375,12 @@ def main():
         if transferred_files:
             lines = []
             for file, _ in transferred_files:
-                for src_file, dest_file in file_dict.items():
-                    if dest_file == file:
-                        for base_path in in_base_path:
-                            if src_file.startswith(base_path):
-                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
-                for src_file, dest_file in file_dict_rawdata_freezeman.items():
-                    if dest_file == file:
-                        for base_path in in_base_path_abacus_rawdata_freezeman:
-                            if src_file.startswith(base_path):
-                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
-                for src_file, dest_file in file_dict_rawdata_processing.items():
-                    if dest_file == file:
-                        for base_path in in_base_path_abacus_rawdata_processing:
-                            if src_file.startswith(base_path):
-                                lines.append(f"{os.path.join(base_path, src_file)} {os.path.join(out_base_path, dest_file)}")
+                for dest_path, _ in transferred_files:
+                    src_abs = src_abs_by_dest.get(dest_path)
+                    if src_abs:
+                        lines.append(f"{src_abs} {os.path.join(out_base_path, dest_path)}")
+                    else:
+                        logger.warning(f"Missing source mapping for destination: {dest_path}")
             with open(args.list_file, 'w') as list_file:
                 list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
@@ -461,7 +454,8 @@ def deliver_dna(
     file_dict,
     file_dict_rawdata_freezeman,
     file_dict_rawdata_processing,
-    metrics_dict
+    metrics_dict,
+    src_abs_by_dest
     ):
 
     metric_mapping = {
@@ -498,43 +492,70 @@ def deliver_dna(
                 if location_endpoint == "abacus":
                     if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
-                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                        file_dict_rawdata_freezeman[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name 
+                        dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        file_dict_rawdata_freezeman[file_location] = dest_path
+                        src_abs_by_dest[dest_path] = file["location"]
                         continue
                     if file["location"].startswith(in_base_path_abacus_rawdata_processing):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                        file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        file_dict_rawdata_processing[file_location] = dest_path
+                        src_abs_by_dest[dest_path] = file["location"]
                         continue
                 # Usual case
+                used_base = None
                 for base_path in in_base_path:
                     if file["location"].startswith(base_path):
                         file_location = remove_path_parts(file["location"], base_path)
+                        used_base = base_path
                         break
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
                     # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), os.path.basename(file_location))
+                    dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), os.path.basename(file_location))
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # variants
                 elif variant_pattern.search(file_name):
-                    file_dict[file_location] = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # variants/caller_vcfs
                 elif cal_pattern.search(file_name):
-                    file_dict[file_location] = os.path.join(remove_path_parts(cal_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(cal_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # raw_cnv
                 elif "cnvkit.vcf.gz" in file_name:
-                    file_dict[file_location] = os.path.join(remove_path_parts(raw_cnv_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(raw_cnv_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # alignment
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
                     # Rename to remove extra part from dna bams
                     file_name = file_name.replace(".sorted.dup.recal", "")
-                    file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # svariants
                 elif svar_pattern.search(file_name):
-                    file_dict[file_location] = os.path.join(remove_path_parts(svar_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(svar_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # svariants/linx
                 elif "linx" in file_location:
-                    file_dict[file_location] = os.path.join(remove_path_parts(linx_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(linx_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # reports
                 elif reports_pattern.search(file_name):
                     match = reports_pattern.search(file_name)
@@ -545,7 +566,10 @@ def deliver_dna(
                     # Rename pcgr report
                     if "pcgr_acmg" in file_name:
                         file_name = file_name.replace("_acmg.grch38.flexdb", "")
-                    file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
                     match = pcgr_pattern.search(file_name)
@@ -553,7 +577,10 @@ def deliver_dna(
                         # Insert '_D' before the matched part to differentiate between DNA and RNA reports
                         start = match.start()
                         file_name = file_name[:start] + "_D" + file_name[start:]
-                    file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
             for metric in readset["metric"]:
                 metric_name = metric["name"]
                 metric_value = metric["value"]
@@ -580,7 +607,8 @@ def deliver_rna(
     file_dict,
     file_dict_rawdata_freezeman,
     file_dict_rawdata_processing,
-    metrics_dict
+    metrics_dict,
+    src_abs_by_dest
     ):
 
     metric_mapping = {
@@ -613,31 +641,46 @@ def deliver_rna(
                     if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                        file_dict_rawdata_freezeman[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        file_dict_rawdata_freezeman[file_location] = dest_path
+                        src_abs_by_dest[dest_path] = file["location"]
                         continue
                     if file["location"].startswith(in_base_path_abacus_rawdata_processing):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
-                        file_dict_rawdata_processing[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                        file_dict_rawdata_freezeman[file_location] = dest_path
+                        src_abs_by_dest[dest_path] = file["location"]
                         continue
                 # Usual case
+                used_base = None
                 for base_path in in_base_path:
                     if file["location"].startswith(base_path):
                         file_location = remove_path_parts(file["location"], base_path)
+                        used_base = base_path
                         break
                 # raw_data
                 if "MAIN/raw_reads/" in file_location or "GQ_STAGING" in file_location:
-                    file_dict[file_location] = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # expression
                 elif expression_pattern.search(file_name):
                     # Rename to include sample name in file
                     file_name = f"{sample_name}.{file_name}"
-                    file_dict[file_location] = os.path.join(remove_path_parts(expression_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(expression_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # variants
                 elif variant_pattern.search(file_name):
                     # Rename as it's delivered as filt and not flt
                     file_name = file_name.replace("flt", "filt")
-                    file_dict[file_location] = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(var_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # reports
                 elif reports_pattern.search(file_name):
                     if "putative_driver_fusions" in file_name:
@@ -654,7 +697,10 @@ def deliver_rna(
                         # Rename pcgr report
                         if "pcgr_acmg" in file_name:
                             file_name = file_name.replace("_acmg.grch38.flexdb", "")
-                    file_dict[file_location] = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(reports_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # reports/pcgr
                 elif pcgr_pattern.search(file_name):
                     match = pcgr_pattern.search(file_name)
@@ -664,12 +710,18 @@ def deliver_rna(
                         file_name = file_name[:start] + "_R" + file_name[start:]
                     # Rename to patient name instead of sample name
                     file_name = file_name.replace(sample_name, patient["name"])
-                    file_dict[file_location] = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(pcgr_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
                 # alignment has to go as last if because otehr regex files are located under alignment folder
                 elif "MAIN/alignment/" in file_location and not ignore_alignment:
                     # Rename to remove extra part from rna bams
                     file_name = file_name.replace("sorted.mdup.split.recal", "variants")
-                    file_dict[file_location] = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
+                    dest_path = os.path.join(remove_path_parts(alignment_folder, out_base_path), file_name)
+                    file_dict[file_location] = dest_path
+                    if used_base is not None:
+                        src_abs_by_dest[dest_path] = os.path.join(used_base, file_location)
             for metric in readset["metric"]:
                 metric_name = metric["name"]
                 metric_value = metric["value"]
