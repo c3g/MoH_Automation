@@ -374,13 +374,12 @@ def main():
 
         if transferred_files:
             lines = []
-            for file, _ in transferred_files:
-                for dest_path, _ in transferred_files:
-                    src_abs = src_abs_by_dest.get(dest_path)
-                    if src_abs:
-                        lines.append(f"{src_abs} {os.path.join(out_base_path, dest_path)}")
-                    else:
-                        logger.warning(f"Missing source mapping for destination: {dest_path}")
+            for dest_path, _ in transferred_files:
+                src_abs = src_abs_by_dest.get(dest_path)
+                if src_abs:
+                    lines.append(f"{src_abs} {os.path.join(out_base_path, dest_path)}")
+                else:
+                    logger.warning(f"Missing source mapping for destination: {dest_path}")
             with open(args.list_file, 'w') as list_file:
                 list_file.write('\n'.join(lines))
             for ini_file_name, ini_content in ini_dict.items():
