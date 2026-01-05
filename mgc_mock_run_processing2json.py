@@ -138,13 +138,13 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                                 {
                                     "location_uri": f"abacus://{bam_location_uri}",
                                     "file_name": f"{bam}",
-                                    "file_md5sum": compute_md5(bam),
+                                    "file_md5sum": compute_md5(bam_location_uri),
                                     "file_deliverable": True
                                     },
                                 {
                                     "location_uri": f"abacus://{bai_location_uri}",
                                     "file_name": f"{bai}",
-                                    "file_md5sum": compute_md5(bai),
+                                    "file_md5sum": compute_md5(bai_location_uri),
                                     "file_deliverable": True
                                     }
                                 ]
@@ -163,14 +163,14 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                             {
                                 "location_uri": f"abacus://{fastq1_location_uri}",
                                 "file_name": f"{fastq1}",
-                                "file_md5sum": compute_md5(fastq1),
+                                "file_md5sum": compute_md5(fastq1_location_uri),
                                 "file_extra_metadata": {"read_type": "R1"},
                                 "file_deliverable": True
                                 },
                             {
                                 "location_uri": f"abacus://{fastq2_location_uri}",
                                 "file_name": f"{fastq2}",
-                                "file_md5sum": compute_md5(fastq2),
+                                "file_md5sum": compute_md5(fastq2_location_uri),
                                 "file_extra_metadata": {"read_type": "R2"},
                                 "file_deliverable": True
                                 }
