@@ -74,11 +74,13 @@ echo "-> Processing $runid, file $input..."
 TIMESTAMP=$(date +%FT%H.%M.%S)
 
 if [ -s "$input" ]; then
+  run_processing_json=$path/$runid.json
   # Json creation from run csv file
   # shellcheck disable=SC2086
-  ~/moh_automation/run_processing2json.py $run_processing2json_args --input $input --output $path/$runid.json
-  chmod 664 "$path/$runid.json"
-  ~/moh_automation/pt_check_sample.sh $path/$runid.json
+  ~/moh_automation/run_processing2json.py $run_processing2json_args --input $input --output $run_processing_json
+  chmod 664 "$run_processing_json"
+  # Sample check before ingestion: make sure sample name is correct aka an existing one is not renamed
+  ~/moh_automation/pt_check_sample.sh -i $run_processing_json
   # Using client to add new runs to database
   # shellcheck disable=SC2086
   ret="$(pt-cli ingest run_processing --input-json $path/$runid.json 2>&1 || true)"
