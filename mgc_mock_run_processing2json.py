@@ -4,6 +4,7 @@ import argparse
 import json
 import re
 import csv
+import hashlib
 import os
 import logging
 from datetime import datetime
