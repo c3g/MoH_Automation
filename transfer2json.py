@@ -136,7 +136,7 @@ def jsonify_run_processing_transfer(batch_file, source, destination, output, ope
         }
     with open(batch_file, 'r') as file:
         for line in file:
-            if line.startswith(("/lb/robot/research/processing/novaseq/20", "/lb/robot/research/freezeman-processing/novaseqx/20")):
+            if line.startswith(("/lb/robot/research/processing/novaseq/20", "/lb/robot/research/freezeman-processing/novaseqx/20", "/lb/project/mugqic/projects/MOH/GQ_STAGING/mgc_mock_runs")):
                 fields = line.split(" ")
                 if ".bam" in line:
                     path_l = fields[0].split('/')
