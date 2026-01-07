@@ -180,11 +180,11 @@ def jsonify_run_processing_transfer(batch_file, source, destination, output, ope
             line = raw_line.strip()
             pfx = _matched_prefix(line)
             if not pfx:
-                continue  # skip lines that are not one of the known prefixes
+                continue # skip lines that are not one of the known prefixes
 
             fields = line.split()
             if len(fields) < 2:
-                continue  # malformed line
+                continue # malformed line
 
             src_path = fields[0]
             dest_path = fields[1]
@@ -196,6 +196,7 @@ def jsonify_run_processing_transfer(batch_file, source, destination, output, ope
             src_location_uri = f"abacus://{src_path}"
             dest_location_uri = f"{destination}://{dest_path.strip()}"
 
+            # BAM CASE
             if ".bam" in src_path:
                 try:
                     readset_name = f"{path_l[10 + offset]}.{path_l[11 + offset].replace('run', '')}"
@@ -204,15 +205,34 @@ def jsonify_run_processing_transfer(batch_file, source, destination, output, ope
 
                 _append_file(json_output, readset_name, src_location_uri, dest_location_uri)
 
+            # FASTQ CASE
             elif ".fastq" in src_path:
                 try:
-                    run_name_l = path_l[7 + offset].split('_')
+                    run_part = path_l[7 + offset]
                     lane = path_l[8 + offset].split('.')[1]
                     sample_name = path_l[10 + offset].split('_')[1]
                 except (IndexError, ValueError):
                     continue
 
-                readset_name = f"{sample_name}.{run_name_l[1]}_{run_name_l[2]}_{lane}"
+                is_mgc = pfx.endswith("mgc_mock_runs")
+
+                if is_mgc:
+                    try:
+                        _, instrument_full = run_part.split('_')
+                        instrument = instrument_full.split('-')[0]
+                    except ValueError:
+                        continue
+
+                    readset_name = f"{sample_name}.{instrument}_{lane}"
+
+                else:
+                    # regular case
+                    parts = run_part.split('_')
+                    if len(parts) < 3:
+                        continue
+                    instrument = parts[1]
+                    runnum = parts[2]
+                    readset_name = f"{sample_name}.{instrument}_{runnum}_{lane}"
 
                 _append_file(json_output, readset_name, src_location_uri, dest_location_uri)
 
