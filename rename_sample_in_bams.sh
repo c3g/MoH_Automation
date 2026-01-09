@@ -81,7 +81,7 @@ echo "Renaming SM:${old} -> SM:${new}"
 # Iterate and process each BAM
 for bam in "${bam_files[@]}"; do
   base="$(basename "$bam")"
-  bai="${bam}.bai"
+  bai="${bam%.bam}.bai"
   tmp="${bam%.bam}.tmp.bam"
 
   echo "  Processing: $base"
