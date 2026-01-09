@@ -63,7 +63,7 @@ done
 
 # --- Process BAM files safely (handles spaces with NUL separation) ---
 shopt -s nullglob
-mapfile -d '' bam_files < <(find "$workdir" -maxdepth 1 -type f -name '*.bam' -print0)
+bam_files=( "$workdir"/*.bam )
 shopt -u nullglob
 
 if (( ${#bam_files[@]} == 0 )); then
