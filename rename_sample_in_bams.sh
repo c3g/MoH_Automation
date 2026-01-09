@@ -115,7 +115,7 @@ for bam in "${bam_files[@]}"; do
   fi
 
   # Create new BAI index (real file) for the new BAM.
-  if ! samtools index -b "$bam"; then
+  if ! samtools index -b "$bam" "$bai"; then
     echo "Error: indexing failed for $base" >&2
     exit 1
   fi
