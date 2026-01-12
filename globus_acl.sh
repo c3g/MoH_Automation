@@ -128,7 +128,50 @@ if ! globus endpoint permission list "$ENDPOINT_ID" --format json >/dev/null 2>&
 fi
 vlog "ACL subsystem reachable via 'globus endpoint permission list'."
 
-# ---- Load principals (no mapfile)
+
+# ---- Cache all existing ACLs once (JSON)
+ALL_ACLS_JSON="$(globus endpoint permission list "$ENDPOINT_ID" --format json 2>/dev/null || echo '{}')"
+
+# ---- Helper: normalize directory path (ensure trailing '/')
+norm_dir_path() {
+  local p="$1"
+  echo "${p%/}/"
+}
+
+# ---- Helper: test if an exact ACL already exists
+# Args: endpoint_id path principal_type principal_uuid permission
+acl_exists_exact() {
+  local ep="$1" path="$2" ptype="$3" puuid="$4" perm="$5"
+  local path_norm
+  path_norm="$(norm_dir_path "$path")"
+  echo "$ALL_ACLS_JSON" \
+    | jq -e --arg path "$path_norm" --arg ptype "$ptype" --arg puuid "$puuid" --arg perm "$perm" '
+        .DATA[]?
+        | select(.path == $path
+                 and .principal_type == $ptype
+                 and .principal == $puuid
+                 and .permissions == $perm)
+      ' >/dev/null
+}
+
+# ---- Helper: test if a superset ACL exists (rw satisfies r)
+# Returns success if requested 'r' and existing rule is 'rw' on same path and principal
+acl_exists_superset() {
+  local ep="$1" path="$2" ptype="$3" puuid="$4" perm="$5"
+  [[ "$perm" != "r" ]] && return 1  # only applicable when requesting 'r'
+  local path_norm
+  path_norm="$(norm_dir_path "$path")"
+  echo "$ALL_ACLS_JSON" \
+    | jq -e --arg path "$path_norm" --arg ptype "$ptype" --arg puuid "$puuid" '
+        .DATA[]?
+        | select(.path == $path
+                 and .principal_type == $ptype
+                 and .principal == $puuid
+                 and .permissions == "rw")
+      ' >/dev/null
+}
+
+# ---- Load principals
 PRINCIPALS=()
 if [[ -n "$USERS_FILE" ]]; then
   while IFS= read -r u || [[ -n "$u" ]]; do
@@ -148,6 +191,7 @@ fi
 $VERBOSE && { log "Principals:"; for p in "${PRINCIPALS[@]}"; do echo "  - $p"; done; }
 
 # ---- Validate principals and print names
+PRINCIPAL_IDS=()
 for USER in "${PRINCIPALS[@]}"; do
   if [[ "$PRINCIPAL_TYPE" == "identity" ]]; then
     ID_JSON="$(globus get-identities "$USER" --format json 2>/dev/null || true)"
@@ -156,6 +200,7 @@ for USER in "${PRINCIPALS[@]}"; do
     USERNAME="$(echo "$ID_JSON" | jq -r '.identities[0].username // empty')"
     [[ -z "$ID" ]] && die "Identity not found or invalid: $USER"
     [[ -z "$FULLNAME" ]] && FULLNAME="<no name available>"
+    PRINCIPAL_IDS+=( "$ID" )
     log "Validated identity: $USER"
     log "  → UUID:      $ID"
     log "  → Username:  $USERNAME"
@@ -167,6 +212,7 @@ for USER in "${PRINCIPALS[@]}"; do
     fi
     GROUP_NAME="$(echo "$GROUP_JSON" | jq -r '.name // empty')"
     [[ -z "$GROUP_NAME" ]] && GROUP_NAME="<unnamed group>"
+    PRINCIPAL_IDS+=( "$USER" )  # group input is already a UUID
     log "Validated group: $USER"
     log "  → Group Name: $GROUP_NAME"
   fi
@@ -253,20 +299,34 @@ log "Starting ACL operations in 3 seconds. Ctrl+C to abort."
 sleep 3
 
 ERRORS=0
-for USER in "${PRINCIPALS[@]}"; do
+for i in "${!PRINCIPALS[@]}"; do
+  USER="${PRINCIPALS[$i]}"
+  USER_ID="${PRINCIPAL_IDS[$i]}"
   log "Principal: $USER"
   for dir in "${FILTERED_DIRS[@]}"; do
-    TARGET="${ENDPOINT_ID}:${dir}"
+    DIR_FOR_ACL="$(norm_dir_path "$dir")"
+    TARGET="${ENDPOINT_ID}:${DIR_FOR_ACL}"
+    # 1) Exact duplicate check
+    if acl_exists_exact "$ENDPOINT_ID" "$DIR_FOR_ACL" "$PRINCIPAL_TYPE" "$USER_ID" "$PERMISSION"; then
+      log "  → SKIP (already present): $PERMISSION for $PRINCIPAL_TYPE '$USER' on $DIR_FOR_ACL"
+      continue
+    fi
+    # 2) Superset check (rw satisfies r)
+    if acl_exists_superset "$ENDPOINT_ID" "$DIR_FOR_ACL" "$PRINCIPAL_TYPE" "$USER_ID" "$PERMISSION"; then
+      log "  → SKIP (superset exists: rw): requested '$PERMISSION' for $PRINCIPAL_TYPE '$USER' on $DIR_FOR_ACL"
+      continue
+    fi
+    # 3) Create if not present
     if $DRY_RUN; then
       vlog "DRY-RUN: globus endpoint permission create '$TARGET' --permissions '$PERMISSION' --$PRINCIPAL_TYPE '$USER'"
       continue
     fi
-    $VERBOSE && log "Setting $PERMISSION for $PRINCIPAL_TYPE '$USER' on $dir"
+    $VERBOSE && log "Setting $PERMISSION for $PRINCIPAL_TYPE '$USER' on $DIR_FOR_ACL"
     if ! globus endpoint permission create \
            "$TARGET" \
            --permissions "$PERMISSION" \
            --"$PRINCIPAL_TYPE" "$USER"; then
-      echo "ERROR: Failed ACL on $dir (principal: $USER)" >&2
+      echo "ERROR: Failed ACL on $DIR_FOR_ACL (principal: $USER)" >&2
       ((ERRORS++))
     fi
   done
