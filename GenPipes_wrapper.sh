@@ -148,7 +148,7 @@ cd "$path"
 while IFS=, read -r readset_file pair_file extra_ini; do
   timestamp=$(date "+%Y-%m-%dT%H.%M.%S")
   timestamp_find_format=$(date "+%Y-%m-%d %H:%M:%S")
-  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX|CQ)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
+  patient=$(awk 'NR==2, match($1, /^((MoHQ-(JG|HM|CM|GC|MU|MR|IQ|XX|CQ|CS)-\w+)-\w+)/) {print substr($1, RSTART, RLENGTH)}' "$readset_file")
   echo "-> Running GenPipes for ${patient}..."
   # GenPipes call
   if test "$pipeline" == rnaseq_light; then
