@@ -124,7 +124,7 @@ fi
 
 # ---- Pre-flight: ACL subsystem reachable (authoritative for your environment)
 if ! globus endpoint permission list "$ENDPOINT_ID" --format json >/dev/null 2>&1; then
-  die "ACL subsystem not accessible for this collection. Check session consent or your privileges."
+  die "ACL subsystem not accessible for this collection. Check session consent or your privileges. Run globus endpoint permission list $ENDPOINT_ID to verify."
 fi
 vlog "ACL subsystem reachable via 'globus endpoint permission list'."
 
