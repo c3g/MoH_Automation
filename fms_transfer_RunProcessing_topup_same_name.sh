@@ -102,24 +102,17 @@ jq -r '
   .sample_name as $sample_name | 
   .readset[]? | 
   .readset_name as $readset_name | 
-  .readset_lane as $readset_lane | 
   .file[]? | 
   select(.location_uri != null) | 
-  "\($sample_name) \($readset_name) \($readset_lane) \(.location_uri | sub("^abacus://"; ""))"
-' "$run_processing_json" | while read -r sample_name readset_name readset_lane file; do
+  "\($sample_name) \($readset_name) \(.location_uri | sub("^abacus://"; ""))"
+' "$run_processing_json" | while read -r sample_name readset_name file; do
   file_basename=$(basename "$file")
   # file_without_extension="${file_basename%%.sorted.*}"
   file_extension="${file_basename##*.}"
   new_filename="${readset_name}.sorted.${file_extension}"
-  if [[ ($file == *.bam || $file == *.bai) && "$file" != *"_L00${readset_lane}.sorted.${file_extension}" ]]; then
-    echo "${file#"$SRC_BASE_PATH"} ${DEST_LOC#"$DEST_BASE_PATH"}/$sample_name/$new_filename" >> "$TEMP/$LISTFILE"
-    echo "$file $DEST_LOC/$sample_name/$new_filename" >> "$TEMP/$LISTFILE_FULLPATH"
-    echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
-  else
-    echo "${file#"$SRC_BASE_PATH"} ${DEST_LOC#"$DEST_BASE_PATH"}/$sample_name/$file_basename" >> "$TEMP/$LISTFILE"
-    echo "$file $DEST_LOC/$sample_name/$file_basename" >> "$TEMP/$LISTFILE_FULLPATH"
-    echo "$file,$sample_name/$file_basename" >> "$TEMP/$LOGFILE"
-  fi
+  echo "${file#"$SRC_BASE_PATH"} ${DEST_LOC#"$DEST_BASE_PATH"}/$sample_name/$new_filename" >> "$TEMP/$LISTFILE"
+  echo "$file $DEST_LOC/$sample_name/$new_filename" >> "$TEMP/$LISTFILE_FULLPATH"
+  echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
 done
 
 exit 1
