@@ -115,8 +115,6 @@ jq -r '
   echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
 done
 
-exit 1
-
 # echo "$TEMP/$LOGFILE $DEST_LOG_LOC/$LOGFILE" >> "$TEMP/$LISTFILE"
 
 if [[ $destination != Abacus ]]; then
