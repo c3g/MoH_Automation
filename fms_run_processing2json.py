@@ -375,6 +375,12 @@ def main():
     output = args.output or f"{os.path.basename(args.input)}.json"
     lanes = args.lane
 
+    json_candidates = glob.glob(os.path.join(args.input, "*.json"))
+    json_main = [p for p in json_candidates if "_L" not in os.path.basename(p)]
+    if not json_main:
+        raise FileNotFoundError(f"No main .json file (without lane suffix) found in folder {args.input}.")
+    fms_json = load_json_file(json_main[0])
+
     fms_json = load_json_file(glob.glob(os.path.join(args.input, "*.json"))[0])
     if not fms_json:
         return
