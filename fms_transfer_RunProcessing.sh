@@ -3,7 +3,7 @@
 THIS_SCRIPT=$(basename "$0")
 
 usage() {
-  echo "script usage: $THIS_SCRIPT -h [-l run_processing_json] [-d destination] [-s sample]"
+  echo "script usage: $THIS_SCRIPT -h [-r run_processing_json] [-d destination]"
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <run_processing_json>         Run Processing json."
