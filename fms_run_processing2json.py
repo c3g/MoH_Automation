@@ -381,10 +381,6 @@ def main():
         raise FileNotFoundError(f"No main .json file (without lane suffix) found in folder {args.input}.")
     fms_json = load_json_file(json_main[0])
 
-    fms_json = load_json_file(glob.glob(os.path.join(args.input, "*.json"))[0])
-    if not fms_json:
-        return
-
     lanes_json_files = glob.glob(os.path.join(args.input, "report", "*.run_validation_report.json"))
     lanes_json = {os.path.basename(file): load_json_file(file) for file in lanes_json_files}
 
