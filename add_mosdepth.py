@@ -3,7 +3,16 @@
 import argparse
 import json
 from pathlib import Path
+from datetime import datetime
 
+def validate_timestamp(value: str) -> str:
+    try:
+        datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
+        return value
+    except ValueError:
+        raise argparse.ArgumentTypeError(
+            "Timestamp must be in format: YYYY-MM-DD HH:MM:SS"
+        )
 
 def parse_mosdepth_metric(summary_path: Path) -> str:
     """
@@ -99,8 +108,18 @@ def main():
     )
 
     parser.add_argument("--sample-name", required=True)
-    parser.add_argument("--job-start", required=True)
-    parser.add_argument("--job-stop", required=True)
+    parser.add_argument(
+        "--job-start",
+        required=True,
+        type=validate_timestamp,
+        help='Job start timestamp (format: "YYYY-MM-DD HH:MM:SS")'
+    )
+    parser.add_argument(
+        "--job-stop",
+        required=True,
+        type=validate_timestamp,
+        help='Job stop timestamp (format: "YYYY-MM-DD HH:MM:SS")'
+    )
     parser.add_argument("--summary-txt", required=True)
     parser.add_argument("--tagged-json", required=True)
 
