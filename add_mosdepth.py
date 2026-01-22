@@ -5,14 +5,24 @@ import json
 from pathlib import Path
 from datetime import datetime
 
-def validate_timestamp(value: str) -> str:
+def join_and_validate(date, time):
+    """
+    Join date and time strings and validate the format.
+    Args:
+        date (str): Date string in YYYY-MM-DD format.
+        time (str): Time string in HH:MM:SS format.
+    Returns:
+        str: Combined timestamp string.
+    """
+    timestamp = f"{date} {time}"
     try:
-        datetime.strptime(value, "%Y-%m-%d %H:%M:%S")
-        return value
+        datetime.strptime(timestamp, "%Y-%m-%d %H:%M:%S")
     except ValueError:
-        raise argparse.ArgumentTypeError(
-            "Timestamp must be in format: YYYY-MM-DD HH:MM:SS"
+        raise SystemExit(
+            f"Invalid timestamp '{timestamp}' (expected YYYY-MM-DD HH:MM:SS)"
         )
+    return timestamp
+
 
 def parse_mosdepth_metric(summary_path: Path) -> str:
     """
@@ -111,14 +121,16 @@ def main():
     parser.add_argument(
         "--job-start",
         required=True,
-        type=validate_timestamp,
-        help='Job start timestamp (format: "YYYY-MM-DD HH:MM:SS")'
+        nargs=2,
+        metavar=("DATE", "TIME"),
+        help="Job start time (YYYY-MM-DD HH:MM:SS)"
     )
     parser.add_argument(
         "--job-stop",
         required=True,
-        type=validate_timestamp,
-        help='Job stop timestamp (format: "YYYY-MM-DD HH:MM:SS")'
+        nargs=2,
+        metavar=("DATE", "TIME"),
+        help="Job stop time (YYYY-MM-DD HH:MM:SS)"
     )
     parser.add_argument("--summary-txt", required=True)
     parser.add_argument("--tagged-json", required=True)
@@ -141,11 +153,15 @@ def main():
     with tagged_json_path.open() as f:
         tagged = json.load(f)
 
+
+    job_start = join_and_validate(*args.job_start)
+    job_stop  = join_and_validate(*args.job_stop)
+
     # Build job object template
     mosdepth_job = construct_mosdepth_job(
         sample_name=args.sample_name,
-        job_start=args.job_start,
-        job_stop=args.job_stop,
+        job_start=job_start,
+        job_stop=job_stop,
         summary_path=summary_path,
         metric=metric_value,
     )
