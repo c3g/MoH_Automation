@@ -24,6 +24,13 @@ while getopts 'hc:p::t:i:' OPTION; do
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
+      elif [[ $cluster == narval ]]; then
+        path="/lustre06/project/6084703/C3G/projects/MOH"
+        scheduler="slurm"
+        max_queue="500"
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
+          export MUGQIC_INSTALL_HOME_DEV=/lustre06/project/6007512/C3G/analyste_dev
+        fi
       elif [[ $cluster == cardinal ]]; then
         path="/project/60007/MOH/MAIN"
         scheduler="slurm"
@@ -43,7 +50,7 @@ while getopts 'hc:p::t:i:' OPTION; do
           export MUGQIC_INSTALL_HOME_PRIVATE=/lb/project/mugqic/analyste_private
         fi
       else
-        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'rorqual' or 'cardinal'\n"
+        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'rorqual', 'narval, or 'cardinal'\n"
         usage
       fi
       # echo "cluster: $cluster"
@@ -128,6 +135,11 @@ export MUGQIC_PIPELINES_HOME=${path}/genpipes_moh/genpipes
 
 if [[ $cluster == rorqual ]]; then
   cluster_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/rorqual.ini"
+  if [ -z "${RAP_ID:-}" ]; then
+    export RAP_ID=rrg-bourqueg-ad
+  fi
+elif [[ $cluster == narval ]]; then
+  cluster_ini="$MUGQIC_PIPELINES_HOME/pipelines/common_ini/narval.ini"
   if [ -z "${RAP_ID:-}" ]; then
     export RAP_ID=rrg-bourqueg-ad
   fi

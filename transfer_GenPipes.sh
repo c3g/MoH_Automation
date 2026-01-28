@@ -95,6 +95,17 @@ if [[ $HOSTNAME == "abacus"* ]]; then
   SRC_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
   # Abacus name for json creation
   SRC='abacus'
+elif [[ $HOSTNAME == "narval"* ]]; then
+  # Narval MOH
+  SRC_MOH="/lustre06/project/6084703/C3G/projects/MOH"
+  # Narval main folder location
+  SRC_MAIN="$SRC_MOH/MAIN"
+  # Narval log file location
+  SRC_LOG_LOC="$SRC_MOH/log_files/transfer"
+  # Narval Endpoint
+  SRC_EP='e2fbf36a-90da-4113-9a57-390c8a4ea85f'
+  # Narval name for json creation
+  SRC='narval'
 elif [[ $HOSTNAME == "cardinal"* ]]; then
   # Cardinal MOH
   SRC_MOH="/project/def-c3g/MOH"

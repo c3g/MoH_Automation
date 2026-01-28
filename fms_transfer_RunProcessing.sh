@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <run_processing_json>         Run Processing json."
-  echo " -d <destination>                 Destination for the transfer (either Rorqual or Cardinal or Abacus)."
+  echo " -d <destination>                 Destination for the transfer (either Rorqual or Narval or Cardinal or Abacus)."
   exit 1
   }
 
@@ -34,8 +34,8 @@ if [ ! "$run_processing_json" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if ! [[ $destination =~ Cardinal|Rorqual|Abacus ]]; then
-    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Cardinal or Abacus.\n"
+if ! [[ $destination =~ Cardinal|Rorqual|Abacus|Narval ]]; then
+    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Narval, Cardinal or Abacus.\n"
     usage
 fi
 
@@ -55,6 +55,11 @@ if [[ $destination = Rorqual ]]; then
     # Rorqual main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Rorqual log file location
+    DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+if [[ $destination = Narval ]]; then
+    # Narval main folder location
+    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+    # Narval log file location
     DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
@@ -135,6 +140,9 @@ if [[ $destination != Abacus ]]; then
       ;;
     Rorqual)
       ENV_FILE="$ENV_DIR/Abacus_to_Rorqual.sh"
+      ;;
+    Narval)
+      ENV_FILE="$ENV_DIR/Abacus_to_Narval.sh"
       ;;
     *)
       echo "ERROR: No Globus env file defined for destination '$destination'." >&2

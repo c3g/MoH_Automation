@@ -56,6 +56,11 @@ elif [[ $location == "cardinal"* ]]; then
     SRC_MOH="/project/def-c3g/MOH"
     # Cardinal delivery folder location
     SRC_DELIVERY="$SRC_MOH/DELIVERY"
+elif [[ $location == "narval"* ]]; then
+    # Narval MOH
+    SRC_MOH="/lustre06/project/6084703/C3G/projects/MOH"
+    # Narval deliver folder location
+    SRC_DELIVERY="$SRC_MOH/DELIVERY"
 else
     echo "ERROR: Unknown cluster. Exiting."
     exit 1
