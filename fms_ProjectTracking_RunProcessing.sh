@@ -6,7 +6,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <runfolder>                   RunFolder found in abacus under /lb/robot/research/freezeman-processing/<sequencer>/<year>/<runfolder>."
-  echo " -d <destination>                 Destination of the transfer (Abacus, Cardinal or Rorqual)."
+  echo " -d <destination>                 Destination of the transfer (Abacus, Cardinal, Rorqual, or Narval)."
   echo " -n <nucleic_acid_type>           nucleic_acid_type to be considered for the transfer (either DNA or RNA, Default: ALL)."
   echo " -l <lane>                        Lane(s) to be ingested (default: all)."
   echo " -s <sample>                      Sample Name(s) (as they appear in the json file from Freezeman) (default: all)."
