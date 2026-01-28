@@ -46,39 +46,39 @@ DEST_EP=$(jq -r --arg dest "$destination_lowercase" '.robot_endpoints[$dest].uui
 DEST_BASE_PATH=$(jq -r --arg dest "$destination_lowercase" '.robot_endpoints[$dest].base_path[0]' "$ROBOT_EP")
 
 if [[ $destination = Rorqual ]]; then
-    # Rorqual Endpoint
-    # DEST_EP='f19f13f5-5553-40e3-ba30-6c151b9d35d4'
-    # Rorqual_MoH_Robot Endpoint
-    # DEST_EP='b8ae5665-590d-45b9-ae83-d1dfde08e7d0'
-    # Rorqual base path
-    # DEST_BASE_PATH="/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
-    # Rorqual main folder location
-    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
-    # Rorqual log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
-if [[ $destination = Narval ]]; then
-    # Narval main folder location
-    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
-    # Narval log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+  # Rorqual Endpoint
+  # DEST_EP='f19f13f5-5553-40e3-ba30-6c151b9d35d4'
+  # Rorqual_MoH_Robot Endpoint
+  # DEST_EP='b8ae5665-590d-45b9-ae83-d1dfde08e7d0'
+  # Rorqual base path
+  # DEST_BASE_PATH="/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
+  # Rorqual main folder location
+  DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+  # Rorqual log file location
+  DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+elif [[ $destination = Narval ]]; then
+  # Narval main folder location
+  DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+  # Narval log file location
+  DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
-    # Cardinal Endpoint
-    # DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
-    # Cardinal_MoH_Robot Endpoint
-    # DEST_EP='995863d1-97fe-4af2-bc48-c9bf91c33f08'
-    # Cardinal base path
-    # DEST_BASE_PATH="/project/60007/MOH"
-    # Cardinal main folder location
-    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
-    # Cardinal log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
+  # Cardinal Endpoint
+  # DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
+  # Cardinal_MoH_Robot Endpoint
+  # DEST_EP='995863d1-97fe-4af2-bc48-c9bf91c33f08'
+  # Cardinal base path
+  # DEST_BASE_PATH="/project/60007/MOH"
+  # Cardinal main folder location
+  DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+  # Cardinal log file location
+  DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Abacus ]]; then
-    # Abacus Endpoint
-    DEST_EP=''
-    # Abacus main folder location
-    DEST_LOC="/lb/project/mugqic/projects/MOH/MAIN/raw_reads"
-    # Abacus log file location
-    DEST_LOG_LOC="/lb/project/mugqic/projects/MOH/log_files/transfer"
+  # Abacus Endpoint
+  DEST_EP=''
+  # Abacus main folder location
+  DEST_LOC="/lb/project/mugqic/projects/MOH/MAIN/raw_reads"
+  # Abacus log file location
+  DEST_LOG_LOC="/lb/project/mugqic/projects/MOH/log_files/transfer"
 fi
 
 # Abacus Endpoint
