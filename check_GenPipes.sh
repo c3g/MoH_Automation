@@ -143,7 +143,7 @@ MOH_MAIN="$MOH_path/MAIN"
 genpipes_submission_folder=$(dirname "$readset_file")
 
 echo "-> Checking $genpipes_submission_folder..."
-if [[ $cluster == rorqual ]] || [[ $cluster == rorqual ]] || [[ $cluster == cardinal ]] ; then
+if [[ $cluster == rorqual ]] || [[ $cluster == narval ]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
   $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1
