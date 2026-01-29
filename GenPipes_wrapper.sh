@@ -25,7 +25,7 @@ while getopts 'hc:p::t:i:' OPTION; do
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == narval ]]; then
-        path="/lustre06/project/6084703/C3G/projects/MOH"
+        path="/lustre06/project/6084703/C3G/projects/MOH/MAIN"
         scheduler="slurm"
         max_queue="500"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
