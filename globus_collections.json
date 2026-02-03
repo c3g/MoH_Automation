@@ -31,6 +31,10 @@
     "narval": {
       "uuid": "e2fbf36a-90da-4113-9a57-390c8a4ea85f",
       "base_path": ["/lustre06/project/6084703/C3G/projects/MOH"]
+    },
+    "fir": {
+      "uuid": "TBD",
+      "base_path": ["/project/6007512/C3G/projects/MOH"]
     }
   }
 }
