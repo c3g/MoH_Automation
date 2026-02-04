@@ -76,8 +76,13 @@ while getopts 'hc:j:r:l:' OPTION; do
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}"]; then
           export MUGQIC_INSTALL_HOME_DEV=/lustre06/project/6007512/C3G/analyste_dev
         fi
+      elif [[ $cluster == fir ]]; then
+        MOH_path="/project/6007512/C3G/projects/MOH"
+        if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}"]; then
+          export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
+        fi
       else
-        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'rorqual', 'narval', or 'cardinal'\n"
+        echo -e "ERROR: Invalid cluster: '$cluster'. It has to be either 'abacus', 'rorqual', 'narval', 'fir', or 'cardinal'\n"
         usage
       fi
     ;;
@@ -143,7 +148,7 @@ MOH_MAIN="$MOH_path/MAIN"
 genpipes_submission_folder=$(dirname "$readset_file")
 
 echo "-> Checking $genpipes_submission_folder..."
-if [[ $cluster == rorqual ]] || [[ $cluster == narval ]] || [[ $cluster == cardinal ]] ; then
+if [[ $cluster == rorqual ]] || [[ $cluster == narval ]] || [[ $cluster == fir]] || [[ $cluster == cardinal ]] ; then
   log_report_file="${job_list}.tsv"
   # shellcheck disable=SC2046,SC2086
   $MOH_MAIN/genpipes_moh/genpipes/utils/log_report.py $(readlink -f $job_list) --tsv $log_report_file 2>&1

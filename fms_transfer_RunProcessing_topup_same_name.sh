@@ -34,8 +34,8 @@ if [ ! "$run_processing_json" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if ! [[ $destination =~ Cardinal|Rorqual|Abacus ]]; then
-    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Cardinal or Abacus.\n"
+if ! [[ $destination =~ Cardinal|Rorqual|Abacus|Fir|Narval ]]; then
+    echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Narval, Fir, Cardinal or Abacus.\n"
     usage
 fi
 
