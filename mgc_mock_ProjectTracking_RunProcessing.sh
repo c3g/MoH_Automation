@@ -6,7 +6,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <runid>                       RunID found in abacus under /lb/robot/research/processing/novaseq."
-  echo " -d <destination>                 Destination of the transfer (Abacus, Cardinal or Rorqual)."
+  echo " -d <destination>                 Destination of the transfer (Abacus, Cardinal, Narval, Fir or Rorqual)."
   echo " -l <lane>                        Lane(s) to be ingested (default: all)."
   echo " -s <sample>                      Sample Name(s) (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: all)."
   echo " -x <xsample>                     Sample Name(s) to be EXCLUDED (as they appear in the file <runid>-run.align_bwa_mem.csv) (default: none)."
