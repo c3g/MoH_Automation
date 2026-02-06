@@ -20,21 +20,21 @@ while getopts 'hc:p::t:i:' OPTION; do
         path="/project/6007512/C3G/projects/MOH_PROCESSING/MAIN"
         # path="/scratch/stretenp/tmp/MoH_GenPipes"
         scheduler="slurm"
-        max_queue="500"
+        max_queue="1000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == narval ]]; then
         path="/lustre06/project/6084703/C3G/projects/MOH/MAIN"
         scheduler="slurm"
-        max_queue="500"
+        max_queue="1000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/lustre06/project/6007512/C3G/analyste_dev
         fi
       elif [[ $cluster == fir ]]; then
         path="/project/6007512/C3G/projects/MOH/MAIN"
         scheduler="slurm"
-        max_queue="500"
+        max_queue="1000"
         if [ -z "${MUGQIC_INSTALL_HOME_DEV:-}" ]; then
           export MUGQIC_INSTALL_HOME_DEV=/project/6007512/C3G/analyste_dev
         fi
