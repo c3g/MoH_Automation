@@ -25,7 +25,7 @@ Behavior:
   - Replacement only touches headers (@RG SM:), alignments are not modified.
 
 Requires:
-  - samtools, sed
+  - samtools, awk
 
 Example:
   rename_sample_in_bams.sh \
@@ -76,18 +76,12 @@ if [[ ! -d "$workdir" ]]; then
 fi
 
 # --- Check dependencies ---
-for cmd in samtools sed; do
+for cmd in samtools awk; do
   if ! command -v "$cmd" >/dev/null 2>&1; then
     echo "Error: Required command not found in PATH: $cmd" >&2
     exit 127
   fi
 done
-
-# --- Prepare escaped patterns for sed ---
-# Escape regex metacharacters in $old for the pattern (match)
-old_esc_re=$(printf '%s' "$old" | sed -e 's/[][.^$*+?{}()|\\/]/\\&/g')
-# Escape '&' in $new for the replacement (avoid & = whole match)
-new_esc_sub=$(printf '%s' "$new" | sed -e 's/[&\\]/\\&/g')
 
 # --- Process BAM files ---
 shopt -s nullglob
@@ -111,33 +105,30 @@ for bam in "${bam_files[@]}"; do
   echo "  Processing: $base"
 
   # Preflight: only proceed if header actually contains @RG lines with SM:OLD
-  if ! samtools view -H "$bam" | grep -qE $'^@RG\b.*\tSM:'"$old_esc_re"$'(\t|$)'; then
+  if ! samtools view -H "$bam" | grep -qE $'^@RG\b.*\tSM:'"$old"$'(\t|$)'; then
     echo "    Skipped: no @RG line with SM:${old} found in header."
     continue
   fi
 
   # Reheader with robust, order-agnostic SM replacement in @RG lines:
   #   ^(@RG([^\t]*\t)*)SM:OLD(\t|$)  ->  \1SM:NEW\3
-  if ! samtools view -H "$bam" \
+  if ! samtools view -H in.bam \
       | awk -v old="$old" -v new="$new" -F'\t' '
           BEGIN{OFS="\t"}
           /^@RG/ {
-            for (i=1;i<=NF;i++) {
-              if ($i ~ /^SM:/ && substr($i,4)==old)
-                $i="SM:" new
-            }
-            print; next
+            for (i=1;i<=NF;i++) 
+              if ($i ~ /^SM:/ && substr($i,4)==old) $i="SM:" new
           }
-          {print}
+          { print }
         ' \
-      | samtools reheader - "$bam" > "$tmp"; then
+      | samtools reheader - in.bam > out.bam; then
     echo "Error: reheader failed for $base" >&2
     rm -f "$tmp" 2>/dev/null || true
     exit 1
   fi
 
   # Verify change took effect in tmp
-  if ! samtools view -H "$tmp" | grep -qE $'^@RG\b.*\tSM:'"$new_esc_sub"$'(\t|$)'; then
+  if ! samtools view -H "$tmp" | grep -qE $'^@RG\b.*\tSM:'"$new"$'(\t|$)'; then
     echo "Error: verification failed for $base (SM:${new} not found after reheader)." >&2
     rm -f "$tmp" 2>/dev/null || true
     exit 1
