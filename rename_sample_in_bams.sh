@@ -103,6 +103,8 @@ echo "Found ${#bam_files[@]} BAM file(s) in: $workdir"
 echo "Renaming SM:${old} -> SM:${new}"
 $force && echo "Force mode: will overwrite non-symlink BAMs."
 
+tab=$(printf '\t')
+
 for bam in "${bam_files[@]}"; do
   base="$(basename "$bam")"
   bai="${bam%.bam}.bai"
@@ -118,8 +120,9 @@ for bam in "${bam_files[@]}"; do
 
   # Reheader with robust, order-agnostic SM replacement in @RG lines:
   #   ^(@RG([^\t]*\t)*)SM:OLD(\t|$)  ->  \1SM:NEW\3
+  sed_script="s/^(@RG([^\t]*${tab})*)SM:${old_esc_re}(${tab}|\$)/\1SM:${new_esc_sub}\3/g"
   if ! samtools view -H "$bam" \
-      | sed -E $'s/^(@RG([^\t]*\t)*)SM:'"$old_esc_re"$'(\t|$)/\\1SM:'"$new_esc_sub"$'\\3/g' \
+      | sed -E "$sed_script" \
       | samtools reheader - "$bam" > "$tmp"; then
     echo "Error: reheader failed for $base" >&2
     rm -f "$tmp" 2>/dev/null || true
