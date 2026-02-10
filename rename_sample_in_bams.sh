@@ -87,7 +87,7 @@ done
 # Escape regex metacharacters in $old for the pattern (match)
 old_esc_re=$(printf '%s' "$old" | sed -e 's/[][.^$*+?{}()|\\/]/\\&/g')
 # Escape '&' in $new for the replacement (avoid & = whole match)
-new_esc_sub=$(printf '%s' "$new" | sed -e 's/[&]/\\&/g')
+new_esc_sub=$(printf '%s' "$new" | sed -e 's/[&\\]/\\&/g')
 
 # --- Process BAM files ---
 shopt -s nullglob
