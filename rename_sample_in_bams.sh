@@ -105,30 +105,50 @@ for bam in "${bam_files[@]}"; do
   echo "  Processing: $base"
 
   # Preflight: only proceed if header actually contains @RG lines with SM:OLD
-  if ! samtools view -H "$bam" | grep -qE $'^@RG\b.*\tSM:'"$old"$'(\t|$)'; then
+  if ! samtools view -H "$bam" | awk -v old="$old" '
+      BEGIN{FS="[ \t]+"}
+      /^@RG/ {
+        for (i=1;i<=NF;i++) if ($i ~ /^SM:/) {
+          if (substr($i,4) == old) { exit 0 }
+        }
+      }
+      END{ exit 1 }'; then
     echo "    Skipped: no @RG line with SM:${old} found in header."
     continue
   fi
 
   # Reheader with robust, order-agnostic SM replacement in @RG lines:
   #   ^(@RG([^\t]*\t)*)SM:OLD(\t|$)  ->  \1SM:NEW\3
-  if ! samtools view -H in.bam \
-      | awk -v old="$old" -v new="$new" -F'\t' '
-          BEGIN{OFS="\t"}
+  if ! samtools view -H "$bam" \
+      | awk -v old="$old" -v new="$new" '
+          BEGIN{FS="[ \t]+"; OFS="\t"}
           /^@RG/ {
-            for (i=1;i<=NF;i++) 
-              if ($i ~ /^SM:/ && substr($i,4)==old) $i="SM:" new
+            for (i=1;i<=NF;i++) {
+              if ($i ~ /^SM:/) {
+                val = substr($i,4)
+                if (val == old) $i = "SM:" new
+              }
+            }
+            out=$1; for (i=2;i<=NF;i++) out=out OFS $i
+            print out; next
           }
           { print }
         ' \
-      | samtools reheader - in.bam > out.bam; then
+      | samtools reheader - "$bam" > "$tmp"; then
     echo "Error: reheader failed for $base" >&2
     rm -f "$tmp" 2>/dev/null || true
     exit 1
   fi
 
   # Verify change took effect in tmp
-  if ! samtools view -H "$tmp" | grep -qE $'^@RG\b.*\tSM:'"$new"$'(\t|$)'; then
+  if ! samtools view -H "$tmp" | awk -v new="$new" '
+      BEGIN{FS="[ \t]+"}
+      /^@RG/ {
+        for (i=1;i<=NF;i++) if ($i ~ /^SM:/) {
+          if (substr($i,4) == new) { exit 0 }
+        }
+      }
+      END{ exit 1 }'; then
     echo "Error: verification failed for $base (SM:${new} not found after reheader)." >&2
     rm -f "$tmp" 2>/dev/null || true
     exit 1
