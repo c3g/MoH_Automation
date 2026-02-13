@@ -80,6 +80,7 @@ def construct_mosdepth_job(sample_name, job_start, job_stop, summary_path, metri
             {
                 "metric_name": "dedup_coverage",
                 "metric_value": metric,
+                "metric_deliverable": True
             }
         ],
     }
