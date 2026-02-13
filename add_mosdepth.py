@@ -50,6 +50,19 @@ def parse_mosdepth_metric(summary_path: Path) -> str:
 
     return columns[3]
 
+def to_float(value, default=None):
+    """
+    Convert a value to float, returning a default if conversion fails.
+    Args:
+        value: The value to convert.
+        default: The value to return if conversion fails.
+    Returns:
+        float or default: The converted float value, or the default if conversion fails.
+    """
+    try:
+        return float(value)
+    except (ValueError, TypeError):
+        return default
 
 def construct_mosdepth_job(sample_name, job_start, job_stop, summary_path, metric):
     """
@@ -64,7 +77,14 @@ def construct_mosdepth_job(sample_name, job_start, job_stop, summary_path, metri
         dict: The constructed mosdepth job JSON object.
     """
     summary_path = Path(summary_path)
-
+    val_float = to_float(metric)
+    metric_flag = "PASS"
+    # Dedup Coverage DN
+    if val_float < 30 and sample_name.endswith("DN"):
+        metric_flag = "FAILED"
+    # Dedup Coverage DT
+    if val_float < 80 and sample_name.endswith("DT"):
+        metric_flag = "FAILED"
     return {
         "job_name": f"mosdepth.{sample_name}",
         "job_start": job_start,
@@ -80,6 +100,7 @@ def construct_mosdepth_job(sample_name, job_start, job_stop, summary_path, metri
             {
                 "metric_name": "dedup_coverage",
                 "metric_value": metric,
+                "metric_flag": metric_flag,
                 "metric_deliverable": True
             }
         ],
