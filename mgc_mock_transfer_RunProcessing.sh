@@ -185,11 +185,4 @@ if [[ $destination != Abacus ]]; then
   else
     echo "$task_id failed!"
   fi
-else
-  while IFS= read -r line; do
-    # shellcheck disable=SC2046,SC2086
-    mkdir -p $(dirname $(echo $line | awk '{print $2}'))
-    # shellcheck disable=SC2086
-    ln -sf $line
-  done < "$TEMP/$LISTFILE"
 fi
