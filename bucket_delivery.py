@@ -433,6 +433,36 @@ def extract_metrics(sample_content, metric_name):
     return unique_values
 
 
+def get_abacus_rawdata_name_counts(sample, in_base_path_abacus_rawdata_freezeman, in_base_path_abacus_rawdata_processing):
+    """Count Abacus rawdata file names for a sample to detect duplicate destination names."""
+    duplicate_name_counts = defaultdict(int)
+    for readset in sample["readset"]:
+        for file in readset["file"]:
+            file_location = file["location"]
+            if (
+                in_base_path_abacus_rawdata_freezeman
+                and file_location.startswith(in_base_path_abacus_rawdata_freezeman)
+            ) or (
+                in_base_path_abacus_rawdata_processing
+                and file_location.startswith(in_base_path_abacus_rawdata_processing)
+            ):
+                duplicate_name_counts[file["name"]] += 1
+    return duplicate_name_counts
+
+
+def maybe_rename_abacus_rawdata_file(file_name, readset_name, duplicate_name_counts):
+    """Rename duplicated Abacus .sorted.bam/.sorted.bai files to include readset name."""
+    if duplicate_name_counts.get(file_name, 0) <= 1:
+        return file_name
+
+    match = re.search(r"\.sorted\.(bam|bai)$", file_name)
+    if not match:
+        return file_name
+
+    extension = match.group(1)
+    return f"{readset_name}.sorted.{extension}"
+
+
 def deliver_dna(
     ignore_alignment,
     raw_folder,
@@ -483,6 +513,11 @@ def deliver_dna(
 
     for sample in patient["sample"]:
         sample_name = sample["name"]
+        duplicate_name_counts = get_abacus_rawdata_name_counts(
+            sample,
+            in_base_path_abacus_rawdata_freezeman,
+            in_base_path_abacus_rawdata_processing,
+        ) if location_endpoint == "abacus" else {}
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
@@ -491,13 +526,15 @@ def deliver_dna(
                 if location_endpoint == "abacus":
                     if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
-                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name 
+                        file_name = maybe_rename_abacus_rawdata_file(file_name, readset_name, duplicate_name_counts)
+                        # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                         dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         file_dict_rawdata_freezeman[file_location] = dest_path
                         src_abs_by_dest[dest_path] = file["location"]
                         continue
                     if file["location"].startswith(in_base_path_abacus_rawdata_processing):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
+                        file_name = maybe_rename_abacus_rawdata_file(file_name, readset_name, duplicate_name_counts)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                         dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         file_dict_rawdata_processing[file_location] = dest_path
@@ -631,6 +668,11 @@ def deliver_rna(
 
     for sample in patient["sample"]:
         sample_name = sample["name"]
+        duplicate_name_counts = get_abacus_rawdata_name_counts(
+            sample,
+            in_base_path_abacus_rawdata_freezeman,
+            in_base_path_abacus_rawdata_processing,
+        ) if location_endpoint == "abacus" else {}
         for readset in sample["readset"]:
             readset_name = readset["name"]
             for file in readset["file"]:
@@ -639,6 +681,7 @@ def deliver_rna(
                 if location_endpoint == "abacus":
                     if file["location"].startswith(in_base_path_abacus_rawdata_freezeman):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_freezeman)
+                        file_name = maybe_rename_abacus_rawdata_file(file_name, readset_name, duplicate_name_counts)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                         dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         file_dict_rawdata_freezeman[file_location] = dest_path
@@ -646,6 +689,7 @@ def deliver_rna(
                         continue
                     if file["location"].startswith(in_base_path_abacus_rawdata_processing):
                         file_location = remove_path_parts(file["location"], in_base_path_abacus_rawdata_processing)
+                        file_name = maybe_rename_abacus_rawdata_file(file_name, readset_name, duplicate_name_counts)
                         # To workaround issue with RP naming regarding raw data being non unique we have to use file_location for file_name
                         dest_path = os.path.join(remove_path_parts(raw_folder, out_base_path), file_name)
                         file_dict_rawdata_freezeman[file_location] = dest_path
