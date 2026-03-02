@@ -75,15 +75,28 @@ def jsonify_delivery_transfer(batch_file, source, destination, delivery_json, ou
     """Writing transfer json based on json delivery file"""
     with open(delivery_json, 'r') as json_file:
         delivery_json = json.load(json_file)
-    delivery_file = {}
+    delivery_file_by_location = {}
+    delivery_file_by_name = {}
+
+    def _append_unique_readset(mapping, key, readset_name):
+        if key not in mapping:
+            mapping[key] = [readset_name]
+        elif readset_name not in mapping[key]:
+            mapping[key].append(readset_name)
+
     for specimen in delivery_json['specimen']:
         for sample in specimen['sample']:
             for readset in sample['readset']:
+                readset_name = readset['name']
                 for file in readset['file']:
-                    if file['name'] in delivery_file:
-                        delivery_file[file['name']].append(readset['name'])
-                    else:
-                        delivery_file[file['name']] = [readset['name']]
+                    file_name = file.get('name')
+                    file_location = file.get('location')
+
+                    if file_name:
+                        _append_unique_readset(delivery_file_by_name, file_name, readset_name)
+                    if file_location:
+                        normalized_location = os.path.normpath(file_location)
+                        _append_unique_readset(delivery_file_by_location, normalized_location, readset_name)
 
     start = start.replace('.', ':').replace('T', ' ') if start else None
     stop = stop.replace('.', ':').replace('T', ' ') if stop else None
@@ -96,36 +109,33 @@ def jsonify_delivery_transfer(batch_file, source, destination, delivery_json, ou
         }
     with open(batch_file, 'r') as file:
         for line in file:
-            fields = line.split(" ")
+            fields = line.split()
+            if len(fields) < 2:
+                continue
+
+            src_path = os.path.normpath(fields[0])
             src_location_uri = f"{source}://{fields[0]}"
             dest_location_uri = f"{destination}://{fields[1].strip()}"
             current_file = os.path.basename(fields[0])
-            if current_file in delivery_file:
-                for readset_name in delivery_file[os.path.basename(current_file)]:
-                    # relative_file_path = current_file.replace(fields[1], '')
-                    # src_location_uri_file = f"{src_location_uri}{relative_file_path}"
-                    # dest_location_uri_file = f"{dest_location_uri}{relative_file_path}"
-                    if readset_name in [readset["readset_name"] for readset in json_output["readset"]]:
-                        for readset in json_output["readset"]:
-                            if readset_name == readset["readset_name"]:
-                                readset["file"].append(
-                                    {
-                                        "src_location_uri": src_location_uri,
-                                        "dest_location_uri": dest_location_uri
-                                    }
-                                )
-                    else:
-                        json_output["readset"].append(
-                            {
-                                "readset_name": readset_name,
-                                "file": [
-                                    {
-                                        "src_location_uri": src_location_uri,
-                                        "dest_location_uri": dest_location_uri
-                                    }
-                                ]
-                            }
-                        )
+
+            # Primary key: full source path from delivery file location
+            readset_names = delivery_file_by_location.get(src_path, [])
+
+            # Backward compatibility: fallback to filename only when unambiguous
+            if not readset_names:
+                name_matches = delivery_file_by_name.get(current_file, [])
+                if len(name_matches) == 1:
+                    readset_names = name_matches
+                elif len(name_matches) > 1:
+                    logger.warning(
+                        "Ambiguous delivery filename '%s' (multiple readsets) without location match for '%s'; skipping.",
+                        current_file,
+                        src_path,
+                    )
+                    continue
+
+            for readset_name in readset_names:
+                _append_file(json_output, readset_name, src_location_uri, dest_location_uri)
 
     with open(output, 'w', encoding='utf-8') as file:
         json.dump(json_output, file, ensure_ascii=False, indent=4)
