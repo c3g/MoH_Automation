@@ -55,17 +55,17 @@ if [[ $destination = Rorqual ]]; then
     # Rorqual main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Rorqual log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Narval ]]; then
     # Narval main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Narval log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Fir ]]; then
     # Fir main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Fir log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
     # DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
@@ -76,14 +76,14 @@ elif [[ $destination = Cardinal ]]; then
     # Cardinal main folder location
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Cardinal log file location
-    DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Abacus ]]; then
     # Abacus Endpoint
     DEST_EP=''
     # Abacus main folder location
     DEST_LOC="/lb/project/mugqic/projects/MOH/MAIN/raw_reads"
     # Abacus log file location
-    DEST_LOG_LOC="/lb/project/mugqic/projects/MOH/log_files/transfer"
+    # DEST_LOG_LOC="/lb/project/mugqic/projects/MOH/log_files/transfer"
 fi
 
 # Abacus Endpoint

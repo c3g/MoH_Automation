@@ -228,7 +228,7 @@ def jsonify_run_processing_transfer(batch_file, source, destination, output, ope
 
                 if is_mgc:
                     try:
-                        _, instrument_full = run_part.split('_')
+                        _, instrument_full = run_part.split('_', 1)
                         instrument = instrument_full.split('-')[0]
                     except ValueError:
                         continue
