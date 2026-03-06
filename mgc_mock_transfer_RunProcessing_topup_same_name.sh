@@ -118,8 +118,15 @@ jq -r '
   file_basename=$(basename "$file")
   # file_without_extension="${file_basename%%.sorted.*}"
   file_extension="${file_basename##*.}"
-  new_filename="${readset_name}.${file_extension}"
   if [[ $file == *.fastq.gz ]]; then
+    if [[ $file == *R1* ]]; then
+      new_filename="${readset_name}_R1.fastq.gz"
+    elif [[ $file == *R2* ]]; then
+      new_filename="${readset_name}_R2.fastq.gz"
+    else
+        echo "ERROR: Fastq file '$file' does not contain R1 or R2 in its name to determine the read pair. Please check the file naming." >&2
+        exit 1
+    fi
     echo "${file#"$SRC_BASE_PATH"} ${DEST_LOC#"$DEST_BASE_PATH"}/$sample_name/$new_filename" >> "$TEMP/$LISTFILE"
     echo "$file $DEST_LOC/$sample_name/$new_filename" >> "$TEMP/$LISTFILE_FULLPATH"
     echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
