@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <run_processing_json>         Run Processing json."
-  echo " -d <destination>                 Destination for the transfer (either Rorqual or Cardinal or Abacus)."
+  echo " -d <destination>                 Destination for the transfer (either Rorqual or Narval or Fir or Cardinal or Abacus)."
   exit 1
   }
 
@@ -34,7 +34,7 @@ if [ ! "$run_processing_json" ] || [ ! "$destination" ]; then
   usage
 fi
 
-if ! [[ $destination =~ Cardinal|Rorqual|Abacus|Fir|Narval ]]; then
+if ! [[ $destination =~ Cardinal|Rorqual|Narval|Fir|Abacus ]]; then
     echo -e "ERROR: Invalid destination: '$destination'. It has to be either Rorqual, Narval, Fir, Cardinal or Abacus.\n"
     usage
 fi
@@ -56,6 +56,16 @@ if [[ $destination = Rorqual ]]; then
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Rorqual log file location
     # DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+elif [[ $destination = Narval ]]; then
+    # Narval main folder location
+    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+    # Narval log file location
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
+elif [[ $destination = Fir ]]; then
+    # Fir main folder location
+    DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+    # Fir log file location
+    # DEST_LOG_LOC="${DEST_BASE_PATH}/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
     # DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
@@ -77,10 +87,9 @@ elif [[ $destination = Abacus ]]; then
 fi
 
 # Abacus Endpoint
-# ABA_EP='26261fd6-0e6d-4252-a0ea-410b4b4f2eef'
-# Abacus_RawData_freezeman-processing_Robot
-ABA_EP='fb9e89bd-7bfb-4842-9c4d-9190eb946160'
-SRC_BASE_PATH="/lb/robot/research/freezeman-processing"
+# Abacus_MoH_Robot
+ABA_EP='892ba9e9-f6f3-4b6c-b428-4039a6214be1'
+SRC_BASE_PATH="/lb/project/mugqic/projects/MOH"
 
 runfolder=$(jq -r '.run_name' "$run_processing_json")
 
@@ -109,8 +118,8 @@ jq -r '
   file_basename=$(basename "$file")
   # file_without_extension="${file_basename%%.sorted.*}"
   file_extension="${file_basename##*.}"
-  new_filename="${readset_name}.sorted.${file_extension}"
-  if [[ $file == *.bam || $file == *.bai ]]; then
+  new_filename="${readset_name}.${file_extension}"
+  if [[ $file == *.fastq.gz ]]; then
     echo "${file#"$SRC_BASE_PATH"} ${DEST_LOC#"$DEST_BASE_PATH"}/$sample_name/$new_filename" >> "$TEMP/$LISTFILE"
     echo "$file $DEST_LOC/$sample_name/$new_filename" >> "$TEMP/$LISTFILE_FULLPATH"
     echo "$file,$sample_name/$new_filename" >> "$TEMP/$LOGFILE"
@@ -135,6 +144,12 @@ if [[ $destination != Abacus ]]; then
       ;;
     Rorqual)
       ENV_FILE="$ENV_DIR/Abacus_to_Rorqual.sh"
+      ;;
+    Narval)
+      ENV_FILE="$ENV_DIR/Abacus_to_Narval.sh"
+      ;;
+    Fir)
+      ENV_FILE="$ENV_DIR/Abacus_to_Fir.sh"
       ;;
     *)
       echo "ERROR: No Globus env file defined for destination '$destination'." >&2
@@ -170,11 +185,4 @@ if [[ $destination != Abacus ]]; then
   else
     echo "$task_id failed!"
   fi
-else
-  while IFS= read -r line; do
-    # shellcheck disable=SC2046,SC2086
-    mkdir -p $(dirname $(echo $line | awk '{print $2}'))
-    # shellcheck disable=SC2086
-    ln -sf $line
-  done < "$TEMP/$LISTFILE"
 fi
