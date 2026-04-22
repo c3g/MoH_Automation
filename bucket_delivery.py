@@ -1062,7 +1062,7 @@ def generate_readme(
     if rna_cancer_inis:
         rna_cancer_inis = "\n    " + rna_cancer_inis
     if missing_vardict:
-        vardict_warning = " (Warning: Vardict results are missing)"
+        vardict_warning = " (Warning: VarDict results are missing)"
     else:
         vardict_warning = ""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.

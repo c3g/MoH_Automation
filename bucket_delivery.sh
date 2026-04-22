@@ -104,20 +104,22 @@ transfer_json=${SRC_DELIVERY}/${specimen_name}_${experiment_nucleic_acid_type}_$
 unset PYTHONPATH
 source $SRC_MOH/project_tracking_cli/venv/bin/activate
 # shellcheck disable=SC2086
-if [ "$missing_vardict" = true ]; then
-    pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json --missing_vardict
-else
-    pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json
-fi
+pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json
+
 if [ ! -f "$delivery_json" ]; then
     echo "ERROR: Delivery JSON file not created: $delivery_json. Exiting..."
     exit 1
 fi
 # To force python to not buffer and print/log right away
 export PYTHONUNBUFFERED=1
-# shellcheck disable=SC2086
-$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
-status=$?
+if [ "$missing_vardict" = true ]; then
+    # shellcheck disable=SC2086
+    $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile --missing_vardict
+    status=$?
+else
+    # shellcheck disable=SC2086
+    $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
+    status=$?
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
