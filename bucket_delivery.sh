@@ -120,6 +120,7 @@ else
     # shellcheck disable=SC2086
     $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
     status=$?
+fi
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
