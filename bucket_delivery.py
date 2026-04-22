@@ -72,6 +72,7 @@ def main():
     parser.add_argument('--update_methods', required=False, help="Forces Methods.html file generation.", action='store_true')
     parser.add_argument('--update_readme', required=False, help="Forces Readme.html file generation.", action='store_true')
     parser.add_argument('--loglevel', help='Sets logging level', choices=['ERROR', 'WARNING', 'INFO', 'DEBUG'], default='INFO')
+    parser.add_argument('--missing_vardict', required=False, help="Adds a message in README if all callers except cvardict are present in the ensemble vcf.", action='store_true')
     args = parser.parse_args()
 
     log_level = getattr(logging, args.loglevel.upper(), None)
@@ -404,7 +405,7 @@ def main():
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(key_metrics_file, out_base_path), Body=metrics_content)
 
         if args.update_readme or transferred_files:
-            readme_content = generate_readme(patient_name, sample_name_dna_n, sample_name_dna_t, sample_name_rna, all_delivered_files)
+            readme_content = generate_readme(patient_name, sample_name_dna_n, sample_name_dna_t, sample_name_rna, all_delivered_files, args.missing_vardict)
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(readme_file, out_base_path), Body=readme_content)
 
     print("Transfer script completed successfully.")
@@ -1013,7 +1014,8 @@ def generate_readme(
     sample_name_dna_n,
     sample_name_dna_t,
     sample_name_rna,
-    all_delivered_files):
+    all_delivered_files,
+    missing_vardict=False):
     # Add timestamp
     timestamp = datetime.datetime.today().strftime("%Y/%m/%d")
 
@@ -1059,6 +1061,10 @@ def generate_readme(
     )
     if rna_cancer_inis:
         rna_cancer_inis = "\n    " + rna_cancer_inis
+    if missing_vardict:
+        vardict_warning = " (Warning: Vardict results are missing)"
+    else:
+        vardict_warning = ""
     data = f"""This directory contains the delivered data for **{patient}** processed by the Canadian Centre for Computational Genomics.
 The data will be updated as it becomes available and as such many files may be missing from RNA or DNA upon initial creation of this directory
 Should you have concerns, questions, or suggestions, please contact the analysis team at moh-q@computationalgenomics.ca
@@ -1074,8 +1080,8 @@ When :white_check_mark: is present the file is available and the date at which i
 * `variants/` *Contains the vcfs related to variant calls*
     * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.germline.vt.annot.vcf.gz", all_delivered_files)}
     * `{patient}.ensemble.germline.vt.annot.vcf.gz.tbi` *Index of Germline Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.germline.vt.annot.vcf.gz.tbi", all_delivered_files)}
-    * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz", all_delivered_files)}
-    * `{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi` *Index of Somatic Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi", all_delivered_files)}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers for DNA Sample{vardict_warning}* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz", all_delivered_files)}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi` *Index of Somatic Variants found in any of the callers for DNA Sample{vardict_warning}* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi", all_delivered_files)}
     * `{patient}.hc.vt.annot.vcf.gz` *Variants found using RNA sample* {file_exist_check(f"{patient}.hc.vt.annot.vcf.gz", all_delivered_files)}
     * `{patient}.hc.vt.annot.vcf.gz.tbi` *Index of Variants found using RNA sample* {file_exist_check(f"{patient}.hc.vt.annot.vcf.gz.tbi", all_delivered_files)}
     * `{patient}.hc.vt.annot.filt.vcf.gz` *Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(f"{patient}.hc.vt.annot.filt.vcf.gz", all_delivered_files)}

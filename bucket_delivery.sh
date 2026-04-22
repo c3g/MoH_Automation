@@ -3,16 +3,17 @@
 THIS_SCRIPT=$(basename "$0")
 
 usage() {
-    echo "script usage: $THIS_SCRIPT -h [-s specimen_name] [-l location] [-e experiment_nucleic_acid_type]"
+    echo "script usage: $THIS_SCRIPT -h [-s specimen_name] [-l location] [-e experiment_nucleic_acid_type] [-k]"
     echo "Usage:"
     echo " -h                                 Display this help message."
     echo " -s <specimen_name>                 Specimen name to be delivered /!\ MANDATORY /!\."
     echo " -l <location>                      Location of the data to be delivered /!\ MANDATORY /!\."
     echo " -e <experiment_nucleic_acid_type>  Experiment nucleic acid type to be delivered (either: DNA or RNA) /!\ MANDATORY /!\."
+    echo " -k                                 Don't delete data after delivery (keep). By default, data will be deleted after delivery."
     exit 1
 }
 
-while getopts 'hs:l:e:' OPTION; do
+while getopts 'hs:l:e:k' OPTION; do
     case "$OPTION" in
         s)
             specimen_name="$OPTARG"
@@ -30,6 +31,9 @@ while getopts 'hs:l:e:' OPTION; do
                     usage
                     ;;
             esac
+            ;;
+        k)
+            keep_data=true
             ;;
         h)
             usage
@@ -97,7 +101,7 @@ unset PYTHONPATH
 source $SRC_MOH/project_tracking_cli/venv/bin/activate
 # shellcheck disable=SC2086
 pt-cli digest delivery --specimen_name $specimen_name --endpoint $location --experiment_nucleic_acid_type $experiment_nucleic_acid_type -o $delivery_json
-if [ ! -f $delivery_json ]; then
+if [ ! -f "$delivery_json" ]; then
     echo "ERROR: Delivery JSON file not created: $delivery_json. Exiting..."
     exit 1
 fi
@@ -112,23 +116,23 @@ if [ $status -ne 0 ]; then
     exit $status
 fi
 
-if [ ! -s $listfile ]; then
+if [ ! -s "$listfile" ]; then
     echo "WARNING: Delivery list file is empty: $listfile. Exiting..."
     exit 0
 fi
 
 timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
 
-$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input $listfile --delivery $delivery_json --output $transfer_json --source $location --destination "c3g-data-repos" --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start "$timestamp" --stop "$timestamp_end"
-if [ ! -f $transfer_json ]; then
+$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input "$listfile" --delivery "$delivery_json" --output "$transfer_json" --source "$location" --destination "c3g-data-repos" --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start "$timestamp" --stop "$timestamp_end"
+if [ ! -f "$transfer_json" ]; then
     echo "ERROR: Delivery JSON file for ingestion in the DB not created: $transfer_json. Exiting..."
     exit 1
 fi
 # shellcheck disable=SC2086
 pt-cli ingest delivery --input-json $transfer_json
 for i in $(awk '{print $1}' "$listfile"); do
-    # Skip Abacus rm data deletion
-    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/robot/research/processing/novaseq* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]]; then
+    # Skip Abacus rm data deletion or when keep option is set to true
+    if [[ "$i" != /lb/robot/research/freezeman-processing/novaseqx* && "$i" != /lb/robot/research/processing/novaseq* && "$i" != /lb/project/mugqic/projects/MOH/GQ_STAGING* ]] && [ -z "$keep_data" ]; then
         rm "$i"
     fi
 done
