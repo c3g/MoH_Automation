@@ -1348,6 +1348,14 @@ def display_transfer_status(transfer_client, task_id, s3_client, bucket_name):
         sys.exit(0)
 
     def finalize_transfer():
+        # If called from the finally block after an exception, the task may still
+        # show ACTIVE in the Globus API even though the transfer physically completed.
+        # Poll until a terminal state is reached before pulling the event log.
+        for _ in range(20):
+            task = safe_get_task(transfer_client, task_id)
+            if task and task['status'] in ['SUCCEEDED', 'FAILED', 'CANCELED']:
+                break
+            time.sleep(15)
         transferred_files, fault_events = get_transfer_event_log(transfer_client, task_id, s3_client, bucket_name)
         if transferred_files:
             logger.debug(f"Transferred files:\n {'\n '.join([file[0] for file in transferred_files])}")
