@@ -225,6 +225,7 @@ def main():
         readme_file = os.path.join(out_folder, "Readme.html")
         methods_file = os.path.join(out_folder, "Methods.html")
         key_metrics_file = os.path.join(out_folder, "Key_metrics.csv")
+        vardict_note_file = os.path.join(var_folder, "README.txt")
         file_dict = {}
         # For Abacus rawdata special handling
         file_dict_rawdata_freezeman = {}
@@ -407,6 +408,10 @@ def main():
         if args.update_readme or transferred_files:
             readme_content = generate_readme(patient_name, sample_name_dna_n, sample_name_dna_t, sample_name_rna, all_delivered_files, args.missing_vardict)
             s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(readme_file, out_base_path), Body=readme_content)
+
+        if args.missing_vardict:
+            vardict_note_content = "Please note that VarDict was not included among the callers in the ensemble approach due to its high resource usage."
+            s3_client.put_object(Bucket=bucket_name, Key=remove_path_parts(vardict_note_file, out_base_path), Body=vardict_note_content)
 
     print("Transfer script completed successfully.")
 
@@ -1081,7 +1086,7 @@ When :white_check_mark: is present the file is available and the date at which i
     * `{patient}.ensemble.germline.vt.annot.vcf.gz` *Germline Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.germline.vt.annot.vcf.gz", all_delivered_files)}
     * `{patient}.ensemble.germline.vt.annot.vcf.gz.tbi` *Index of Germline Variants found in any of the callers for DNA Sample* {file_exist_check(f"{patient}.ensemble.germline.vt.annot.vcf.gz.tbi", all_delivered_files)}
     * `{patient}.ensemble.somatic.vt.annot.vcf.gz` *Somatic Variants found in any of the callers for DNA Sample{vardict_warning}* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz", all_delivered_files)}
-    * `{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi` *Index of Somatic Variants found in any of the callers for DNA Sample{vardict_warning}* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi", all_delivered_files)}
+    * `{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi` *Index of Somatic Variants found in any of the callers for DNA Sample{vardict_warning}* {file_exist_check(f"{patient}.ensemble.somatic.vt.annot.vcf.gz.tbi", all_delivered_files)}{"" if not missing_vardict else chr(10) + "    * `README.txt` *Notes on the ensemble approach (VarDict excluded)* :white_check_mark:"}
     * `{patient}.hc.vt.annot.vcf.gz` *Variants found using RNA sample* {file_exist_check(f"{patient}.hc.vt.annot.vcf.gz", all_delivered_files)}
     * `{patient}.hc.vt.annot.vcf.gz.tbi` *Index of Variants found using RNA sample* {file_exist_check(f"{patient}.hc.vt.annot.vcf.gz.tbi", all_delivered_files)}
     * `{patient}.hc.vt.annot.filt.vcf.gz` *Variants found using RNA sample; annotated with RNAEdits and filtered with coverage >=10x and VAF >=5%* {file_exist_check(f"{patient}.hc.vt.annot.filt.vcf.gz", all_delivered_files)}
