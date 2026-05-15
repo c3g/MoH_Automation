@@ -112,15 +112,13 @@ if [ ! -f "$delivery_json" ]; then
 fi
 # To force python to not buffer and print/log right away
 export PYTHONUNBUFFERED=1
+extra_args=""
 if [ "$missing_vardict" = true ]; then
-    # shellcheck disable=SC2086
-    $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile --missing_vardict
-    status=$?
-else
-    # shellcheck disable=SC2086
-    $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile
-    status=$?
+    extra_args="$extra_args --missing_vardict"
 fi
+# shellcheck disable=SC2086
+$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile $extra_args
+status=$?
 
 if [ $status -ne 0 ]; then
     echo "Bucket delivery failed $SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile. Exiting..."
@@ -134,7 +132,7 @@ fi
 
 timestamp_end=$(date "+%Y-%m-%dT%H.%M.%S")
 
-$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input "$listfile" --delivery "$delivery_json" --output "$transfer_json" --source "$location" --destination "c3g-data-repos" --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile" --start "$timestamp" --stop "$timestamp_end"
+$SRC_MOH/moh_automation/moh_automation_main/transfer2json.py --input "$listfile" --delivery "$delivery_json" --output "$transfer_json" --source "$location" --destination "c3g-data-repos" --operation_cmd_line "$SRC_MOH/moh_automation/moh_automation_main/bucket_delivery.py -i $delivery_json -l $listfile$extra_args" --start "$timestamp" --stop "$timestamp_end"
 if [ ! -f "$transfer_json" ]; then
     echo "ERROR: Delivery JSON file for ingestion in the DB not created: $transfer_json. Exiting..."
     exit 1
