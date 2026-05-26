@@ -303,7 +303,7 @@ def dna_raw_mean_coverage_check(sample, value, tumour):
     if not value:
         ret = "MISSING"
         logger.warning(f"Missing 'mean_coverage' value for {sample} from json.")
-    if float(value)<30 and not tumour:
+    elif float(value)<30 and not tumour:
         ret = "FAILED"
     elif float(value)<80 and tumour:
         ret = "FAILED"
@@ -316,7 +316,7 @@ def rna_raw_reads_count_check(sample, value):
     if not value:
         ret = "MISSING"
         logger.warning(f"Missing 'nb_reads' value for {sample} from json.")
-    if int(value)<80000000:
+    elif int(value)<80000000:
         ret = "FAILED"
     elif int(value)<100000000:
         ret = "WARNING"
@@ -342,10 +342,10 @@ def median_insert_size_check(sample, value):
     if not value:
         ret = "MISSING"
         logger.warning(f"Missing 'median_aligned_insert_size' value for {sample} from json.")
-    if float(value)<300:
-        ret = "WARNING"
     elif float(value)<150:
         ret = "FAILED"
+    elif float(value)<300:
+        ret = "WARNING"
     else:
         ret = "PASS"
     return ret
