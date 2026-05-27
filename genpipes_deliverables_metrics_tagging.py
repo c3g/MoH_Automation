@@ -339,15 +339,15 @@ def iterate_json(current_json_hash, deliverables_metrics_json):
                                 # Contamination
                                 if metric_name == "contamination":
                                     if val_float > 0.5:
-                                        metric["metric_flag"] = "WARNING"
-                                    elif val_float > 0.05:
                                         metric["metric_flag"] = "FAILED"
+                                    elif val_float > 0.05:
+                                        metric["metric_flag"] = "WARNING"
                                 # Median Insert Size
                                 if metric_name == "median_insert_size":
-                                    if val_int < 300:
-                                        metric["metric_flag"] = "WARNING"
-                                    elif val_int < 150:
+                                    if val_int < 150:
                                         metric["metric_flag"] = "FAILED"
+                                    elif val_int < 300:
+                                        metric["metric_flag"] = "WARNING"
                                 # Dedup Coverage DN
                                 if metric_name == "dedup_coverage" and val_float < 30 and sample["sample_name"].endswith("DN"):
                                     metric["metric_flag"] = "FAILED"
