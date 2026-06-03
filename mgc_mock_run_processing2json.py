@@ -187,7 +187,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             raw_duplication_rate_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
                 raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, run_row['Dup. Rate (%)'])
-            raw_median_insert_size_flag = median_insert_size_check(sample, run_row['Mapped Insert Size (median)'])
+            raw_median_insert_size_flag = median_insert_size_check(sample, run_row.get('Mapped Insert Size (median)', None))
             raw_mean_insert_size_flag = "PASS"
             raw_mean_coverage_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
