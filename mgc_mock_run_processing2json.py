@@ -187,11 +187,22 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             raw_duplication_rate_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
                 raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, run_row['Dup. Rate (%)'])
-            raw_median_insert_size_flag = median_insert_size_check(sample, run_row.get('Mapped Insert Size (median)', None))
-            raw_mean_insert_size_flag = "PASS"
-            raw_mean_coverage_flag = "PASS"
-            if run_row['Library Type'] != "RNASeq":
-                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, run_row.get('Mean Coverage', None), sample_tumour)
+            raw_median_insert_size_value = run_row.get('Mapped Insert Size (median)', None)
+            raw_median_insert_size_flag = median_insert_size_check(sample, raw_median_insert_size_value)
+            raw_mean_insert_size_value = run_row.get('Mapped Insert Size (mean)', None)
+            if raw_mean_insert_size_value is None:
+                logger.warning(f"Missing 'Mapped Insert Size (mean)' value for {sample}")
+                raw_mean_insert_size_flag = "FAIL"
+            else:
+                raw_mean_insert_size_flag = "PASS"
+            raw_mean_coverage_value = run_row.get('Mean Coverage', None)
+            if raw_mean_coverage_value is None:
+                logger.warning(f"Missing 'Mean Coverage' value for {sample}")
+                raw_mean_coverage_flag = "FAIL"
+            elif run_row['Library Type'] == "RNASeq":
+                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, raw_mean_coverage_value, sample_tumour)
+            else:
+                raw_mean_coverage_flag = "PASS"
             metric_json = [
                 {
                     "metric_name": "raw_reads_count",
@@ -206,17 +217,17 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     },
                 {
                     "metric_name": "raw_median_insert_size",
-                    "metric_value": f"{run_row.get('Mapped Insert Size (median)', None)}",
+                    "metric_value": f"{raw_median_insert_size_value}",
                     "metric_flag": raw_median_insert_size_flag
                     },
                 {
                     "metric_name": "raw_mean_insert_size",
-                    "metric_value": f"{run_row['Mapped Insert Size (mean)']}",
+                    "metric_value": f"{raw_mean_insert_size_value}",
                     "metric_flag": raw_mean_insert_size_flag
                     },
                 {
                     "metric_name": "raw_mean_coverage",
-                    "metric_value": f"{run_row.get('Mean Coverage', None)}",
+                    "metric_value": f"{raw_mean_coverage_value}",
                     "metric_flag": raw_mean_coverage_flag
                     }
                 ]
