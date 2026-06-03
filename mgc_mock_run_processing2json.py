@@ -191,7 +191,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             raw_mean_insert_size_flag = "PASS"
             raw_mean_coverage_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, run_row['Mean Coverage'], sample_tumour)
+                raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, run_row.get('Mean Coverage', None), sample_tumour)
             metric_json = [
                 {
                     "metric_name": "raw_reads_count",
