@@ -206,7 +206,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     },
                 {
                     "metric_name": "raw_median_insert_size",
-                    "metric_value": f"{run_row['Mapped Insert Size (median)']}",
+                    "metric_value": f"{run_row.get('Mapped Insert Size (median)', None)}",
                     "metric_flag": raw_median_insert_size_flag
                     },
                 {
@@ -216,7 +216,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     },
                 {
                     "metric_name": "raw_mean_coverage",
-                    "metric_value": f"{run_row['Mean Coverage']}",
+                    "metric_value": f"{run_row.get('Mean Coverage', None)}",
                     "metric_flag": raw_mean_coverage_flag
                     }
                 ]
