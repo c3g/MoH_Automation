@@ -184,9 +184,15 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                 raw_reads_count_flag = "PASS"
             if run_row['Library Type'] == "RNASeq":
                 raw_reads_count_flag = rna_raw_reads_count_check(sample, run_row['Clusters'])
+            raw_duplication_rate_value = run_row.get('Dup. Rate (%)', None)
+            if raw_duplication_rate_value not in (None, ""):
+                try:
+                    float(raw_duplication_rate_value)
+                except (TypeError, ValueError):
+                    raw_duplication_rate_value = None
             raw_duplication_rate_flag = "PASS"
             if run_row['Library Type'] != "RNASeq":
-                raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, run_row['Dup. Rate (%)'])
+                raw_duplication_rate_flag = dna_raw_duplication_rate_check(sample, raw_duplication_rate_value)
             raw_median_insert_size_value = run_row.get('Mapped Insert Size (median)', None)
             raw_median_insert_size_flag = median_insert_size_check(sample, raw_median_insert_size_value)
             raw_mean_insert_size_value = run_row.get('Mapped Insert Size (mean)', None)
@@ -212,7 +218,7 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
                     },
                 {
                     "metric_name": "raw_duplication_rate",
-                    "metric_value": f"{run_row['Dup. Rate (%)']}",
+                    "metric_value": raw_duplication_rate_value,
                     "metric_flag": raw_duplication_rate_flag
                     },
                 {
