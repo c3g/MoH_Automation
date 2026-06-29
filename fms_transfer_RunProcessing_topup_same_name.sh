@@ -7,7 +7,7 @@ usage() {
   echo "Usage:"
   echo " -h                               Display this help message."
   echo " -r <run_processing_json>         Run Processing json."
-  echo " -d <destination>                 Destination for the transfer (either Rorqual or Cardinal or Abacus)."
+  echo " -d <destination>                 Destination for the transfer (either Rorqual or Cardinal or Narvalor Abacus)."
   exit 1
   }
 
@@ -56,6 +56,11 @@ if [[ $destination = Rorqual ]]; then
     DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
     # Rorqual log file location
     # DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
+elif [[ $destination = Narval ]]; then
+  # Narval main folder location
+  DEST_LOC="${DEST_BASE_PATH}/MAIN/raw_reads"
+  # Narval log file location
+  # DEST_LOG_LOC="${DEST_BASE_PATH}/DATABASE/log_files/transfer"
 elif [[ $destination = Cardinal ]]; then
     # Cardinal Endpoint
     # DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
