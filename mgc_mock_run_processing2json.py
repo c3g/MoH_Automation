@@ -198,13 +198,13 @@ def jsonify_run_processing(input_csv, run_list, output, lanes, samples):
             raw_mean_insert_size_value = run_row.get('Mapped Insert Size (mean)', None)
             if raw_mean_insert_size_value is None:
                 logger.warning(f"Missing 'Mapped Insert Size (mean)' value for {sample}")
-                raw_mean_insert_size_flag = "FAIL"
+                raw_mean_insert_size_flag = "FAILED"
             else:
                 raw_mean_insert_size_flag = "PASS"
             raw_mean_coverage_value = run_row.get('Mean Coverage', None)
             if raw_mean_coverage_value is None:
                 logger.warning(f"Missing 'Mean Coverage' value for {sample}")
-                raw_mean_coverage_flag = "FAIL"
+                raw_mean_coverage_flag = "FAILED"
             elif run_row['Library Type'] == "RNASeq":
                 raw_mean_coverage_flag = dna_raw_mean_coverage_check(sample, raw_mean_coverage_value, sample_tumour)
             else:
