@@ -141,6 +141,12 @@ if [[ $destination != Abacus ]]; then
     Rorqual)
       ENV_FILE="$ENV_DIR/Abacus_to_Rorqual.sh"
       ;;
+    Narval)
+      ENV_FILE="$ENV_DIR/Abacus_to_Narval.sh"
+      ;;
+    Fir)
+      ENV_FILE="$ENV_DIR/Abacus_to_Fir.sh"
+      ;;
     *)
       echo "ERROR: No Globus env file defined for destination '$destination'." >&2
       exit 1
