@@ -87,7 +87,7 @@ elif [[ $destination = Cardinal ]]; then
     # Cardinal run metrics location
     DEST_MET_LOC="/project/60007/MOH/MAIN/metrics/run_metrics"
     # Cardinal Endpoint
-    DEST_EP='a6df16bc-4e7f-4784-9afa-8ceb7b20b7c0'
+    DEST_EP='4ab4f58f-f3fd-43ab-8b6b-d44dd37969de'
 elif [[ $destination = Abacus ]]; then
     # Abacus main folder location
     DEST_LOC="/lb/project/mugqic/projects/MOH/MAIN/raw_reads"
